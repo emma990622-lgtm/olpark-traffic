@@ -43,6 +43,24 @@ const DOW = ["일", "월", "화", "수", "목", "금", "토"];
 // 공연 길이는 공연마다 다르다. 기본값 150분, 화면에서 바꿀 수 있다.
 const DEFAULT_SHOW_MIN = 150;
 
+// ---------- 지하철 시간 (가정값) ----------
+// 서울교통공사 역간 표준 운행시간 자료를 받으면 정거장별 실제 값으로 바꾼다.
+const SUBWAY = { perStopMin: 2, waitMin: 5, transferMin: 5,
+  note: "지하철 운행은 정거장당 2분, 개찰·대기 5분, 환승 5분으로 가정한 값이에요" };
+
+// 환승주차 총 이동시간: 주차장→역 도보 + 대기 + 운행 + 환승 + 내린 역→공연장 도보
+function transferTotal(lot, station) {
+  if (lot.toStationMin == null || !station || lot.stops == null) return null;
+  const parts = {
+    walk1: lot.toStationMin,
+    wait: SUBWAY.waitMin,
+    ride: lot.stops * SUBWAY.perStopMin,
+    transfer: (lot.transfers || 0) * SUBWAY.transferMin,
+    walk2: station.walkMin,
+  };
+  return { total: Object.values(parts).reduce((a, b) => a + b, 0), ...parts };
+}
+
 // ---------- 요금 ----------
 function parkingFee(lot, minutes) {
   if (!lot.won || !lot.per) return null;
@@ -144,6 +162,29 @@ function liveNote(live) {
   return live.source === "live"
     ? `실시간: 도로 ${live.roadTime} 기준, 주차 ${live.summary["수집시각"].slice(11, 16)} 기준 (2~3분마다 갱신)`
     : `저장된 최근 수집값: ${live.roadTime} (${live.folder}). 인터넷에 올린 버전에서는 실시간으로 바뀌어요.`;
+}
+
+// ---------- 공연일 자동 수집 결과 (GitHub 공개 저장소) ----------
+let _folderCache = null;
+async function listCollectedFolders() {
+  if (_folderCache) return _folderCache;
+  const api = `https://api.github.com/repos/${CONFIG.collectorRepo}/contents/data`;
+  const list = await fetch(api).then((r) => { if (!r.ok) throw new Error("GitHub " + r.status); return r.json(); });
+  _folderCache = list.filter((x) => x.type === "dir").map((x) => x.name).sort();
+  return _folderCache;
+}
+
+function parseCSV(t) {
+  const rows = t.replace(/^\uFEFF/, "").trim().split("\n").map((l) => l.replace(/\r$/, "").split(","));
+  const h = rows[0];
+  return rows.slice(1).map((r) => Object.fromEntries(h.map((k, i) => [k, r[i]])));
+}
+
+// 한 수집 폴더의 summary.csv + roads.csv
+async function loadCollectedFolder(folder) {
+  const raw = `https://raw.githubusercontent.com/${CONFIG.collectorRepo}/main/data/${folder}/`;
+  const [s, r] = await Promise.all(["summary.csv", "roads.csv"].map((f) => fetch(raw + f).then((x) => (x.ok ? x.text() : ""))));
+  return { folder, summary: s ? parseCSV(s) : [], roads: r ? parseCSV(r) : [] };
 }
 
 // ---------- 도로 지도 (SVG, 지도 타일 없이) ----------

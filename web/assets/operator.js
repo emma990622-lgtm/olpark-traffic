@@ -60,6 +60,7 @@
 
     drawChart(big);
     drawBrief(d, list, lv, seats, big, peakAt, showMin);
+    renderRoadDay(d, list, showMin);
   }
 
   // 출차 곡선: 시작 시각이 가장 비슷한 2024-07 KSPO 공연일 vs 공연 없는 평일 평균
@@ -119,6 +120,102 @@
         <tr><th>기관별 확인 요청</th><td>한국체육산업개발: 출구별 요원 배치 · 송파구청: 주변 공영주차장 안내 · 관할 경찰서: 출차 집중 시간대 교차로 관리 · 서울시: 도로전광판 안내</td></tr>
       </table>
       <div class="muted small">공연 길이 ${showMin}분 가정. 예측값은 참고용이며, 배치와 통제는 각 기관이 결정합니다.</div>`;
+  }
+
+
+  // ---------- 공연 전후 도로 상황 ----------
+  const hm = (ts) => { const t = ts.slice(11, 16); return toMin(t); };
+  const median = (a) => { const b = a.slice().sort((x, y) => x - y); const n = b.length; return n ? (n % 2 ? b[(n - 1) / 2] : (b[n / 2 - 1] + b[n / 2]) / 2) : NaN; };
+
+  async function renderRoadDay(d, list, showMin) {
+    const note = $("roadDayNote");
+    let folders;
+    try { folders = await listCollectedFolders(); } catch (e) { note.textContent = "수집 기록을 불러오지 못했어요(" + e.message + ")."; return; }
+    const dayF = folders.filter((f) => f.startsWith(d + "_"));
+    const isExample = !dayF.length;
+    const target = isExample ? folders.filter((f) => /^\d{4}-\d{2}-\d{2}_/.test(f)).at(-1) : dayF.at(-1);
+    if (!target) { note.textContent = "아직 수집된 기록이 없어요."; return; }
+    const baseF = folders.filter((f) => f.includes("_baseline") && !f.startsWith(d)).at(-1);
+    const [T, B] = await Promise.all([loadCollectedFolder(target), baseF ? loadCollectedFolder(baseF) : null]);
+    note.innerHTML = isExample
+      ? `이 날짜는 공연 당일 자동 수집(공연 약 2시간 전부터 6시간) 뒤에 채워져요. 아래는 가장 최근 수집 <b>${target}</b>을 예시로 보여 줘요.`
+      : `수집 기록: <b>${target}</b>${B ? ` · 비교: 공연 없는 날 <b>${baseF}</b>` : " · 공연 없는 날 비교 기록은 11/20, 11/26 수집 후 표시"}`;
+
+    const starts = isExample ? [] : list.flatMap((e) => e.times.map(toMin));
+    const st = starts.length ? Math.min(...starts) : null;
+    drawRoadChart(T, B, st, showMin);
+    drawHeat(T, st, showMin);
+    drawSlowTop(T, st);
+  }
+
+  function drawRoadChart(T, B, st, showMin) {
+    const pts = T.summary.map((r) => ({ t: hm(r["수집시각"]), v: +r["지역평균속도_kmh"], bad: (+r["정체구간수"] || 0) + (+r["서행구간수"] || 0) })).filter((p) => p.v);
+    const bpts = B ? B.summary.map((r) => ({ t: hm(r["수집시각"]), v: +r["지역평균속도_kmh"] })).filter((p) => p.v) : [];
+    if (!pts.length) { $("roadChart").outerHTML = '<svg id="roadChart"></svg>'; return; }
+    const ts = [...pts, ...bpts].map((p) => p.t).concat(st != null ? [st, st + showMin, st + ref.lagMed] : []);
+    const t0 = Math.floor(Math.min(...ts) / 30) * 30, t1 = Math.ceil(Math.max(...ts) / 30) * 30;
+    const W = 1000, H = 280, L = 44, R = 44, Tp = 16, Bt = 30;
+    const vmax = Math.ceil(Math.max(...pts.map((p) => p.v), ...bpts.map((p) => p.v), 40) / 10) * 10;
+    const cmax = 58;
+    const X = (t) => L + ((t - t0) / Math.max(30, t1 - t0)) * (W - L - R);
+    const Y = (v) => H - Bt - (v / vmax) * (H - Tp - Bt);
+    const Yc = (c) => H - Bt - (c / cmax) * (H - Tp - Bt);
+    const line = (arr) => arr.map((p, i) => (i ? "L" : "M") + X(p.t).toFixed(1) + " " + Y(p.v).toFixed(1)).join("");
+    let g = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-size="11">`;
+    for (let v = 0; v <= vmax; v += 10) g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end" fill="var(--ink-2)">${v}</text>`;
+    for (let c = 0; c <= cmax; c += 20) g += `<text x="${W - R + 6}" y="${Yc(c) + 4}" fill="var(--bad)" opacity="0.7">${c}</text>`;
+    for (let t = t0; t <= t1; t += 30) g += `<text x="${X(t)}" y="${H - 10}" text-anchor="middle" fill="var(--ink-2)">${toHHMM(t)}</text>`;
+    const bw = Math.max(2, (W - L - R) / Math.max(1, (t1 - t0) / 5) * 0.6);
+    pts.forEach((p) => { g += `<rect x="${X(p.t) - bw / 2}" y="${Yc(p.bad)}" width="${bw}" height="${H - Bt - Yc(p.bad)}" fill="var(--bad)" opacity="0.18"/>`; });
+    if (bpts.length) g += `<path d="${line(bpts)}" fill="none" stroke="var(--none)" stroke-width="2" stroke-dasharray="5 4"/>`;
+    g += `<path d="${line(pts)}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>`;
+    if (st != null) {
+      [[st, "공연 시작"], [st + showMin, "예상 종료"], [st + ref.lagMed, "출차 최대 예상"]].forEach(([t, lab], i) => {
+        g += `<line x1="${X(t)}" x2="${X(t)}" y1="${Tp}" y2="${H - Bt}" stroke="${i === 2 ? "var(--bad)" : "var(--ink-2)"}" stroke-dasharray="4 4"/>
+              <text x="${X(t) + 4}" y="${Tp + 10 + i * 13}" fill="${i === 2 ? "var(--bad)" : "var(--ink-2)"}">${lab} ${toHHMM(t)}</text>`;
+      });
+    }
+    g += `<text x="${L}" y="${Tp - 4}" fill="var(--ink-2)">km/h</text><text x="${W - R + 6}" y="${Tp - 4}" fill="var(--bad)" opacity="0.7">구간 수</text></svg>`;
+    $("roadChart").outerHTML = g.replace("<svg ", '<svg id="roadChart" style="width:100%;height:auto;margin-top:8px" ');
+    $("roadChartLegend").innerHTML = `<span><i style="background:var(--accent)"></i>올림픽공원 주변 평균 속도</span>
+      ${bpts.length ? '<span><i style="background:var(--none)"></i>공연 없는 날 평균 속도</span>' : ""}
+      <span><i style="background:var(--bad);opacity:.35;height:10px"></i>서행+정체 구간 수(58구간 중, 오른쪽 축)</span>`;
+  }
+
+  function drawHeat(T, st, showMin) {
+    if (!T.roads.length) { $("heat").innerHTML = ""; return; }
+    const times = [...new Set(T.roads.map((r) => r["수집시각"].slice(0, 16)))].sort();
+    const byRoad = new Map();
+    T.roads.forEach((r) => {
+      const k = r["도로명"]; const t = r["수집시각"].slice(0, 16);
+      if (!byRoad.has(k)) byRoad.set(k, new Map());
+      const m = byRoad.get(k); if (!m.has(t)) m.set(t, []); m.get(t).push(r["혼잡단계"]);
+    });
+    const score = (arr) => arr.reduce((s, x) => s + (x === "정체" ? 2 : x === "서행" ? 1 : 0), 0) / arr.length;
+    const color = (sc) => sc == null ? "#eef0f3" : sc < 0.4 ? "var(--good)" : sc < 1.0 ? "var(--warn)" : "var(--bad)";
+    const rows = [...byRoad.entries()].map(([k, m]) => ({ k, cells: times.map((t) => (m.has(t) ? score(m.get(t)) : null)) }))
+      .sort((a, b) => Math.max(...b.cells.map((c) => c ?? 0)) - Math.max(...a.cells.map((c) => c ?? 0)));
+    const mark = (t) => st != null && [st, st + showMin, st + ref.lagMed].some((m) => Math.abs(hm(t + ":00") - m) < 3);
+    let h = `<table class="heat"><tr><th></th>${times.map((t, i) => `<td class="tick">${i % 6 === 0 ? t.slice(11) : ""}</td>`).join("")}</tr>`;
+    rows.forEach((r) => {
+      h += `<tr><th>${r.k}</th>${r.cells.map((c, i) => `<td title="${r.k} ${times[i].slice(11)}" style="background:${color(c)};${mark(times[i]) ? "outline:2px solid var(--ink)" : ""}"></td>`).join("")}</tr>`;
+    });
+    h += `</table><div class="legend"><span><i style="background:var(--good)"></i>대부분 원활</span><span><i style="background:var(--warn)"></i>서행 섞임</span><span><i style="background:var(--bad)"></i>정체 많음</span>${st != null ? "<span>검은 테두리: 공연 시작·예상 종료·출차 최대 예상</span>" : ""}</div>`;
+    $("heat").innerHTML = h;
+  }
+
+  function drawSlowTop(T, st) {
+    const byLink = new Map();
+    T.roads.forEach((r) => { const k = r["LINK_ID"]; if (!byLink.has(k)) byLink.set(k, { r, pts: [] }); byLink.get(k).pts.push({ t: hm(r["수집시각"]), v: +r["속도_kmh"] }); });
+    const res = [...byLink.values()].map(({ r, pts }) => {
+      const before = st != null ? pts.filter((p) => p.t < st).map((p) => p.v) : pts.map((p) => p.v);
+      const after = st != null ? pts.filter((p) => p.t >= st + 60) : pts;
+      if (!before.length || !after.length) return null;
+      const base = median(before); const worst = after.reduce((a, b) => (b.v < a.v ? b : a));
+      return { name: `${r["도로명"]} ${r["시작지점"]}→${r["끝지점"]}`, base, worst: worst.v, at: toHHMM(worst.t), drop: base ? (base - worst.v) / base : 0 };
+    }).filter(Boolean).sort((a, b) => b.drop - a.drop).slice(0, 5);
+    $("slowTop").innerHTML = `<tr><th>구간</th><th>${st != null ? "공연 전 보통 속도" : "보통 속도(중앙값)"}</th><th>가장 느렸을 때</th><th>떨어진 정도</th></tr>` +
+      res.map((x) => `<tr><td>${x.name}</td><td>${x.base.toFixed(0)}km/h</td><td>${x.worst.toFixed(0)}km/h (${x.at})</td><td>${Math.round(x.drop * 100)}%</td></tr>`).join("");
   }
 
   $("date").addEventListener("change", render);

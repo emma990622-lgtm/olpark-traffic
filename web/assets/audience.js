@@ -62,6 +62,7 @@
 
     renderCar(ev, startMin, endMin, seats, lv);
     $("walkSrc").textContent = places.walkSource;
+    $("subwayNote").textContent = SUBWAY.note;
     renderTransit();
   }
 
@@ -103,7 +104,10 @@
     if (endMin > toMin("21:30")) notices.push("공원 차량 출입은 22시까지예요(심야 행사 때는 조정). 늦게 끝나는 공연은 출차 안내를 확인하세요.");
     if (closed.length) notices.push(`공연 후 문을 닫아 뺀 주차장: ${closed.map((c) => c.name).join(", ")}`);
 
-    const parkLive = live && live.summary ? `${live.summary["주차합계_parking_sum"]} (${String(live.summary["수집시각"]).slice(5, 16)} 기준, 주차 대수인지 빈자리인지 확인 중)` : "공연일에 5분마다 수집";
+    const parkSum = live && live.summary ? Number(live.summary["주차합계_parking_sum"]) : NaN;
+    const parkLive = Number.isFinite(parkSum)
+      ? `주차된 차 <b>${parkSum.toLocaleString()}대</b> · 빈자리 약 ${Math.max(0, park[0].cap - parkSum).toLocaleString()}면 <span class="muted small">(${park[0].cap.toLocaleString()}면 기준 추정, ${String(live.summary["수집시각"]).slice(11, 16)})</span>`
+      : "공연일에 5분마다 수집";
 
     $("options").innerHTML = `
       ${notices.map((n) => `<div class="notice">${n}</div>`).join("")}
@@ -136,7 +140,7 @@
         <h3>공원 정체를 피하는 방법</h3>
         <dl>
           <dt>귀가할 때</dt><dd>공원 출구 대기 없음. 대신 공연 직후 역이 붐벼요</dd>
-          <dt>지하철 시간</dt><dd>정거장 수만 확인됨 <span class="tag-pending">역 간 소요시간 자료 확보 중</span></dd>
+          <dt>총 이동시간</dt><dd>주차장에서 공연장까지 (도보는 TMAP 계산, 지하철은 가정값) <span class="tag-pending">공식 운행시간 반영 예정</span></dd>
         </dl>
         <div class="lots">
           ${transfer.map((t) => {
@@ -146,7 +150,8 @@
             return `<div class="tlot${t.notRecommended ? " skip" : ""}">
               <div class="tname">${t.name} <span class="muted small">${t.cap}면 · ${t.hours}</span></div>
               <div>${t.board ? t.board + "에서 " : ""}${t.route}</div>
-              <div class="muted small">도보: 주차장→역 ${t.toStationMin != null ? t.toStationMin + "분" : "?"} · 내려서 공연장까지 ${st ? st.walkMin + "분" : "-"} · 예상 요금 ${won(parkingFee(t, stay))}</div>
+              ${(() => { const tt = transferTotal(t, st); return tt ? `<div class="ttotal">주차장 → 공연장 총 <b>약 ${tt.total}분</b></div>
+              <div class="muted small">도보 ${tt.walk1}분 + 대기 ${tt.wait}분 + 지하철 ${tt.ride}분${tt.transfer ? ` + 환승 ${tt.transfer}분` : ""} + 내려서 도보 ${tt.walk2}분 · 예상 요금 ${won(parkingFee(t, stay))}</div>` : `<div class="muted small">예상 요금 ${won(parkingFee(t, stay))}</div>`; })()}
               <div class="small">${free}</div>
               ${t.notRecommended ? `<div class="small warnline">비추천: ${t.notRecommended}</div>` : ""}
             </div>`;

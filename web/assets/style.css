@@ -141,3 +141,10 @@ button.ghost {
 .tlot .tname { font-weight: 600; }
 .tlot.skip { color: var(--ink-2); }
 .tlot .warnline { color: #a12727; }
+.tlot .ttotal { margin-top: 4px; }
+.tlot .ttotal b { color: var(--accent); font-size: 16px; }
+
+.heat { border-collapse: collapse; font-size: 11px; }
+.heat td { width: 12px; height: 18px; padding: 0; border: 1px solid #fff; }
+.heat th { text-align: right; padding-right: 6px; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+.heat .tick { font-size: 10px; color: var(--ink-2); text-align: left; white-space: nowrap; }
