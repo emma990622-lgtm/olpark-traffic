@@ -3,7 +3,7 @@
 const MAP3D_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 const IDX_HEX = { "원활": "#1f9d55", "서행": "#d98a00", "정체": "#d63b3b" };
 
-function roadsGeoJSON(links, live) {
+function roadsGeoJSON(links, live, shapes = {}) {
   // 실시간 응답에 실제 도로 모양(xy)이 있으면 그걸, 없으면 시작~끝 직선
   const liveById = {};
   ((live && live.links) || []).forEach((l) => { liveById[l.id] = l; });
@@ -12,7 +12,7 @@ function roadsGeoJSON(links, live) {
     features: links.map((l) => {
       const lv = liveById[l.id];
       const r = live && live.roads ? live.roads[l.id] : null;
-      const coords = lv && lv.xy && lv.xy.length >= 2 ? lv.xy : [l.a, l.b];
+      const coords = shapes[l.id] || (lv && lv.xy && lv.xy.length > 2 ? lv.xy : [l.a, l.b]);
       return {
         type: "Feature", geometry: { type: "LineString", coordinates: coords },
         properties: { name: `${l.road} ${l.from}→${l.to}`, idx: r ? r.idx : "없음", spd: r ? r.spd : null },
@@ -22,7 +22,12 @@ function roadsGeoJSON(links, live) {
 }
 
 async function initMap3D(el, { links, places, live }) {
-  if (!window.maplibregl || !maplibregl.supported || (maplibregl.supported && !maplibregl.supported())) return null;
+  if (!window.maplibregl) return null;   // 지도 엔진을 못 불러온 경우
+  let shapes = {};
+  try {
+    const g = await fetch(CONFIG.dataDir + "link_shapes.geojson").then((r) => { if (!r.ok) throw 0; return r.json(); });
+    g.features.forEach((f) => { shapes[f.properties.id] = f.geometry.coordinates; });
+  } catch (_) { /* 도로 모양 파일이 없으면 시작~끝 직선 */ }
   const dome = places.dome;
   const map = new maplibregl.Map({
     container: el, style: MAP3D_STYLE,
@@ -50,7 +55,7 @@ async function initMap3D(el, { links, places, live }) {
   } catch (_) { /* 바탕지도 건물 사용 */ }
 
   // 2) 차도: 실시간 속도 색, 방향별로 살짝 띄워 양방향이 겹치지 않게
-  map.addSource("roads", { type: "geojson", data: roadsGeoJSON(links, live) });
+  map.addSource("roads", { type: "geojson", data: roadsGeoJSON(links, live, shapes) });
   map.addLayer({
     id: "roads", type: "line", source: "roads",
     layout: { "line-cap": "round", "line-join": "round" },
@@ -108,7 +113,7 @@ async function initMap3D(el, { links, places, live }) {
 
   return {
     map, buildingSrc,
-    update(newLive) { const s = map.getSource("roads"); if (s) s.setData(roadsGeoJSON(links, newLive)); },
+    update(newLive) { const s = map.getSource("roads"); if (s) s.setData(roadsGeoJSON(links, newLive, shapes)); },
   };
 }
 

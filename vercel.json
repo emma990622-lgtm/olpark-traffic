@@ -2,5 +2,12 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "",
   "outputDirectory": "web",
-  "functions": { "api/*.js": { "maxDuration": 20 } }
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 20
+    }
+  },
+  "regions": [
+    "icn1"
+  ]
 }
