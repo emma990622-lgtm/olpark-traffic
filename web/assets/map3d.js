@@ -36,7 +36,15 @@ async function initMap3D(el, { links, places, live, venues }) {
   });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
 
-  await new Promise((ok, fail) => { map.once("load", ok); map.once("error", (e) => fail(e.error || e)); setTimeout(() => fail(new Error("지도 로딩 시간 초과")), 15000); });
+  // 바탕지도 스타일만 준비되면 바로 그린다(타일이 다 올 때까지 기다리지 않음). 느린 회선을 위해 30초까지 기다림.
+  await new Promise((ok, fail) => {
+    let done = false;
+    const fin = () => { if (!done) { done = true; ok(); } };
+    if (map.isStyleLoaded()) fin();
+    map.once("style.load", fin); map.once("load", fin);
+    map.once("error", (e) => { if (!done && !map.isStyleLoaded()) { done = true; fail(e.error || e); } });
+    setTimeout(() => { if (!done) { done = true; fail(new Error("지도 로딩 시간 초과")); } }, 30000);
+  });
 
   // 1) 건물: 브이월드(층수 높이). 실패하면 바탕지도의 OpenStreetMap 건물을 그대로 둔다.
   let buildingSrc = "OpenStreetMap";
