@@ -2,6 +2,7 @@
 (async function () {
   const [events, links, places, exits] = await Promise.all([
     loadJSON("events.json"), loadJSON("links.json"), loadPlaces(), loadJSON("exits_2024_07.json"),
+    loadSubwayTimes(),
   ]);
   const ref = kspoReference(exits);
   const today = new Date().toISOString().slice(0, 10);
@@ -62,7 +63,7 @@
 
     renderCar(ev, startMin, endMin, seats, lv);
     $("walkSrc").textContent = places.walkSource;
-    $("subwayNote").textContent = SUBWAY.note;
+    $("subwayNote").textContent = subwayNote();
     renderTransit();
   }
 
@@ -140,7 +141,7 @@
         <h3>공원 정체를 피하는 방법</h3>
         <dl>
           <dt>귀가할 때</dt><dd>공원 출구 대기 없음. 대신 공연 직후 역이 붐벼요</dd>
-          <dt>총 이동시간</dt><dd>주차장에서 공연장까지 (도보는 TMAP 계산, 지하철은 가정값) <span class="tag-pending">공식 운행시간 반영 예정</span></dd>
+          <dt>총 이동시간</dt><dd>주차장에서 공연장까지. 도보는 TMAP 계산, 지하철은 ${SUBWAY.official ? "서울교통공사 표준 운행시간" : "가정값"}</dd>
         </dl>
         <div class="lots">
           ${transfer.map((t) => {

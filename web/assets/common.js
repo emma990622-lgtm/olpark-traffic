@@ -43,22 +43,58 @@ const DOW = ["일", "월", "화", "수", "목", "금", "토"];
 // 공연 길이는 공연마다 다르다. 기본값 150분, 화면에서 바꿀 수 있다.
 const DEFAULT_SHOW_MIN = 150;
 
-// ---------- 지하철 시간 (가정값) ----------
-// 서울교통공사 역간 표준 운행시간 자료를 받으면 정거장별 실제 값으로 바꾼다.
-const SUBWAY = { perStopMin: 2, waitMin: 5, transferMin: 5,
-  note: "지하철 운행은 정거장당 2분, 개찰·대기 5분, 환승 5분으로 가정한 값이에요" };
+// ---------- 지하철 시간 ----------
+// 운행: 서울교통공사 역간 표준 운행시간(/api/subway) + 중간역 정차 30초씩. 못 받으면 정거장당 2분 가정.
+// 개찰·대기 5분, 환승 5분은 가정값.
+const SUBWAY = { perStopMin: 2, dwellMin: 0.5, waitMin: 5, transferMin: 5, official: null };
+
+async function loadSubwayTimes() {
+  try {
+    const j = await fetch("/api/subway").then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
+    const byLine = {};
+    (j.rows || []).forEach((r, i) => {
+      const [m, sec] = String(r.HM).split(":").map(Number);
+      (byLine[r.SBWY_ROUT_LN] = byLine[r.SBWY_ROUT_LN] || []).push({ name: r.SBWY_STNS_NM, min: m + (sec || 0) / 60, i });
+    });
+    SUBWAY.official = byLine;
+  } catch (_) { SUBWAY.official = null; }
+}
+
+// 한 호선에서 역 순서대로 탄 운행시간(분). 표의 HM은 '앞 행 역에서 이 역까지' 시간이므로,
+// 이웃한 두 역 중 표에서 뒤에 나오는 역의 HM이 그 구간 시간이다.
+function segmentMinutes(line, stations) {
+  const rows = SUBWAY.official && SUBWAY.official[line];
+  if (!rows) return null;
+  let sum = 0;
+  for (let k = 0; k + 1 < stations.length; k++) {
+    const a = rows.find((r) => r.name === stations[k]), b = rows.find((r) => r.name === stations[k + 1]);
+    if (!a || !b) return null;
+    sum += (b.i > a.i ? b : a).min;
+  }
+  return sum + Math.max(0, stations.length - 2) * SUBWAY.dwellMin;
+}
+
+function subwayNote() {
+  return SUBWAY.official
+    ? "지하철 운행시간은 서울교통공사 역간 표준 운행시간(정차 30초씩 포함)이고, 개찰·대기 5분·환승 5분은 가정값이에요"
+    : "지하철 운행은 정거장당 2분, 개찰·대기 5분, 환승 5분으로 가정한 값이에요";
+}
 
 // 환승주차 총 이동시간: 주차장→역 도보 + 대기 + 운행 + 환승 + 내린 역→공연장 도보
 function transferTotal(lot, station) {
   if (lot.toStationMin == null || !station || lot.stops == null) return null;
+  let ride = null;
+  if (SUBWAY.official && lot.segments && lot.segments.length) {
+    const parts = lot.segments.map((sg) => segmentMinutes(sg.line, sg.stations));
+    if (parts.every((x) => x != null)) ride = parts.reduce((a, b) => a + b, 0);
+  }
+  const official = ride != null;
+  if (!official) ride = lot.stops * SUBWAY.perStopMin;
   const parts = {
-    walk1: lot.toStationMin,
-    wait: SUBWAY.waitMin,
-    ride: lot.stops * SUBWAY.perStopMin,
-    transfer: (lot.transfers || 0) * SUBWAY.transferMin,
-    walk2: station.walkMin,
+    walk1: lot.toStationMin, wait: SUBWAY.waitMin, ride: Math.round(ride),
+    transfer: (lot.transfers || 0) * SUBWAY.transferMin, walk2: station.walkMin,
   };
-  return { total: Object.values(parts).reduce((a, b) => a + b, 0), ...parts };
+  return { total: Object.values(parts).reduce((a, b) => a + b, 0), official, ...parts };
 }
 
 // ---------- 요금 ----------

@@ -90,6 +90,13 @@ transfer = [
      "2호선 1정거장 → 잠실역에서 8호선 갈아타 1정거장 → 몽촌토성역", "mongchon", "24시간",
      "가장 가까운 역이 2호선이라 한 번 갈아타야 하고, 내려서도 23분을 더 걸어야 해요", 2, 1),
 ]
+# 지하철 구간: (호선, [탈 역 → … → 내릴 역]) — /api/subway 의 공식 역간 운행시간과 맞춰 더한다
+SEGMENTS = {
+    "천호역 공영주차장": [("5", ["천호", "강동", "둔촌동", "올림픽공원"])],
+    "잠실역 공영주차장": [("8", ["잠실", "몽촌토성"])],
+    "복정역 공영주차장": [("8", ["복정", "장지", "문정", "가락시장", "송파", "석촌", "잠실", "몽촌토성"])],
+    "신천유수지 공영주차장": [("2", ["잠실나루", "잠실"]), ("8", ["잠실", "몽촌토성"])],
+}
 tt = {}
 if (OUT / "transfer_tmap.json").exists():
     tt = json.loads((OUT / "transfer_tmap.json").read_text(encoding="utf-8"))["lots"]
@@ -101,7 +108,8 @@ for name, cap, fee, won, per, board, route, st, hours, skip, stops, transfers in
                            "board": board.split("[")[0], "toStationMin": walk_to["minutes"] if walk_to else None,
                            "toStationM": walk_to["meters"] if walk_to else None,
                            "lat": info.get("lat"), "lng": info.get("lng"), "hours": hours, "live": "있음",
-                           "notRecommended": skip, "stops": stops, "transfers": transfers})
+                           "notRecommended": skip, "stops": stops, "transfers": transfers,
+                           "segments": [{"line": ln, "stations": sts} for ln, sts in SEGMENTS.get(name, [])]})
 for key, name, line, lat, lng in [
     ("olympic5", "올림픽공원역", "5·9호선", 37.516201, 127.130923),
     ("mongchon", "몽촌토성역", "8호선", 37.517409, 127.112359),
