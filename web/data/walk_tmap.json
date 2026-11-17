@@ -1,0 +1,41 @@
+{
+ "to": "KSPO DOME",
+ "measured": "2026-11-18",
+ "items": {
+  "올림픽공원 주차장(동2문·남2문·북2문)": {
+   "kind": "lot",
+   "meters": 383,
+   "minutes": 6
+  },
+  "한성백제박물관 주차장": {
+   "kind": "lot",
+   "meters": 1012,
+   "minutes": 13
+  },
+  "올림픽공원 남3문 주차장": {
+   "kind": "lot",
+   "meters": 1231,
+   "minutes": 15
+  },
+  "올림픽공원 회관 외 주차장": {
+   "kind": "lot",
+   "meters": 1672,
+   "minutes": 21
+  },
+  "올림픽공원역": {
+   "kind": "station",
+   "meters": 621,
+   "minutes": 9
+  },
+  "몽촌토성역": {
+   "kind": "station",
+   "meters": 1858,
+   "minutes": 23
+  },
+  "한성백제역": {
+   "kind": "station",
+   "meters": 1377,
+   "minutes": 17
+  }
+ }
+}

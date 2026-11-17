@@ -10,6 +10,8 @@ KSPO DOME·올림픽공원 공연 후 도로 혼잡 데이터 프로젝트
   - `01_inspect_inout.py` 2024-07 입출차 점검 + 일별 요약
   - `02_build_events.py` 공식 행사 일정 → 공연일 표
   - `03_fetch_kcisa_2025.py` 2025 입출차·연계 데이터 내려받기 (키 필요)
+  - `04_build_web_data.py` 웹앱용 데이터(web/data/*.json) 만들기
+- `web/` 웹앱 1차 (관객·운영자 화면). 실행: `web\run_web.bat`
 - `docs/data_scope.md` 사용할 데이터·기간·한계 정리 (4단계 결과)
 
 ## 실행 (윈도우)
