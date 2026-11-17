@@ -22,6 +22,26 @@
    "meters": 1672,
    "minutes": 21
   },
+  "천호역 공영주차장": {
+   "kind": "lot",
+   "meters": 2976,
+   "minutes": 39
+  },
+  "잠실역 공영주차장": {
+   "kind": "lot",
+   "meters": 2694,
+   "minutes": 35
+  },
+  "복정역 공영주차장": {
+   "kind": "lot",
+   "meters": 6584,
+   "minutes": 87
+  },
+  "신천유수지 공영주차장": {
+   "kind": "lot",
+   "meters": 3241,
+   "minutes": 42
+  },
   "올림픽공원역": {
    "kind": "station",
    "meters": 621,

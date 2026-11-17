@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>올팍 공연 주차·귀가 안내</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
@@ -47,14 +48,20 @@
   </section>
 
   <section class="card">
-    <h2>지금 주변 도로</h2>
-    <div class="map-wrap"><svg class="map" id="map"></svg></div>
-    <div id="legend"></div>
+    <h2>지금 주변 도로와 걷는 길</h2>
+    <div id="map3d" class="map3d"></div>
+    <div id="legend3d"></div>
+    <details id="flat"><summary class="muted small">평면 지도로 보기</summary>
+      <div class="map-wrap"><svg class="map" id="map"></svg></div>
+      <div id="legend"></div>
+    </details>
     <p class="muted small" id="roadNote">불러오는 중…</p>
   </section>
 </main>
 
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="assets/common.js"></script>
+<script src="assets/map3d.js"></script>
 <script src="assets/audience.js"></script>
 </body>
 </html>

@@ -179,6 +179,17 @@
   // 지도 (먼저 회색으로 그리고, 수집값이 오면 다시 그림)
   $("legend").innerHTML = legendHTML();
   drawRoadMap($("map"), links, places, null);
+  let m3 = null;
+  const start3D = async (lv) => {
+    try {
+      m3 = await initMap3D($("map3d"), { links, places, live: lv });
+      if (!m3) throw new Error("3D 미지원");
+      $("legend3d").innerHTML = legend3DHTML(m3.buildingSrc);
+    } catch (e) {
+      $("map3d").classList.add("failed"); $("flat").open = true;
+      $("legend3d").innerHTML = `<p class="muted small">3D 지도를 열 수 없어 평면 지도로 보여 드려요 (${e.message || e}).</p>`;
+    }
+  };
   fillEvents();
   try {
     live = await loadLive();
@@ -186,12 +197,14 @@
       drawRoadMap($("map"), links, places, live.roads);
       $("roadNote").textContent = liveNote(live);
       render();
-    }
+      start3D(live);
+    } else start3D(null);
     // 실시간 연결이면 2분마다 새로 고침
     if (live && live.source === "live") setInterval(async () => {
-      try { live = await loadLive(); drawRoadMap($("map"), links, places, live.roads); $("roadNote").textContent = liveNote(live); render(); } catch (_) {}
+      try { live = await loadLive(); drawRoadMap($("map"), links, places, live.roads); if (m3) m3.update(live); $("roadNote").textContent = liveNote(live); render(); } catch (_) {}
     }, 120000);
   } catch (e) {
+    start3D(null);
     $("roadNote").textContent = "최근 수집값을 불러오지 못했어요(" + e.message + "). 도로는 회색으로 표시돼요.";
   }
 })();

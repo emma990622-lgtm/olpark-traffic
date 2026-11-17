@@ -16,7 +16,12 @@ module.exports = async (req, res) => {
       roadTime: avg.ROAD_TRAFFIC_TIME || null,
       avgSpeed: avg.ROAD_TRAFFIC_SPD != null ? Number(avg.ROAD_TRAFFIC_SPD) : null,
       avgLevel: avg.ROAD_TRAFFIC_IDX || null,
-      links: (road.ROAD_TRAFFIC_STTS || []).map((r) => ({ id: String(r.LINK_ID), spd: Number(r.SPD), idx: r.IDX })),
+      links: (road.ROAD_TRAFFIC_STTS || []).map((r) => ({
+        id: String(r.LINK_ID), road: r.ROAD_NM, from: r.START_ND_NM, to: r.END_ND_NM,
+        spd: Number(r.SPD), idx: r.IDX,
+        // 실제 도로 모양: "경도_위도|경도_위도|..." → [[경도, 위도], ...]
+        xy: String(r.XYLIST || "").split("|").map((p) => p.split("_").map(Number)).filter((c) => c.length === 2 && c.every(Number.isFinite)),
+      })),
       nearLots: (c.PRK_STTS || []).map((p) => ({
         name: p.PRK_NM, cap: Number(p.CPCTY) || null,
         now: p.CUR_PRK_CNT === "" ? null : Number(p.CUR_PRK_CNT), live: p.CUR_PRK_YN === "Y",

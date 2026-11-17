@@ -182,7 +182,7 @@ async function loadLive() {
     (p.lots || []).forEach((l) => { lots[l.name] = { cap: l.cap, now: l.now, time: l.updated || p.time }; });
     return {
       source: "live", folder: "실시간",
-      roadTime: r.roadTime || r.time, roads,
+      roadTime: r.roadTime || r.time, roads, links: r.links || [],
       summary: { "주차합계_parking_sum": p.kspo ? p.kspo.parking_sum : "-", "수집시각": p.time },
       lots, subway: r.subway || [], weather: r.weather || null,
     };
