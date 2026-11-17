@@ -14,17 +14,49 @@ async function loadJSON(name) {
 // 장소 + TMAP 실제 도보 경로값(있으면 직선 추정값 대신 사용)
 async function loadPlaces() {
   const p = await loadJSON("places.json");
+  p.venues = { "KSPO DOME": { name: "KSPO DOME", lat: p.dome.lat, lng: p.dome.lng, items: null } };
   try {
     const w = await loadJSON("walk_tmap.json");
-    [...p.lots, ...p.stations].forEach((x) => {
-      const m = w.items[x.name];
-      if (m) { x.walkMin = m.minutes; x.walkM = m.meters; x.walkSrc = "TMAP 보행자 경로"; }
-    });
+    if (w.venues) Object.entries(w.venues).forEach(([n, v]) => { p.venues[n] = { name: n, lat: v.lat, lng: v.lng, items: v.items }; });
+    else p.venues["KSPO DOME"].items = w.items;            // 예전 형식(KSPO DOME만)
+    applyWalk(p, p.venues["KSPO DOME"].items);
     p.walkSource = `TMAP 보행자 경로(${w.measured} 계산)`;
   } catch (_) {
     p.walkSource = "직선거리 × 1.3, 분당 75m 추정";
   }
   return p;
+}
+
+function applyWalk(p, items) {
+  if (!items) return;
+  [...p.lots, ...p.stations].forEach((x) => {
+    const m = items[x.name];
+    if (m) { x.walkMin = m.minutes; x.walkM = m.meters; x.walkSrc = "TMAP 보행자 경로"; }
+  });
+}
+
+// 고른 공연장 기준으로 장소 정보를 다시 만든다 (공연장 위치 + 주차장·역에서 걷는 시간)
+// 측정값이 없는 공연장은 직선거리 × 1.3, 분당 75m로 추정. 위치조차 모르면 KSPO DOME 기준.
+function placesFor(p, venueName) {
+  const v = p.venues[venueName] || (venueName === "뮤즈라이브" ? p.venues["올림픽홀"] : null);
+  const base = p.venues["KSPO DOME"];
+  const q = JSON.parse(JSON.stringify({ lots: p.lots, stations: p.stations }));
+  const out = { ...p, ...q, venueName, venueKnown: !!v };
+  const tgt = v || base;
+  out.dome = { name: v ? venueName : "KSPO DOME", lat: tgt.lat, lng: tgt.lng };
+  if (tgt.items) {
+    applyWalk(out, tgt.items);
+    out.walkSource = p.walkSource;
+  } else if (v) {
+    [...out.lots, ...out.stations].forEach((x) => {
+      if (!x.lat) return;
+      const k = Math.cos(x.lat * Math.PI / 180);
+      const m = Math.hypot((x.lng - tgt.lng) * 111320 * k, (x.lat - tgt.lat) * 110540) * 1.3;
+      x.walkM = Math.round(m); x.walkMin = Math.max(1, Math.round(m / 75)); x.walkSrc = "추정";
+    });
+    out.walkSource = `${venueName}까지는 직선거리 × 1.3, 분당 75m 추정 (TMAP 계산 전)`;
+  }
+  return out;
 }
 
 // ---------- 시간 ----------
@@ -265,7 +297,7 @@ function drawRoadMap(svg, links, places, roads) {
   };
   places.lots.filter((x) => x.lat && x.kind !== "transfer").forEach((x) => dot(x.lng, x.lat, "var(--ink-2)", 5, x.kind === "park" ? "공원 주차장" : x.name.replace(" 주차장", "").replace("올림픽공원 ", ""), 16));
   places.stations.forEach((s) => dot(s.lng, s.lat, "#7b4fd6", 6, s.name));
-  dot(places.dome.lng, places.dome.lat, "var(--accent)", 9, "KSPO DOME");
+  dot(places.dome.lng, places.dome.lat, "var(--accent)", 9, places.dome.name || "KSPO DOME");
 }
 
 function legendHTML() {

@@ -156,5 +156,6 @@ button.ghost {
   font-size: 12px; font-weight: 600; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
 .m3d.lot span { border-color: #5b6474; }
 .m3d.st span { color: #5a36b0; border-color: #7b4fd6; }
+.m3d.venue span { color: var(--ink-2); border-style: dashed; opacity: .85; font-size: 11px; }
 .m3d.dome span { background: var(--accent); color: #fff; border-color: var(--accent); font-size: 13px; }
 details#flat { margin-top: 8px; }

@@ -1,6 +1,318 @@
 {
- "to": "KSPO DOME",
  "measured": "2026-11-18",
+ "venues": {
+  "KSPO DOME": {
+   "lat": 37.51916,
+   "lng": 127.127514,
+   "found": "기준 좌표",
+   "items": {
+    "올림픽공원 주차장(동2문·남2문·북2문)": {
+     "kind": "lot",
+     "meters": 383,
+     "minutes": 6
+    },
+    "한성백제박물관 주차장": {
+     "kind": "lot",
+     "meters": 1012,
+     "minutes": 13
+    },
+    "올림픽공원 남3문 주차장": {
+     "kind": "lot",
+     "meters": 1231,
+     "minutes": 15
+    },
+    "올림픽공원 회관 외 주차장": {
+     "kind": "lot",
+     "meters": 1672,
+     "minutes": 21
+    },
+    "천호역 공영주차장": {
+     "kind": "lot",
+     "meters": 2976,
+     "minutes": 39
+    },
+    "잠실역 공영주차장": {
+     "kind": "lot",
+     "meters": 2694,
+     "minutes": 35
+    },
+    "복정역 공영주차장": {
+     "kind": "lot",
+     "meters": 6584,
+     "minutes": 87
+    },
+    "신천유수지 공영주차장": {
+     "kind": "lot",
+     "meters": 3241,
+     "minutes": 42
+    },
+    "올림픽공원역": {
+     "kind": "station",
+     "meters": 621,
+     "minutes": 9
+    },
+    "몽촌토성역": {
+     "kind": "station",
+     "meters": 1858,
+     "minutes": 23
+    },
+    "한성백제역": {
+     "kind": "station",
+     "meters": 1377,
+     "minutes": 17
+    }
+   }
+  },
+  "올림픽홀": {
+   "lat": 37.514685,
+   "lng": 127.127509,
+   "found": "올림픽홀",
+   "items": {
+    "올림픽공원 주차장(동2문·남2문·북2문)": {
+     "kind": "lot",
+     "meters": 448,
+     "minutes": 6
+    },
+    "한성백제박물관 주차장": {
+     "kind": "lot",
+     "meters": 932,
+     "minutes": 13
+    },
+    "올림픽공원 남3문 주차장": {
+     "kind": "lot",
+     "meters": 1151,
+     "minutes": 15
+    },
+    "올림픽공원 회관 외 주차장": {
+     "kind": "lot",
+     "meters": 1592,
+     "minutes": 20
+    },
+    "천호역 공영주차장": {
+     "kind": "lot",
+     "meters": 3508,
+     "minutes": 47
+    },
+    "잠실역 공영주차장": {
+     "kind": "lot",
+     "meters": 2614,
+     "minutes": 35
+    },
+    "복정역 공영주차장": {
+     "kind": "lot",
+     "meters": 5973,
+     "minutes": 80
+    },
+    "신천유수지 공영주차장": {
+     "kind": "lot",
+     "meters": 3161,
+     "minutes": 42
+    },
+    "올림픽공원역": {
+     "kind": "station",
+     "meters": 563,
+     "minutes": 8
+    },
+    "몽촌토성역": {
+     "kind": "station",
+     "meters": 1779,
+     "minutes": 23
+    },
+    "한성백제역": {
+     "kind": "station",
+     "meters": 1298,
+     "minutes": 16
+    }
+   }
+  },
+  "우리금융아트홀": {
+   "lat": 37.516713,
+   "lng": 127.124981,
+   "found": "우리금융아트홀",
+   "items": {
+    "올림픽공원 주차장(동2문·남2문·북2문)": {
+     "kind": "lot",
+     "meters": 223,
+     "minutes": 3
+    },
+    "한성백제박물관 주차장": {
+     "kind": "lot",
+     "meters": 706,
+     "minutes": 9
+    },
+    "올림픽공원 남3문 주차장": {
+     "kind": "lot",
+     "meters": 925,
+     "minutes": 12
+    },
+    "올림픽공원 회관 외 주차장": {
+     "kind": "lot",
+     "meters": 1366,
+     "minutes": 17
+    },
+    "천호역 공영주차장": {
+     "kind": "lot",
+     "meters": 3519,
+     "minutes": 46
+    },
+    "잠실역 공영주차장": {
+     "kind": "lot",
+     "meters": 2387,
+     "minutes": 31
+    },
+    "복정역 공영주차장": {
+     "kind": "lot",
+     "meters": 6493,
+     "minutes": 86
+    },
+    "신천유수지 공영주차장": {
+     "kind": "lot",
+     "meters": 2934,
+     "minutes": 39
+    },
+    "올림픽공원역": {
+     "kind": "station",
+     "meters": 761,
+     "minutes": 10
+    },
+    "몽촌토성역": {
+     "kind": "station",
+     "meters": 1552,
+     "minutes": 20
+    },
+    "한성백제역": {
+     "kind": "station",
+     "meters": 1071,
+     "minutes": 13
+    }
+   }
+  },
+  "뮤즈라이브": {
+   "lat": 37.514685,
+   "lng": 127.127509,
+   "found": "올림픽홀",
+   "items": {
+    "올림픽공원 주차장(동2문·남2문·북2문)": {
+     "kind": "lot",
+     "meters": 448,
+     "minutes": 6
+    },
+    "한성백제박물관 주차장": {
+     "kind": "lot",
+     "meters": 932,
+     "minutes": 13
+    },
+    "올림픽공원 남3문 주차장": {
+     "kind": "lot",
+     "meters": 1151,
+     "minutes": 15
+    },
+    "올림픽공원 회관 외 주차장": {
+     "kind": "lot",
+     "meters": 1592,
+     "minutes": 20
+    },
+    "천호역 공영주차장": {
+     "kind": "lot",
+     "meters": 3508,
+     "minutes": 47
+    },
+    "잠실역 공영주차장": {
+     "kind": "lot",
+     "meters": 2614,
+     "minutes": 35
+    },
+    "복정역 공영주차장": {
+     "kind": "lot",
+     "meters": 5973,
+     "minutes": 80
+    },
+    "신천유수지 공영주차장": {
+     "kind": "lot",
+     "meters": 3161,
+     "minutes": 42
+    },
+    "올림픽공원역": {
+     "kind": "station",
+     "meters": 563,
+     "minutes": 8
+    },
+    "몽촌토성역": {
+     "kind": "station",
+     "meters": 1779,
+     "minutes": 23
+    },
+    "한성백제역": {
+     "kind": "station",
+     "meters": 1298,
+     "minutes": 16
+    }
+   }
+  },
+  "핸드볼경기장": {
+   "lat": 37.517379,
+   "lng": 127.126315,
+   "found": "티켓링크라이브아레나",
+   "items": {
+    "올림픽공원 주차장(동2문·남2문·북2문)": {
+     "kind": "lot",
+     "meters": 136,
+     "minutes": 2
+    },
+    "한성백제박물관 주차장": {
+     "kind": "lot",
+     "meters": 738,
+     "minutes": 9
+    },
+    "올림픽공원 남3문 주차장": {
+     "kind": "lot",
+     "meters": 958,
+     "minutes": 12
+    },
+    "올림픽공원 회관 외 주차장": {
+     "kind": "lot",
+     "meters": 1399,
+     "minutes": 17
+    },
+    "천호역 공영주차장": {
+     "kind": "lot",
+     "meters": 3247,
+     "minutes": 43
+    },
+    "잠실역 공영주차장": {
+     "kind": "lot",
+     "meters": 2420,
+     "minutes": 31
+    },
+    "복정역 공영주차장": {
+     "kind": "lot",
+     "meters": 6473,
+     "minutes": 86
+    },
+    "신천유수지 공영주차장": {
+     "kind": "lot",
+     "meters": 2967,
+     "minutes": 39
+    },
+    "올림픽공원역": {
+     "kind": "station",
+     "meters": 510,
+     "minutes": 7
+    },
+    "몽촌토성역": {
+     "kind": "station",
+     "meters": 1585,
+     "minutes": 20
+    },
+    "한성백제역": {
+     "kind": "station",
+     "meters": 1104,
+     "minutes": 13
+    }
+   }
+  }
+ },
+ "to": "KSPO DOME",
  "items": {
   "올림픽공원 주차장(동2문·남2문·북2문)": {
    "kind": "lot",

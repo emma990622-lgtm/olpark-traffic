@@ -1,6 +1,6 @@
 // 관객 화면
 (async function () {
-  const [events, links, places, exits] = await Promise.all([
+  const [events, links, allPlaces, exits] = await Promise.all([
     loadJSON("events.json"), loadJSON("links.json"), loadPlaces(), loadJSON("exits_2024_07.json"),
     loadSubwayTimes(),
   ]);
@@ -9,6 +9,7 @@
   const upcoming = events.filter((e) => e.date >= today && e.times.length);
   const byDate = groupByDate(upcoming);
   let live = null;
+  let places = placesFor(allPlaces, "KSPO DOME");   // 고른 공연장 기준 장소 정보
 
   const $ = (id) => document.getElementById(id);
   const dateSel = $("date"), evSel = $("event");
@@ -46,6 +47,9 @@
 
   function render() {
     const { ev, start } = current();
+    const venueChanged = places.venueName !== ev.venue;
+    places = placesFor(allPlaces, ev.venue);
+    if (venueChanged) showVenueOnMaps();
     const sameDay = byDate.get(dateSel.value);
     const seats = sameDay.reduce((s, e) => s + (e.seats || 0), 0);
     const lv = levelOf(seats);
@@ -62,7 +66,8 @@
       </div>`;
 
     renderCar(ev, startMin, endMin, seats, lv);
-    $("walkSrc").textContent = places.walkSource;
+    $("walkSrc").textContent = places.venueKnown ? places.walkSource
+      : `${ev.venue} 위치는 아직 계산 전이라 KSPO DOME 기준이에요`;
     $("subwayNote").textContent = subwayNote();
     renderTransit();
   }
@@ -116,7 +121,7 @@
         <div class="kind">공원 안</div>
         <h3>${park[0].name}</h3>
         <dl>
-          <dt>공연장까지</dt><dd>도보 약 ${park[0].walkMin}분 (구역마다 다름)</dd>
+          <dt>${places.dome.name}까지</dt><dd>도보 약 ${park[0].walkMin}분 (구역마다 다름)</dd>
           <dt>예상 요금</dt><dd>${won(parkingFee(park[0], stay))} <span class="muted small">(${park[0].fee})</span></dd>
           <dt>도착할 때</dt><dd>만차 예상 시각 <span class="tag-pending">2025 데이터 반영 예정</span></dd>
           <dt>귀가할 때</dt><dd>${peakText}</dd>
@@ -127,7 +132,7 @@
         <div class="kind">걸어올 수 있는 곳</div>
         <h3>공원 바깥쪽 주차장 ${walk.length}곳</h3>
         <dl>
-          <dt>공연장까지</dt><dd>도보 약 ${Math.min(...walk.map((w) => w.walkMin))}~${Math.max(...walk.map((w) => w.walkMin))}분</dd>
+          <dt>${places.dome.name}까지</dt><dd>도보 약 ${Math.min(...walk.map((w) => w.walkMin))}~${Math.max(...walk.map((w) => w.walkMin))}분</dd>
           <dt>귀가할 때</dt><dd>공원 출구 쏠림을 덜 받는지 <span class="tag-pending">공연일 실측으로 확인 예정</span></dd>
           <dt>빈자리</dt><dd>실시간 정보 없음</dd>
         </dl>
@@ -141,7 +146,7 @@
         <h3>공원 정체를 피하는 방법</h3>
         <dl>
           <dt>귀가할 때</dt><dd>공원 출구 대기 없음. 대신 공연 직후 역이 붐벼요</dd>
-          <dt>총 이동시간</dt><dd>주차장에서 공연장까지. 도보는 TMAP 계산, 지하철은 ${SUBWAY.official ? "서울교통공사 표준 운행시간" : "가정값"}</dd>
+          <dt>총 이동시간</dt><dd>주차장에서 ${places.dome.name}까지. 도보는 TMAP 계산, 지하철은 ${SUBWAY.official ? "서울교통공사 표준 운행시간" : "가정값"}</dd>
         </dl>
         <div class="lots">
           ${transfer.map((t) => {
@@ -151,7 +156,7 @@
             return `<div class="tlot${t.notRecommended ? " skip" : ""}">
               <div class="tname">${t.name} <span class="muted small">${t.cap}면 · ${t.hours}</span></div>
               <div>${t.board ? t.board + "에서 " : ""}${t.route}</div>
-              ${(() => { const tt = transferTotal(t, st); return tt ? `<div class="ttotal">주차장 → 공연장 총 <b>약 ${tt.total}분</b></div>
+              ${(() => { const tt = transferTotal(t, st); return tt ? `<div class="ttotal">주차장 → ${places.dome.name} 총 <b>약 ${tt.total}분</b></div>
               <div class="muted small">도보 ${tt.walk1}분 + 대기 ${tt.wait}분 + 지하철 ${tt.ride}분${tt.transfer ? ` + 환승 ${tt.transfer}분` : ""} + 내려서 도보 ${tt.walk2}분 · 예상 요금 ${won(parkingFee(t, stay))}</div>` : `<div class="muted small">예상 요금 ${won(parkingFee(t, stay))}</div>`; })()}
               <div class="small">${free}</div>
               ${t.notRecommended ? `<div class="small warnline">비추천: ${t.notRecommended}</div>` : ""}
@@ -162,9 +167,18 @@
   }
 
   function renderTransit() {
-    $("stations").innerHTML = `<tr><th>역</th><th>노선</th><th>KSPO DOME까지 도보(추정)</th></tr>` +
-      places.stations.slice().sort((a, b) => a.walkMin - b.walkMin)
-        .map((s) => `<tr><td>${s.name}</td><td>${s.line}</td><td>약 ${s.walkMin}분</td></tr>`).join("");
+    const sorted = places.stations.slice().sort((a, b) => a.walkMin - b.walkMin);
+    $("stations").innerHTML = `<tr><th>역</th><th>노선</th><th>${places.dome.name}까지 도보</th></tr>` +
+      sorted.map((s) => `<tr><td>${s.name}</td><td>${s.line}</td><td>약 ${s.walkMin}분${s.walkSrc === "TMAP 보행자 경로" ? "" : " (추정)"}</td></tr>`).join("");
+    const near = sorted[0];
+    $("stationTip").textContent = `${places.dome.name}은 ${near.name}(${near.line})이 가장 가까워요.` +
+      (near.key === "olympic5" ? " 5호선은 강동역에서 갈라지니 마천행을 타세요." : "");
+  }
+
+  // 공연장이 바뀌면 지도에서 그 공연장을 표시하고 걷는 길도 그 공연장 기준으로
+  function showVenueOnMaps() {
+    drawRoadMap($("map"), links, places, live ? live.roads : null);
+    if (m3) m3.setVenue(places);
   }
 
   // 이동 방법 전환
@@ -178,12 +192,13 @@
 
   // 지도 (먼저 회색으로 그리고, 수집값이 오면 다시 그림)
   $("legend").innerHTML = legendHTML();
-  drawRoadMap($("map"), links, places, null);
   let m3 = null;
+  drawRoadMap($("map"), links, places, null);
   const start3D = async (lv) => {
     try {
-      m3 = await initMap3D($("map3d"), { links, places, live: lv });
+      m3 = await initMap3D($("map3d"), { links, places, live: lv, venues: allPlaces.venues });
       if (!m3) throw new Error("3D 미지원");
+      m3.setVenue(places);
       $("legend3d").innerHTML = legend3DHTML(m3.buildingSrc);
     } catch (e) {
       $("map3d").classList.add("failed"); $("flat").open = true;

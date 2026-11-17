@@ -21,7 +21,7 @@ function roadsGeoJSON(links, live, shapes = {}) {
   };
 }
 
-async function initMap3D(el, { links, places, live }) {
+async function initMap3D(el, { links, places, live, venues }) {
   if (!window.maplibregl) return null;   // 지도 엔진을 못 불러온 경우
   let shapes = {};
   try {
@@ -67,33 +67,52 @@ async function initMap3D(el, { links, places, live }) {
     },
   });
 
-  // 3) 걷는 길: TMAP 보행자 경로 (공원 근처 주차장·역 → KSPO DOME)
+  // 3) 걷는 길: TMAP 보행자 경로 (공원 근처 주차장·역 → 고른 공연장)
+  let walkAll = [];
   try {
     const w = await fetch(CONFIG.dataDir + "walk_routes.geojson").then((r) => r.json());
-    w.features = w.features.filter((f) => f.properties.meters < 2500);
-    map.addSource("walk", { type: "geojson", data: w });
-    map.addLayer({
-      id: "walk", type: "line", source: "walk",
-      layout: { "line-cap": "round", "line-join": "round" },
-      paint: {
-        "line-color": ["match", ["get", "kind"], "station", "#7b4fd6", "#2459d6"],
-        "line-width": ["interpolate", ["linear"], ["zoom"], 13, 2, 17, 5],
-        "line-dasharray": [1.2, 1.2],
-      },
-    });
+    walkAll = w.features.filter((f) => f.properties.meters < 2500);
+    walkAll.forEach((f) => { if (!f.properties.to) f.properties.to = "KSPO DOME"; });   // 예전 파일은 KSPO DOME 기준
   } catch (_) { /* 걷는 길 파일 없음 */ }
+  const walkFor = (name) => {
+    let f = walkAll.filter((x) => x.properties.to === name);
+    if (!f.length && name === "뮤즈라이브") f = walkAll.filter((x) => x.properties.to === "올림픽홀");
+    return { type: "FeatureCollection", features: f };
+  };
+  map.addSource("walk", { type: "geojson", data: walkFor(dome.name || "KSPO DOME") });
+  map.addLayer({
+    id: "walk", type: "line", source: "walk",
+    layout: { "line-cap": "round", "line-join": "round" },
+    paint: {
+      "line-color": ["match", ["get", "kind"], "station", "#7b4fd6", "#2459d6"],
+      "line-width": ["interpolate", ["linear"], ["zoom"], 13, 2, 17, 5],
+      "line-dasharray": [1.2, 1.2],
+    },
+  });
 
   // 4) 주차장·역·공연장 표시 (HTML 표식: 한글이 깨지지 않게)
   const mark = (lng, lat, label, cls) => {
     const d = document.createElement("div");
     d.className = "m3d " + cls;
     d.innerHTML = `<span>${label}</span>`;
-    new maplibregl.Marker({ element: d, anchor: "bottom" }).setLngLat([lng, lat]).addTo(map);
+    return new maplibregl.Marker({ element: d, anchor: "bottom" }).setLngLat([lng, lat]).addTo(map);
   };
-  places.lots.filter((x) => x.lat && x.kind !== "transfer").forEach((x) =>
-    mark(x.lng, x.lat, (x.kind === "park" ? "P 공원 주차장" : "P " + x.name.replace(" 주차장", "").replace("올림픽공원 ", "")) + (x.walkMin ? ` · ${x.walkMin}분` : ""), "lot"));
-  places.stations.forEach((s) => mark(s.lng, s.lat, `${s.name} · ${s.walkMin}분`, "st"));
-  mark(dome.lng, dome.lat, "KSPO DOME", "dome");
+  let markers = [];
+  const drawMarkers = (pl) => {
+    markers.forEach((m) => m.remove());
+    markers = [];
+    const vname = pl.dome.name || "KSPO DOME";
+    // 다른 공연장은 흐리게, 고른 공연장은 진하게
+    Object.values(venues || {}).forEach((v) => {
+      if (v.name === vname || v.name === "뮤즈라이브" || !v.lat) return;
+      markers.push(mark(v.lng, v.lat, v.name, "venue"));
+    });
+    pl.lots.filter((x) => x.lat && x.kind !== "transfer").forEach((x) =>
+      markers.push(mark(x.lng, x.lat, (x.kind === "park" ? "P 공원 주차장" : "P " + x.name.replace(" 주차장", "").replace("올림픽공원 ", "")) + (x.walkMin ? ` · ${x.walkMin}분` : ""), "lot")));
+    pl.stations.forEach((s) => markers.push(mark(s.lng, s.lat, `${s.name} · ${s.walkMin}분`, "st")));
+    markers.push(mark(pl.dome.lng, pl.dome.lat, vname, "dome"));
+  };
+  drawMarkers(places);
 
   // 5) 눌렀을 때 설명
   const pop = new maplibregl.Popup({ closeButton: false, offset: 8 });
@@ -103,7 +122,7 @@ async function initMap3D(el, { links, places, live }) {
   });
   map.on("click", "walk", (e) => {
     const p = e.features[0].properties;
-    pop.setLngLat(e.lngLat).setHTML(`<b>${p.from} → KSPO DOME</b><br>걷는 길 ${p.meters}m · 약 ${p.minutes}분`).addTo(map);
+    pop.setLngLat(e.lngLat).setHTML(`<b>${p.from} → ${p.to}</b><br>걷는 길 ${p.meters}m · 약 ${p.minutes}분`).addTo(map);
   });
   ["roads", "walk"].forEach((id) => {
     if (!map.getLayer(id)) return;
@@ -114,6 +133,12 @@ async function initMap3D(el, { links, places, live }) {
   return {
     map, buildingSrc,
     update(newLive) { const s = map.getSource("roads"); if (s) s.setData(roadsGeoJSON(links, newLive, shapes)); },
+    // 고른 공연장으로 바꾸기: 표식·걷는 길·지도 중심
+    setVenue(pl) {
+      drawMarkers(pl);
+      map.getSource("walk").setData(walkFor(pl.dome.name || "KSPO DOME"));
+      map.easeTo({ center: [pl.dome.lng - 0.002, pl.dome.lat - 0.001], duration: 800 });
+    },
   };
 }
 
@@ -123,7 +148,7 @@ function legend3DHTML(buildingSrc) {
     <span><i style="background:${IDX_HEX["서행"]}"></i>서행</span>
     <span><i style="background:${IDX_HEX["정체"]}"></i>정체</span>
     <span><i style="background:#a5acb8"></i>수집값 없음</span>
-    <span><i style="background:repeating-linear-gradient(90deg,#2459d6 0 5px,transparent 5px 9px)"></i>주차장→공연장 걷는 길</span>
-    <span><i style="background:repeating-linear-gradient(90deg,#7b4fd6 0 5px,transparent 5px 9px)"></i>역→공연장 걷는 길</span>
+    <span><i style="background:repeating-linear-gradient(90deg,#2459d6 0 5px,transparent 5px 9px)"></i>주차장→고른 공연장 걷는 길</span>
+    <span><i style="background:repeating-linear-gradient(90deg,#7b4fd6 0 5px,transparent 5px 9px)"></i>역→고른 공연장 걷는 길</span>
     <span>건물: ${buildingSrc}</span></div>`;
 }
