@@ -152,7 +152,7 @@ const IDX_COLOR = { "원활": "var(--good)", "서행": "var(--warn)", "정체": 
 function drawRoadMap(svg, links, places, roads) {
   const pts = [];
   links.forEach((l) => { pts.push(l.a, l.b); });
-  places.lots.filter((x) => x.lat).forEach((x) => pts.push([x.lng, x.lat]));
+  places.lots.filter((x) => x.lat && x.kind !== "transfer").forEach((x) => pts.push([x.lng, x.lat]));
   places.stations.forEach((x) => pts.push([x.lng, x.lat]));
   const lngs = pts.map((p) => p[0]), lats = pts.map((p) => p[1]);
   const pad = 0.002;
@@ -186,7 +186,7 @@ function drawRoadMap(svg, links, places, roads) {
     el("circle", { cx: X(lng), cy: Y(lat), r, fill: color, stroke: "#fff", "stroke-width": 2 });
     if (label) el("text", { x: X(lng), y: Y(lat) + dy, "text-anchor": "middle", "font-size": 12, fill: "var(--ink)", "font-weight": 600 }, label);
   };
-  places.lots.filter((x) => x.lat).forEach((x) => dot(x.lng, x.lat, "var(--ink-2)", 5, x.kind === "park" ? "공원 주차장" : x.name.replace(" 주차장", "").replace("올림픽공원 ", ""), 16));
+  places.lots.filter((x) => x.lat && x.kind !== "transfer").forEach((x) => dot(x.lng, x.lat, "var(--ink-2)", 5, x.kind === "park" ? "공원 주차장" : x.name.replace(" 주차장", "").replace("올림픽공원 ", ""), 16));
   places.stations.forEach((s) => dot(s.lng, s.lat, "#7b4fd6", 6, s.name));
   dot(places.dome.lng, places.dome.lat, "var(--accent)", 9, "KSPO DOME");
 }

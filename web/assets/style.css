@@ -135,3 +135,9 @@ button.ghost {
   main { max-width: none; padding: 0; }
   .brief { border: 0; padding: 0; }
 }
+
+.tlot { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.tlot:last-child { border-bottom: 0; }
+.tlot .tname { font-weight: 600; }
+.tlot.skip { color: var(--ink-2); }
+.tlot .warnline { color: #a12727; }

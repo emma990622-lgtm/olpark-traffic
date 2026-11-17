@@ -77,16 +77,31 @@ for kind, name, cap, lat, lng, fee, unit_won, unit_min, day_max, live in near:
                            "fee": fee, "won": unit_won, "per": unit_min, "dayMax": day_max,
                            "distM": dist, "walkMin": wm, "live": live})
 # 환승주차: 실시간 빈자리 있음. 경로는 정거장 수만 확정, 소요시간은 자료 확보 후 채움
+# 환승주차: 주차장→탈 역 도보는 TMAP 계산값(scripts/06, web/data/transfer_tmap.json)
+# (이름, 면수, 요금 문구, 요금, 단위분, 탈 역, 지하철 경로, 내릴 역 key, 운영시간, 추천 여부/이유)
 transfer = [
-    ("천호역 공영주차장", 1431, "5분당 360원", 360, 5, "5호선 마천행 3정거장 → 올림픽공원역", "olympic5", "24시간"),
-    ("잠실역 공영주차장", 357, "5분당 440원", 440, 5, "8호선 1정거장 → 몽촌토성역", "mongchon", "05:00~01:00"),
-    ("복정역 공영주차장", 362, "5분당 280원", 280, 5, "8호선 7정거장 → 몽촌토성역", "mongchon", "24시간"),
-    ("신천유수지 공영주차장", 192, "5분당 440원", 440, 5, "가까운 역 확인 필요", None, "24시간"),
+    ("천호역 공영주차장", 1431, "5분당 360원", 360, 5, "천호역[수도권5호선]",
+     "5호선 마천행 3정거장 → 올림픽공원역", "olympic5", "24시간", None),
+    ("잠실역 공영주차장", 357, "5분당 440원", 440, 5, "잠실역[수도권8호선]",
+     "8호선 1정거장 → 몽촌토성역 (또는 석촌역에서 9호선으로 갈아타 올림픽공원역)", "mongchon", "05:00~01:00", None),
+    ("복정역 공영주차장", 362, "5분당 280원", 280, 5, "복정역[수도권8호선]",
+     "8호선 7정거장 → 몽촌토성역 (또는 석촌역에서 9호선으로 갈아타 올림픽공원역)", "mongchon", "24시간", None),
+    ("신천유수지 공영주차장", 192, "5분당 440원", 440, 5, "잠실나루역[수도권2호선]",
+     "2호선 잠실나루역 → 잠실역에서 8호선 갈아타기 → 몽촌토성역", "mongchon", "24시간",
+     "가장 가까운 역이 2호선이라 한 번 갈아타야 하고, 내려서도 23분을 더 걸어야 해요"),
 ]
-for name, cap, fee, won, per, route, st, hours in transfer:
+tt = {}
+if (OUT / "transfer_tmap.json").exists():
+    tt = json.loads((OUT / "transfer_tmap.json").read_text(encoding="utf-8"))["lots"]
+for name, cap, fee, won, per, board, route, st, hours, skip in transfer:
+    info = tt.get(name, {})
+    walk_to = next((x for x in info.get("stations", []) if x["name"] == board), None)
     places["lots"].append({"kind": "transfer", "name": name, "cap": cap, "fee": fee, "won": won,
                            "per": per, "dayMax": None, "route": route, "station": st,
-                           "hours": hours, "live": "있음"})
+                           "board": board.split("[")[0], "toStationMin": walk_to["minutes"] if walk_to else None,
+                           "toStationM": walk_to["meters"] if walk_to else None,
+                           "lat": info.get("lat"), "lng": info.get("lng"), "hours": hours, "live": "있음",
+                           "notRecommended": skip})
 for key, name, line, lat, lng in [
     ("olympic5", "올림픽공원역", "5·9호선", 37.516201, 127.130923),
     ("mongchon", "몽촌토성역", "8호선", 37.517409, 127.112359),

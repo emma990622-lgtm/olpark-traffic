@@ -1,12 +1,13 @@
-// GET /api/drive?lat=37.50&lng=127.03&to=park|chunho|jamsil
+// GET /api/drive?lat=37.50&lng=127.03&to=park|chunho|jamsil|bokjeong
 // 출발지 → 주차장 운전 시간 (네이버 Directions 5, 실시간 교통 반영)
 // 무료 사용량을 아끼려고 출발지를 소수 둘째 자리(약 1km 격자)로 묶고, 결과를 15분 동안 공유한다.
 const { getJSON, send } = require("./_util");
 
 const DEST = {
   park: [127.126027, 37.517033],     // 올림픽공원 주차장
-  chunho: null,                      // 천호역 공영주차장: 좌표 확인 후 [경도, 위도] 입력
-  jamsil: null,                      // 잠실역 공영주차장: 좌표 확인 후 [경도, 위도] 입력
+  chunho: [127.125127, 37.538509],   // 천호역 공영주차장 (TMAP 주소 검색, 2026-11-18)
+  jamsil: [127.103362, 37.514223],   // 잠실역 공영주차장 (TMAP 주소 검색, 2026-11-18)
+  bokjeong: [127.127776, 37.470021], // 복정역 공영주차장 (TMAP 주소 검색, 2026-11-18)
 };
 
 module.exports = async (req, res) => {

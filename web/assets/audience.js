@@ -138,17 +138,20 @@
           <dt>귀가할 때</dt><dd>공원 출구 대기 없음. 대신 공연 직후 역이 붐벼요</dd>
           <dt>지하철 시간</dt><dd>정거장 수만 확인됨 <span class="tag-pending">역 간 소요시간 자료 확보 중</span></dd>
         </dl>
-        <div class="lots"><table>
-          <tr><th>주차장</th><th>경로</th><th>내려서 도보</th><th>예상 요금</th><th>빈자리</th></tr>
+        <div class="lots">
           ${transfer.map((t) => {
             const st = t.station ? stOf(t.station) : null;
             const lv2 = liveOf(t.name);
-            const free = lv2 && lv2.now != null ? `${Math.max(0, lv2.cap - lv2.now)}면 <span class="muted small">(${String(lv2.time).slice(11, 16)})</span>` : (live && live.source === "live" ? "정보 없음" : "공연일에 수집");
-            return `<tr><td>${t.name}<div class="muted small">${t.cap}면 · ${t.hours}</div></td>
-                    <td>${t.route}</td><td>${st ? st.walkMin + "분" : "-"}</td>
-                    <td>${won(parkingFee(t, stay))}</td><td>${free}</td></tr>`;
+            const free = lv2 && lv2.now != null ? `빈자리 <b>${Math.max(0, lv2.cap - lv2.now)}면</b> <span class="muted small">(${String(lv2.time).slice(11, 16)} 기준)</span>` : (live && live.source === "live" ? "빈자리 정보 없음" : "빈자리: 공연일에 수집");
+            return `<div class="tlot${t.notRecommended ? " skip" : ""}">
+              <div class="tname">${t.name} <span class="muted small">${t.cap}면 · ${t.hours}</span></div>
+              <div>${t.board ? t.board + "에서 " : ""}${t.route}</div>
+              <div class="muted small">도보: 주차장→역 ${t.toStationMin != null ? t.toStationMin + "분" : "?"} · 내려서 공연장까지 ${st ? st.walkMin + "분" : "-"} · 예상 요금 ${won(parkingFee(t, stay))}</div>
+              <div class="small">${free}</div>
+              ${t.notRecommended ? `<div class="small warnline">비추천: ${t.notRecommended}</div>` : ""}
+            </div>`;
           }).join("")}
-        </table></div>
+        </div>
       </div>`;
   }
 
