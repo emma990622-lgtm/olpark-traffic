@@ -1,0 +1,14 @@
+# GitHub 한 파일 한도(100MB)를 넘는 큰 원본 / 다운로드 중간 파일은 올리지 않음
+data/raw/kcisa_*.jsonl
+data/raw/*.offset
+data/raw/*.progress
+data/raw/kcisa_linked_2025.csv
+data/raw/kcisa_probe*.txt
+
+# 파이썬·윈도우 잡파일
+__pycache__/
+*.pyc
+.venv/
+venv/
+Thumbs.db
+desktop.ini
