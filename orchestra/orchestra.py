@@ -77,6 +77,7 @@ USER_PATHS = ("orchestra/runs/", "orchestra/tasks/")
 STAGE_NAMES = {
     "claude": "1. Claude 코딩",
     "gemini": "2. Gemini 디자인",
+    "claude_followup": "2-1. Claude 후속 (디자인 담당이 넘긴 일)",
     "checks": "3. 자동 점검",
     "codex": "4. Codex 검수",
     "publish": "5. GitHub에 올리기",
@@ -186,6 +187,11 @@ def fname(st, key):
         "claude_report": r + "_1_claude_report.md",
         "gemini_prompt": r + "_2_gemini_prompt.md",
         "gemini_report": r + "_2_gemini_report.md",
+        "claude_changes": r + "_1_claude_changes.patch",
+        "gemini_changes": r + "_2_gemini_changes.patch",
+        "followup_prompt": r + "_2b_claude_followup_prompt.md",
+        "followup_report": r + "_2b_claude_followup_report.md",
+        "followup_changes": r + "_2b_claude_followup_changes.patch",
         "checks": r + "_3_checks.md",
         "diff": r + "_diff.patch",
         "codex_prompt": r + "_4_codex_prompt.md",
@@ -205,6 +211,70 @@ def fill(template_name, mapping):
     for k, v in mapping.items():
         text = text.replace("{{%s}}" % k, v)
     return text
+
+
+# ---------------------------------------------------------------------------
+# 인수인계 노트 (handoff.md)
+#   AI끼리는 대화를 못 하고 파일로만 일을 넘긴다. 그래서 단계마다 스크립트가
+#   "요청 해석·결정·넘긴 일·실제로 바뀐 파일"을 한 파일에 차례로 쌓고, 모든 AI가 먼저 읽게 한다.
+# ---------------------------------------------------------------------------
+HANDOFF_REPORT_MAX = 6000
+
+
+def handoff_path(st):
+    return run_dir(st["id"]) / "handoff.md"
+
+
+def handoff_init(st):
+    write(handoff_path(st),
+          "# 인수인계 노트 — %s\n\n"
+          "- 실행 id: `%s` · 브랜치: `%s` · 방식: %s\n"
+          "- 단계: %s\n"
+          "- 모든 담당은 이 노트를 먼저 읽는다. 노트는 지휘 스크립트가 단계마다 덧붙인다(AI는 고치지 않는다).\n"
+          "- 프로젝트 배경은 `docs/context.md`, 작업 요청서는 `task.md`.\n"
+          % (st["title"], st["id"], st["branch"], st["mode"], " → ".join(STAGE_NAMES[x] for x in st["plan"])))
+
+
+def handoff_add(st, title, body):
+    f = handoff_path(st)
+    old = read(f) if f.exists() else ""
+    stamp = datetime.now().strftime("%m-%d %H:%M")
+    write(f, old.rstrip() + "\n\n---\n## [%d회차] %s  (%s)\n\n%s\n" % (st["round"], title, stamp, body.strip()))
+
+
+def save_stage_changes(st, before_sha, key):
+    """이 단계에서 실제로 바뀐 코드를 파일로 남긴다(다음 담당이 보고서만 믿지 않게)."""
+    head = git("rev-parse", "HEAD")
+    if head == before_sha:
+        write(run_dir(st["id"]) / fname(st, key), "(이 단계에서 바뀐 파일 없음)\n")
+        return "(바뀐 파일 없음)"
+    stat = git("diff", "--stat", before_sha, head)
+    diff = git("diff", before_sha, head, "--", ".", ":(exclude)data/**", ":(exclude)web/data/**",
+               ":(exclude)orchestra/runs/**")
+    if len(diff) > 200_000:
+        diff = diff[:200_000] + "\n\n...(너무 길어서 잘랐어요)"
+    write(run_dir(st["id"]) / fname(st, key), "# 바뀐 파일\n" + stat + "\n\n# 변경 내용 (data/, web/data/ 제외)\n" + diff)
+    return stat
+
+
+def report_section(text, heading):
+    """보고서에서 '## heading' 아래 내용을 꺼낸다."""
+    m = re.search(r"^##\s*" + re.escape(heading) + r"[^\n]*\n(.*?)(?=^##\s|\Z)", text, re.S | re.M)
+    return m.group(1).strip() if m else ""
+
+
+def has_real_items(section_text):
+    """'없음'이나 양식 안내문만 있으면 False."""
+    for line in section_text.splitlines():
+        t = line.strip().lstrip("-*•").strip()
+        if not t or t.startswith("```"):
+            continue
+        if re.fullmatch(r"(없음|해당\s*없음|none|n/?a)[.。]?", t, re.I):
+            continue
+        if "없으면" in t or "파일:함수 |" in t:
+            continue
+        return True
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -339,7 +409,8 @@ def extra_for_fix(st, role):
         return ""
     tag = "[코딩]" if role == "claude" else "[디자인]"
     return ("- **이번은 수정 회차(%d회차)다.** 이전 검수 의견 `%s` 을 읽고, \"반드시 고칠 것\" 중 `%s` 항목을 고친다. "
-            "\"고치면 좋은 것\"도 담당 범위면 반영해도 된다. 해당 항목이 없으면 아무것도 바꾸지 말고 보고서에 \"해당 없음\"이라고 쓴다."
+            "\"고치면 좋은 것\"도 담당 범위면 반영해도 된다. 해당 항목이 없으면 아무것도 바꾸지 말고 보고서에 \"해당 없음\"이라고 쓴다.\n"
+            "- 앞 회차에 무엇을 왜 했는지는 `handoff.md`에 있다. 앞 회차의 결정을 뒤집어야 하면 보고서 \"결정과 이유\"에 이유를 적는다."
             % (st["round"], rel(prev), tag))
 
 
@@ -348,22 +419,55 @@ def stage_ai(st, role):
     rd = rel(d)
     if role == "claude":
         mapping = {"RUN_DIR": rd, "REPORT": fname(st, "claude_report"), "EXTRA": extra_for_fix(st, "claude")}
-        prompt_f, report_f, cmd, label = d / fname(st, "claude_prompt"), d / fname(st, "claude_report"), CLAUDE_CMD, "Claude"
+        prompt_f, report_f, cmd, label, guard_role, chg = (d / fname(st, "claude_prompt"), d / fname(st, "claude_report"),
+                                                           CLAUDE_CMD, "Claude", "claude", "claude_changes")
+        tmpl = "claude.md"
+    elif role == "claude_followup":
+        mapping = {"RUN_DIR": rd, "REPORT": fname(st, "followup_report"), "GEMINI_CHANGES": fname(st, "gemini_changes")}
+        prompt_f, report_f, cmd, label, guard_role, chg = (d / fname(st, "followup_prompt"), d / fname(st, "followup_report"),
+                                                           CLAUDE_CMD, "Claude 후속", "claude", "followup_changes")
+        tmpl = "claude_followup.md"
     else:
-        mapping = {"RUN_DIR": rd, "REPORT": fname(st, "gemini_report"),
-                   "CLAUDE_REPORT": fname(st, "claude_report"), "EXTRA": extra_for_fix(st, "gemini")}
-        prompt_f, report_f, cmd, label = d / fname(st, "gemini_prompt"), d / fname(st, "gemini_report"), GEMINI_CMD, "Gemini"
-    write(prompt_f, fill(role + ".md", mapping))
+        claude_chg = fname(st, "claude_changes")
+        if not (d / claude_chg).exists():
+            write(d / claude_chg, "(이번 회차엔 코딩 단계가 없었어요)\n")
+        mapping = {"RUN_DIR": rd, "REPORT": fname(st, "gemini_report"), "CLAUDE_CHANGES": claude_chg,
+                   "EXTRA": extra_for_fix(st, "gemini")}
+        prompt_f, report_f, cmd, label, guard_role, chg = (d / fname(st, "gemini_prompt"), d / fname(st, "gemini_report"),
+                                                           GEMINI_CMD, "Gemini", "gemini", "gemini_changes")
+        tmpl = "gemini.md"
+    if not handoff_path(st).exists():
+        handoff_init(st)
+    write(prompt_f, fill(tmpl, mapping))
     before = git("rev-parse", "HEAD")
     run_ai(cmd, rel(prompt_f))
     log = []
     fold_ai_commits(before, log)
-    guard(role, log)
+    guard(guard_role, log)
     write_guard_log(st, log)
     if not report_f.exists():
         write(report_f, "# %s 보고서\n(%s가 보고서를 남기지 않았어요.)\n" % (label, label))
         say("  ⚠ %s가 보고서를 남기지 않았어요." % label)
     commit_stage(st, label)
+    stat = save_stage_changes(st, before, chg)
+    rep_text = read(report_f).strip()
+    if len(rep_text) > HANDOFF_REPORT_MAX:
+        rep_text = rep_text[:HANDOFF_REPORT_MAX] + "\n...(길어서 잘랐어요. 전체: `%s`)" % report_f.name
+    body = "**실제로 바뀐 파일** (전체 변경: `%s`)\n```\n%s\n```\n" % (fname(st, chg), stat.strip("\n"))
+    if log:
+        body += "\n**범위 지키기로 되돌린 것**\n" + "\n".join("- " + l for l in log) + "\n"
+    # 보고서 제목 단계를 두 칸 내려서(## → ####) 노트의 단계 제목과 섞이지 않게 한다
+    rep_text = re.sub(r"^(#{1,4})\s", lambda m: "#" * min(6, len(m.group(1)) + 2) + " ", rep_text, flags=re.M)
+    body += "\n**보고서** (`%s`)\n\n%s\n" % (report_f.name, rep_text)
+    handoff_add(st, STAGE_NAMES[role], body)
+
+
+def need_followup(st):
+    """Gemini가 'Claude에게 넘길 일'을 적었으면 Claude 후속 단계를 넣는다(회차당 한 번)."""
+    f = run_dir(st["id"]) / fname(st, "gemini_report")
+    if not f.exists() or "claude_followup" in st["plan"]:
+        return False
+    return has_real_items(report_section(read(f), "Claude에게 넘길 일"))
 
 
 # ---------------------------------------------------------------------------
@@ -490,9 +594,12 @@ def stage_codex(st):
         extra = "- 이전 회차 검수 의견: `%s` — 그때 \"반드시 고칠 것\"이 이번에 고쳐졌는지도 확인한다." % rel(prev)
     mapping = {
         "RUN_DIR": rel(d), "CLAUDE_REPORT": fname(st, "claude_report"), "GEMINI_REPORT": fname(st, "gemini_report"),
+        "FOLLOWUP_REPORT": fname(st, "followup_report"),
         "CHECKS": fname(st, "checks"), "DIFF": fname(st, "diff"), "BASE": st["base"][:8], "EXTRA": extra,
     }
     prompt_f, out_f = d / fname(st, "codex_prompt"), d / fname(st, "codex_review")
+    if not handoff_path(st).exists():
+        handoff_init(st)
     write(prompt_f, fill("codex.md", mapping))
     run_ai(CODEX_CMD, rel(prompt_f), rel(out_f))
     if not out_f.exists() or not read(out_f).strip():
@@ -501,6 +608,11 @@ def stage_codex(st):
     verdict = m.group(1).replace(" ", "") if m else "판정없음"
     st.setdefault("verdicts", {})[str(st["round"])] = verdict
     say("  Codex 판정: %s" % verdict)
+    review = read(out_f)
+    must = report_section(review, "반드시 고칠 것") or "(없음)"
+    hand = report_section(review, "인수인계 점검")
+    handoff_add(st, STAGE_NAMES["codex"], "**판정: %s** (전체: `%s`)\n\n**반드시 고칠 것**\n%s\n%s"
+                % (verdict, out_f.name, must, ("\n**인수인계 점검**\n" + hand) if hand else ""))
     # 검수 중에 혹시 파일이 바뀌었으면 되돌린다 (Codex는 읽기만)
     for code, path in changed_entries():
         if not path.startswith(USER_PATHS):
@@ -531,10 +643,13 @@ def build_summary(st):
         "",
         section(d / fname(st, "codex_review"), "Codex 검수 의견"),
         section(d / "task.md", "작업 요청서"),
-        section(d / fname(st, "claude_report"), "Claude 보고서 (코딩)"),
-        section(d / fname(st, "gemini_report"), "Gemini 보고서 (디자인)"),
-        section(d / fname(st, "checks"), "자동 점검"),
     ]
+    if handoff_path(st).exists():   # 단계별 보고서·바뀐 파일·검수 결과가 순서대로 다 들어 있음
+        parts.append(section(handoff_path(st), "인수인계 노트 (단계별 보고서와 넘긴 일, 회차 전체)"))
+    else:
+        parts += [section(d / fname(st, "claude_report"), "Claude 보고서 (코딩)"),
+                  section(d / fname(st, "gemini_report"), "Gemini 보고서 (디자인)")]
+    parts.append(section(d / fname(st, "checks"), "자동 점검"))
     if (d / "guard.log").exists():
         parts.append(section(d / "guard.log", "범위 지키기 기록"))
     parts.append("\n---\n_AI 오케스트라(orchestra/orchestra.py)가 만든 PR입니다. 실행 id: `%s`_" % st["id"])
@@ -601,8 +716,11 @@ def run_plan(st):
         if stage in st["done"]:
             continue
         banner(STAGE_NAMES[stage] + "  (%d회차)" % st["round"])
-        if stage in ("claude", "gemini"):
+        if stage in ("claude", "gemini", "claude_followup"):
             stage_ai(st, stage)
+            if stage == "gemini" and need_followup(st):
+                st["plan"].insert(st["plan"].index("gemini") + 1, "claude_followup")
+                say("  Gemini가 Claude에게 넘긴 일이 있어요 → 'Claude 후속' 단계를 넣었어요.")
         elif stage == "checks":
             stage_checks(st)
         elif stage == "codex":
@@ -669,6 +787,7 @@ def cmd_new(task_path, mode, no_push):
         "task_src": str(task_path), "mode": mode, "round": 1, "plan": plan, "done": [], "no_push": no_push,
     }
     write(run_dir(run_id) / "task.md", text)
+    handoff_init(st)
     save_state(st)
     if any(p.startswith("orchestra/tasks/") for c, p in changed_entries()):
         git("add", "--", "orchestra/tasks")
@@ -690,6 +809,8 @@ def cmd_fix():
     if st["mode"] == "code":
         ai = ["claude"]
     st["plan"], st["done"] = ai + ["checks", "codex", "publish"], []
+    handoff_add(st, "수정 회차 시작", "앞 회차 Codex 검수의 \"반드시 고칠 것\"을 반영한다. 순서: "
+                + " → ".join(STAGE_NAMES[x] for x in st["plan"]))
     save_state(st)
     run_plan(st)
 
@@ -710,7 +831,7 @@ def cmd_resume():
         say("이 작업은 이미 끝까지 진행됐어요.")
         return
     nxt = left[0]
-    if nxt in ("claude", "gemini") and changed_entries():
+    if nxt in ("claude", "gemini", "claude_followup") and changed_entries():
         say("⚠ 멈춘 단계(%s)에서 만들다 만 변경이 있어요. 지우고 그 단계를 처음부터 다시 해요." % nxt)
         for c, p in changed_entries():
             if not p.startswith(USER_PATHS):
