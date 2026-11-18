@@ -8,7 +8,7 @@
   const ref = kspoReference(exits);
   // 선택 자료: 공연 후 출차 소요(과거 기록 분석), 역 주차장 → 공원 주차장 운전 시간
   const optJSON = (n) => loadJSON(n).catch(() => null);
-  const [exitProf, stDrive] = await Promise.all([optJSON("exit_profile.json"), optJSON("station_drive.json")]);
+  const [exitProf, stDrive, cg] = await Promise.all([optJSON("exit_profile.json"), optJSON("station_drive.json"), optJSON("congestion_summary.json")]);
   let liveDrive = null;
   fetch("/api/drivetime").then((r) => (r.ok ? r.json() : null)).then((d) => { if (d && evSel.value) { liveDrive = d; render(); } }).catch(() => {});
   const today = new Date().toISOString().slice(0, 10);
@@ -154,7 +154,10 @@
         <dl>
           <dt>${places.dome.name}까지</dt><dd>도보 약 ${park[0].walkMin}분 (구역마다 다름)</dd>
           <dt>예상 요금</dt><dd>${won(parkingFee(park[0], stay))} <span class="muted small">(${park[0].fee})</span></dd>
-          <dt>도착할 때</dt><dd>만차 예상 시각 <span class="tag-pending">2025 데이터 반영 예정</span></dd>
+          <dt>도착할 때</dt><dd>${cg ? `KSPO DOME 저녁 공연 날 ${cg.kspoEveningDays}일 중 <b>${cg.kspoDaysWithFull}일</b>은 일부 구역이 만차였어요.
+            첫 만차는 보통 공연 시작 <b>약 ${cg.hoursBefore.med}시간 전</b>(${cg.hoursBefore.p25}~${cg.hoursBefore.p75}시간 전)${isBig ? `, 오늘이면 <b>${toHHMM(startMin - cg.hoursBefore.med * 60)} 무렵</b>` : ""}이에요.
+            <span class="muted small">(구역 ${cg.zones}곳 중 보통 ${cg.fullZones.med}곳, 한국체육산업개발 주차장 혼잡도 기록 ${cg.period[0].slice(0, 7)}~${cg.period[1].slice(0, 7)})</span>`
+            : `만차 예상 시각 <span class="tag-pending">자료 준비 중</span>`}</dd>
           <dt>귀가할 때</dt><dd>${peakText}</dd>
           <dt>지금 주차</dt><dd>${parkLive}</dd>
         </dl>
