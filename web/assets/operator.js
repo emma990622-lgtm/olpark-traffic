@@ -5,6 +5,7 @@
   ]);
   const ref = kspoReference(exits);
   const exitProf = await loadJSON("exit_profile.json").catch(() => null);
+  const cgSum = await loadJSON("congestion_summary.json").catch(() => null);   // 주차장 혼잡도 기록(구역별 만차)
   // 실시간 도로 자료 검증: ① 서울시 원본(TOPIS)과 같은지 ② 다른 출처(TMAP 실시간 교통)와 비슷한지
   Promise.all([loadJSON("road_source_check.json").catch(() => null), loadJSON("road_check.json").catch(() => null)]).then(([a, c]) => {
     const pct = (x) => Math.round(x * 100) + "%";
@@ -251,6 +252,7 @@
         <tr><th>공연</th><td>${list.map((e) => `${e.venue} ${e.times.join("·")} ${e.title}`).join("<br>")}</td></tr>
         <tr><th>대응 수준</th><td>${lv.label} (공원 공연 좌석 합 약 ${seats.toLocaleString()}석)</td></tr>
         <tr><th>출차 최대 예상</th><td>${big ? `${peakAt} 무렵, 15분에 ${ref.peakMin}~${ref.peakMax}대 (2024년 7월 KSPO DOME 공연 ${ref.n}회 기준 참고값)` : "참고 기록 없음"}</td></tr>
+        <tr><th>주차장 만차</th><td>${cgSum ? `KSPO DOME 저녁 공연일 ${cgSum.kspoEveningDays}일 중 ${cgSum.kspoDaysWithFull}일 일부 구역 만차 기록. 첫 만차 보통 공연 ${cgSum.hoursBefore.med}시간 전${big ? `(${toHHMM(toMin(big.times[0]) - cgSum.hoursBefore.med * 60)} 무렵)` : ""}, 자주 차는 구역 ${Object.keys(cgSum.zoneFullDays).slice(0, 3).join("·")} → 그 전에 입구 요원 배치, 근처·환승 주차 안내` : "-"}</td></tr>
         <tr><th>집중 관리 출구</th><td>${exitProf ? Object.entries(exitProf.gates).map(([n, v]) => `${n} ${Math.round(v.share * 100)}%`).join(" · ") + ` (관객 차 비중, 2025 기록)` : "2025 입출차 데이터 반영 후 제시"}</td></tr>
         <tr><th>출차 소요</th><td>${exitProf ? `몰리기 시작해서 절반 약 ${exitProf.summary.t50.med}분, 90% 약 ${exitProf.summary.t90.med}분 (KSPO DOME 공연 ${exitProf.summary.shows}회)` : "-"}</td></tr>
         <tr><th>영향 도로</th><td>${roadsTxt}</td></tr>
