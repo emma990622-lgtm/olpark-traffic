@@ -81,12 +81,14 @@
   // 도로 색: 그날 수집한 실측 → 없으면 가장 최근 KSPO DOME 공연일 수집을 같은 시점(공연 시작 기준)으로 맞춰 참고 → 그것도 없으면 회색
   // 공원 주차: 2024년 7월 KSPO DOME 공연 7회 중앙값(park_profile.json)
   const parkProf = await loadJSON("park_profile.json").catch(() => null);
+  loadParkNight();
   const roadCache = {};
   const tl = { mode: "live", d: null, st: null, end: null, day: null, ref: null, refSt: null, timer: null };
   async function roadsByTime(folder) {
     if (roadCache[folder]) return roadCache[folder];
-    const { roads } = await loadCollectedFolder(folder);
+    const { roads, summary } = await loadCollectedFolder(folder);
     const m = new Map();
+    m.park = new Map(summary.filter((r) => r["주차합계_parking_sum"]).map((r) => [toMin(r["수집시각"].slice(11, 16)), +r["주차합계_parking_sum"]]));
     roads.forEach((r) => {
       const t = toMin(r["수집시각"].slice(11, 16));
       if (!m.has(t)) m.set(t, {});
@@ -110,13 +112,18 @@
     try {
       const folders = await listCollectedFolders();
       const dated = folders.filter((f) => /^\d{4}-\d{2}-\d{2}_/.test(f) && !/test|baseline/.test(f));
-      const dayF = dated.filter((f) => f.startsWith(d + "_")).at(-1);
-      if (dayF) tl.day = await roadsByTime(dayF);
+      const dayFs = dated.filter((f) => f.startsWith(d + "_"));
+      if (dayFs.length) {
+        const maps = await Promise.all(dayFs.map(roadsByTime));
+        tl.day = new Map(maps.flatMap((m) => [...m.entries()]));
+        tl.day.park = new Map(maps.flatMap((m) => [...m.park.entries()]));
+      }
       const kspoDates = new Set(events.filter((e) => e.venue === "KSPO DOME").map((e) => e.date));
-      const refF = dated.filter((f) => !f.startsWith(d) && kspoDates.has(f.slice(0, 10)) && f.slice(0, 10) <= today).at(-1);
-      if (refF) {
-        const re = events.find((e) => e.date === refF.slice(0, 10) && e.venue === "KSPO DOME");
-        tl.ref = await roadsByTime(refF); tl.refSt = toMin(re.times[0]); tl.refDate = refF.slice(0, 10);
+      const refDate = dated.filter((f) => !f.startsWith(d) && kspoDates.has(f.slice(0, 10)) && f.slice(0, 10) <= today).map((f) => f.slice(0, 10)).at(-1);
+      if (refDate) {
+        const re = events.find((e) => e.date === refDate && e.venue === "KSPO DOME");
+        const maps = await Promise.all(dated.filter((f) => f.startsWith(refDate + "_")).map(roadsByTime));
+        tl.ref = new Map(maps.flatMap((m) => [...m.entries()])); tl.refSt = toMin(re.times[0]); tl.refDate = refDate;
       }
     } catch (_) { /* 수집 기록을 못 불러와도 주차 예측은 보여 줌 */ }
     if (tl.mode === "time") showTime(+sl.value);
@@ -140,11 +147,16 @@
     if (m3) m3.update({ roads: roads || {} });
     drawRoadMap($("map"), links, places, roads || {});
     let park = "";
+    const realPark = tl.day && tl.day.park ? nearest(tl.day.park, t) : null;
+    if (realPark != null) {
+      const pa = parkActual(realPark);
+      park += `<b>실측</b> 공원 주차 약 <b>${pa.est.toLocaleString()}대</b> (한국체육산업개발 실시간 값 ${realPark.toLocaleString()}대 − 출차 기록 없는 장기 주차 약 ${pa.ghost.toLocaleString()}대, ${tl.d} 수집)<br>`;
+    }
     if (parkProf) {
       const i = parkProf.relMin.findIndex((x) => x >= rel);
       if (i >= 0) {
         const rng = parkProf.parkedMin ? ` <span>(공연에 따라 ${parkProf.parkedMin[i].toLocaleString()}~${parkProf.parkedMax[i].toLocaleString()}대)</span>` : "";
-        park = `공원 주차 약 <b>${parkProf.parked[i].toLocaleString()}대</b> / ${parkProf.capacity.toLocaleString()}면${rng} · 최근 15분 입차 ${parkProf.in15[i]}대 · 출차 ${parkProf.out15[i]}대
+        park += `${realPark != null ? "참고: 과거 " : ""}공원 주차 약 <b>${parkProf.parked[i].toLocaleString()}대</b> / ${parkProf.capacity.toLocaleString()}면${rng} · 최근 15분 입차 ${parkProf.in15[i]}대 · 출차 ${parkProf.out15[i]}대
           <span>(2024년 7월 KSPO DOME 공연 ${parkProf.shows.length}회 중앙값${tl.venue === "KSPO DOME" ? "" : ", 이날은 KSPO DOME 공연이 아니라 참고만"})</span><br>`;
       }
     }
@@ -253,16 +265,23 @@
   const hm = (ts) => { const t = ts.slice(11, 16); return toMin(t); };
   const median = (a) => { const b = a.slice().sort((x, y) => x - y); const n = b.length; return n ? (n % 2 ? b[(n - 1) / 2] : (b[n / 2 - 1] + b[n / 2]) / 2) : NaN; };
 
+  // 같은 날짜 폴더 여러 개(앞 수집 + 이어 받기)를 시간순으로 합침
+  async function loadDayFolders(fs) {
+    const parts = await Promise.all(fs.map(loadCollectedFolder));
+    const by = (k) => (a, b) => (a[k] < b[k] ? -1 : a[k] > b[k] ? 1 : 0);
+    return { folder: fs.join(", "), summary: parts.flatMap((p) => p.summary).sort(by("수집시각")), roads: parts.flatMap((p) => p.roads).sort(by("수집시각")) };
+  }
+
   async function renderRoadDay(d, list, showMin) {
     const note = $("roadDayNote");
     let folders;
     try { folders = await listCollectedFolders(); } catch (e) { note.textContent = "수집 기록을 불러오지 못했어요(" + e.message + ")."; return; }
-    const dayF = folders.filter((f) => f.startsWith(d + "_"));
+    const dayF = folders.filter((f) => f.startsWith(d + "_") && !/test/.test(f));
     const isExample = !dayF.length;
-    const target = isExample ? folders.filter((f) => /^\d{4}-\d{2}-\d{2}_/.test(f)).at(-1) : dayF.at(-1);
+    const target = isExample ? folders.filter((f) => /^\d{4}-\d{2}-\d{2}_/.test(f)).at(-1) : dayF.join(", ");
     if (!target) { note.textContent = "아직 수집된 기록이 없어요."; return; }
     const baseF = folders.filter((f) => f.includes("_baseline") && !f.startsWith(d)).at(-1);
-    const [T, B] = await Promise.all([loadCollectedFolder(target), baseF ? loadCollectedFolder(baseF) : null]);
+    const [T, B] = await Promise.all([isExample ? loadCollectedFolder(target) : loadDayFolders(dayF), baseF ? loadCollectedFolder(baseF) : null]);
     note.innerHTML = isExample
       ? `이 날짜는 공연 당일 자동 수집(공연 약 2시간 전부터 6시간) 뒤에 채워져요. 아래는 가장 최근 수집 <b>${target}</b>을 예시로 보여 줘요.`
       : `수집 기록: <b>${target}</b>${B ? ` · 비교: 공연 없는 날 <b>${baseF}</b>` : " · 공연 없는 날 비교 기록은 11/20, 11/26 수집 후 표시"}`;

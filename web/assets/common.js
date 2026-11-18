@@ -172,6 +172,31 @@ function transferOut(lot, station, ev, level = "med") {
   return { total: Object.values(parts).reduce((a, b) => a + b, 0), riders: Math.round(atStation), ...parts };
 }
 
+// ---------- 공원 주차 합계 보정 ----------
+// 한국체육산업개발 실시간 주차현황(parking_sum)은 출차 기록이 없는 장기 주차까지 세어 실제보다 많게 나온다
+// (공공데이터포털 설명: 장기 주차는 종료일이 표기되지 않아 실제 주차대수가 정확하지 않을 수 있음).
+// 2024년 7월 입출차 기록상 새벽에 실제로 서 있는 차는 약 60대인데, 2026-11-18 00:33 실시간 값은 1,085대였다.
+// → 새벽 값에서 60대를 뺀 만큼(약 1,025대)을 '출차 기록 없는 차'로 보고 실시간 값에서 뺀다.
+//   새벽 값이 매일 쌓이면(수집기 data/parking_night.csv) 가장 최근 값을 쓴다.
+const PARK_NIGHT_DEFAULT = { date: "2026-11-18", time: "00:33", sum: 1085 };
+const PARK_NIGHT_TRUE = 60;
+let _parkNight = null;
+async function loadParkNight() {
+  if (_parkNight) return _parkNight;
+  try {
+    const t = await fetch(`https://raw.githubusercontent.com/${CONFIG.collectorRepo}/main/data/parking_night.csv`).then((r) => { if (!r.ok) throw 0; return r.text(); });
+    const rows = parseCSV(t).filter((r) => +r.parking_sum > 0);
+    const last = rows.at(-1);
+    _parkNight = last ? { date: last.date, time: last.time, sum: +last.parking_sum } : PARK_NIGHT_DEFAULT;
+  } catch (_) { _parkNight = PARK_NIGHT_DEFAULT; }
+  return _parkNight;
+}
+// 실시간 값 → 실제에 가까운 대수
+function parkActual(sum, night = _parkNight || PARK_NIGHT_DEFAULT) {
+  const ghost = Math.max(0, night.sum - PARK_NIGHT_TRUE);
+  return { est: Math.max(0, Math.round(sum - ghost)), ghost, night };
+}
+
 // ---------- 요금 ----------
 function parkingFee(lot, minutes) {
   if (!lot.won || !lot.per) return null;

@@ -1,5 +1,6 @@
 // 관객 화면
 (async function () {
+  loadParkNight();
   const [events, links, allPlaces, exits] = await Promise.all([
     loadJSON("events.json"), loadJSON("links.json"), loadPlaces(), loadJSON("exits_2024_07.json"),
     loadSubwayTimes(),
@@ -114,7 +115,8 @@
     const peakText = isBig && ep
       ? `공연 시작 약 ${durText(ep.surgeMin.med)} 뒤(${toHHMM(startMin + ep.surgeMin.med)} 무렵)부터 출차가 몰려요.
          그때부터 공원 주차장 차의 <b>절반이 빠지는 데 약 ${ep.t50.med}분</b>, <b>90%는 약 ${ep.t90.med}분</b> 걸려요
-         <span class="muted small">(보통 ${ep.t50.p25}~${ep.t50.p75}분 / ${ep.t90.p25}~${ep.t90.p75}분, KSPO DOME 공연 ${ep.shows}회 입출차 기록)</span>`
+         <span class="muted small">(보통 ${ep.t50.p25}~${ep.t50.p75}분 / ${ep.t90.p25}~${ep.t90.p75}분, KSPO DOME 공연 ${ep.shows}회 입출차 기록${ep.bySource && ep.bySource["2024"] && ep.bySource["2025"]
+           ? `: 2024년 7월 전체 기록 ${ep.bySource["2024"].shows}회는 절반 ${ep.bySource["2024"].t50}분, 2025년 일부 기록 ${ep.bySource["2025"].shows}회는 ${ep.bySource["2025"].t50}분` : ""})</span>`
       : isBig
         ? `공연 시작 약 ${durText(ref.lagMed)} 뒤(${toHHMM(startMin + ref.lagMed)} 무렵) 출차가 가장 몰려요. 15분에 ${ref.peakMin}~${ref.peakMax}대`
         : "이 공연장의 출차 기록은 2025 데이터로 채울 예정이에요";
@@ -138,8 +140,10 @@
     if (closed.length) notices.push(`공연 후 문을 닫아 뺀 주차장: ${closed.map((c) => c.name).join(", ")}`);
 
     const parkSum = live && live.summary ? Number(live.summary["주차합계_parking_sum"]) : NaN;
-    const parkLive = Number.isFinite(parkSum)
-      ? `주차된 차 <b>${parkSum.toLocaleString()}대</b> · 빈자리 약 ${Math.max(0, park[0].cap - parkSum).toLocaleString()}면 <span class="muted small">(${park[0].cap.toLocaleString()}면 기준 추정, ${String(live.summary["수집시각"]).slice(11, 16)})</span>`
+    const pa = Number.isFinite(parkSum) ? parkActual(parkSum) : null;
+    const parkLive = pa
+      ? `주차된 차 약 <b>${pa.est.toLocaleString()}대</b> · 빈자리 약 ${Math.max(0, park[0].cap - pa.est).toLocaleString()}면
+         <span class="muted small">(${String(live.summary["수집시각"]).slice(11, 16)} 기준 추정. 한국체육산업개발 실시간 값 ${parkSum.toLocaleString()}대에서 출차 기록이 없는 장기 주차 약 ${pa.ghost.toLocaleString()}대를 뺐어요)</span>`
       : "공연일에 5분마다 수집";
 
     $("options").innerHTML = `

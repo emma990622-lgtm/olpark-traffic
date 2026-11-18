@@ -131,6 +131,10 @@ def main():
         "t50": {"p25": q(S.t50, 25), "med": q(S.t50, 50), "p75": q(S.t50, 75)},
         "t90": {"p25": q(S.t90, 25), "med": q(S.t90, 50), "p75": q(S.t90, 75)},
     }
+    # 자료별로도 따로 (2024년 7월은 전체 기록, 2025년은 받은 만큼의 일부 기록이라 섞어 보면 치우칠 수 있음)
+    summary["bySource"] = {}
+    for src, g in S.groupby("src"):
+        summary["bySource"][src] = {"shows": int(len(g)), "surgeMin": q(g.surgeMin, 50), "t50": q(g.t50, 50), "t90": q(g.t90, 50)}
     # 출구별 (2025만 출구 정보가 있음)
     gates = {}
     for r in shows:
