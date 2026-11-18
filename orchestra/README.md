@@ -74,6 +74,18 @@
 4. 오케스트라 컴퓨터에서 `orchestra.bat` → **9) 구글 시트 연결 설정** → URL·토큰을 붙여 넣어요. (토큰은 채팅·문서에 올리지 않아요. 토큰이 없으면 시트를 읽거나 바꿀 수 없어요.)
 5. `orchestra.bat`을 다시 열고 **8)**을 골라요.
 
+## 모델 바꾸기
+
+`orchestra/orchestra.py` 위쪽 "모델 설정" 몇 줄만 고치면 돼요. 빈칸(`""`)이면 그 프로그램의 기본값을 써요.
+
+| AI | 지금 설정 | 바꾸는 법 |
+|---|---|---|
+| Claude | `CLAUDE_MODEL = "claude-opus-5-5"`, `CLAUDE_EFFORT = "high"` | effort: low / medium / high / xhigh / max |
+| Codex | `CODEX_MODEL = ""`(기본 최신), `CODEX_EFFORT = "high"` | 모델 이름은 `codex` 실행 후 `/model`에서 확인 |
+| Gemini | `GEMINI_MODEL = ""` | `agy` 실행 후 `/model`에서 고르면 그 선택이 계속 유지돼요 |
+
+effort(생각 깊이)가 높을수록 꼼꼼하지만 느리고 사용량을 더 써요. **7) 환경 점검**에서 지금 설정을 볼 수 있어요.
+
 ## 메뉴
 
 | 번호 | 하는 일 |

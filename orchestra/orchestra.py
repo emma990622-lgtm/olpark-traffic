@@ -27,13 +27,28 @@ from datetime import datetime
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# 설정 (모델을 바꾸고 싶으면 여기 명령에 옵션을 더한다. 예: "--model", "opus")
+# 모델 설정 — 여기만 바꾸면 된다. 빈칸("")이면 그 프로그램의 기본값을 쓴다.
+#   생각 깊이(effort): 높을수록 꼼꼼하지만 느리고 사용량을 더 쓴다.
+#   Claude: low / medium / high / xhigh / max      Codex: low / medium / high / xhigh
+# ---------------------------------------------------------------------------
+CLAUDE_MODEL = "claude-opus-5-5"   # Claude Opus 5.5
+CLAUDE_EFFORT = "high"
+CODEX_MODEL = ""                   # 빈칸 = Codex 기본(최신) 모델. 바꾸려면 codex 안에서 /model 로 이름 확인
+CODEX_EFFORT = "high"
+GEMINI_MODEL = ""                  # 빈칸 = agy 안에서 /model 로 골라 둔 모델(고른 값이 계속 유지됨)
+
+# 실행 명령 (보통은 고칠 필요 없음)
 #   {prompt} 자리에 "이 파일을 읽고 따라 해" 라는 짧은 영어 문장이 들어간다.
 #   (윈도우에서 긴 한글 프롬프트를 명령줄로 넘기면 깨질 수 있어서, 지시는 파일로 넘긴다.)
-# ---------------------------------------------------------------------------
-CLAUDE_CMD = ["claude", "-p", "{prompt}", "--permission-mode", "acceptEdits"]
-GEMINI_CMD = ["agy", "-p", "{prompt}", "--dangerously-skip-permissions"]
-CODEX_CMD = ["codex", "exec", "--sandbox", "read-only", "-o", "{out}", "{prompt}"]
+CLAUDE_CMD = (["claude", "-p", "{prompt}", "--permission-mode", "acceptEdits"]
+              + (["--model", CLAUDE_MODEL] if CLAUDE_MODEL else [])
+              + (["--effort", CLAUDE_EFFORT] if CLAUDE_EFFORT else []))
+GEMINI_CMD = (["agy", "-p", "{prompt}", "--dangerously-skip-permissions"]
+              + (["--model", GEMINI_MODEL] if GEMINI_MODEL else []))
+CODEX_CMD = (["codex", "exec", "--sandbox", "read-only"]
+             + (["-m", CODEX_MODEL] if CODEX_MODEL else [])
+             + (["-c", 'model_reasoning_effort="%s"' % CODEX_EFFORT] if CODEX_EFFORT else [])
+             + ["-o", "{out}", "{prompt}"])
 STAGE_TIMEOUT_MIN = 45          # AI 한 단계 최대 시간(분)
 AUTO_FIX_ROUNDS = 1             # 구글 시트 작업함: Codex가 '수정필요'면 자동으로 고치는 횟수
 SHEET_URL_ENV, SHEET_TOKEN_ENV = "ORCH_SHEET_URL", "ORCH_SHEET_TOKEN"   # 시트 연결(웹 앱 주소·토큰)
@@ -305,7 +320,10 @@ def run_ai(cmd_template, prompt_rel, out_rel=None):
     say("  실행: %s ..." % cmd_template[0])
     t0 = time.time()
     try:
-        r = subprocess.run(cmd, cwd=str(ROOT), timeout=STAGE_TIMEOUT_MIN * 60)
+        env = dict(os.environ)
+        if cmd_template[0] == "claude" and CLAUDE_EFFORT:
+            env["CLAUDE_CODE_EFFORT_LEVEL"] = CLAUDE_EFFORT
+        r = subprocess.run(cmd, cwd=str(ROOT), timeout=STAGE_TIMEOUT_MIN * 60, env=env)
     except subprocess.TimeoutExpired:
         raise Stop("%s 이(가) %d분 안에 끝나지 않았어요." % (cmd_template[0], STAGE_TIMEOUT_MIN))
     say("  끝 (%d분 %d초, 종료코드 %d)" % (divmod(int(time.time() - t0), 60) + (r.returncode,)))
@@ -859,6 +877,9 @@ def cmd_doctor():
     show("GitHub CLI (gh, 선택)", bool(v), v or "없으면 PR은 링크로 직접 만듦 → winget install GitHub.cli", need=False)
     show("구글 시트 작업함 (선택)", bool(os.environ.get(SHEET_URL_ENV) and os.environ.get(SHEET_TOKEN_ENV)),
          "연결됨" if os.environ.get(SHEET_URL_ENV) else "없음 → 9) 시트 연결 설정", need=False)
+    say("  ·  모델 설정               Claude %s(%s) / Codex %s(%s) / Gemini %s" % (
+        CLAUDE_MODEL or "기본", CLAUDE_EFFORT or "기본", CODEX_MODEL or "기본", CODEX_EFFORT or "기본",
+        GEMINI_MODEL or "agy에서 고른 모델"))
     v = ver("node")
     show("Node.js (선택)", bool(v), v or "없으면 JS 문법 검사를 건너뜀", need=False)
     say()
