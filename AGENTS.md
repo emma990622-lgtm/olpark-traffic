@@ -19,12 +19,18 @@
 | Gemini (Antigravity) | 웹디자인 | `web/assets/*.css`, `web/*.html`(class, 감싸는 요소, 화면 문구), `web/assets/img/`, `web/assets/fonts/`, `docs/design.md` | JS·api·scripts·data, HTML의 `id`·`data-*` 속성 |
 | Codex | 최종 검수 | 없음 (읽기만) | 전부 |
 
+- 위 역할 범위는 오케스트라 실행 중에 적용한다. 오케스트라 밖에서 사용자가 Claude에게 직접 요청하면 Claude가 디자인도 고칠 수 있다(`CLAUDE.md` 참고).
 - 오케스트라 실행 중에는 범위를 벗어난 변경을 지휘 스크립트(`orchestra/orchestra.py`)가 자동으로 되돌린다.
 - 오케스트라 실행 중에는 커밋·push·브랜치 변경을 스크립트가 한다. AI는 하지 않는다.
 - 다른 역할이 할 일은 직접 하지 말고 보고서의 "넘길 일"에 적는다.
 
 ## 꼭 지킬 것
-- **인증키는 코드·화면·문서에 적지 않는다.** 키는 Vercel 환경변수(`SEOUL_API_KEY`, `NAVER_KEY_ID`, `NAVER_KEY`)와 GitHub Secrets(`TMAP_APP_KEY`)에만 있다. `set_keys.bat`, `delete_keys.bat`은 건드리지 않는다.
+- **인증키는 코드·화면·문서에 적지 않는다.** 키는 아래 세 곳에만 있다. 키 값을 찾거나 출력하지 말고, 필요하면 아래 이름으로 환경변수를 읽는다.
+  - Vercel 환경변수(`api/*.js`가 씀): `SEOUL_API_KEY`(서울시 열린데이터광장), `VWORLD_KEY`·`VWORLD_DOMAIN`(브이월드 건물), `NAVER_KEY_ID`·`NAVER_KEY`(네이버 길찾기, 선택), `TMAP_APP_KEY`(선택: `/api/drivetime` 실시간 운전시간, 없으면 501)
+  - GitHub Secrets: 이 저장소의 `TMAP_APP_KEY`(도로 자료 검증 자동 실행, `.github/workflows/verify_roads.yml`), 수집기 저장소 olpark-collector의 `SEOUL_API_KEY`(공연일 자동 수집)
+  - 사용자 컴퓨터의 윈도우 사용자 환경변수(`set_keys.bat`으로 저장, `scripts/*.py`가 씀): `TMAP_APP_KEY`, `KCISA_KEY`(문화공공데이터광장 2025 입출차정보), `DATAGO_KEY`(공공데이터포털, 주차장 혼잡도 정보)
+  - 예외: 한국체육산업개발 실시간 주차 API 주소의 `apiKey=PARKING21803504`는 기관이 누구나 쓰도록 공개한 값이라 코드(`api/parking.js` 등)에 있어도 된다. 검수에서 인증키 노출로 보지 않는다.
+  - `set_keys.bat`, `delete_keys.bat`은 건드리지 않는다.
 - `data/raw/` 원본은 수정하지 않는다.
 - 화면에 숫자·예측을 보일 때는 출처와 기준(기간·방법)을 같이 보인다. 데이터가 없으면 지어내지 말고 "아직 없음"으로 표시한다. (심사에서 데이터 신뢰가 중요하다.)
 - 화면 문구는 쉬운 한국어. 관객 화면은 "~해요"체. 전문용어는 풀어 쓴다.
