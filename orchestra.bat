@@ -6,4 +6,4 @@ set PYTHONUTF8=1
 set ORCH_PAUSE=1
 where python >nul 2>nul
 if %errorlevel%==0 (python orchestra\orchestra.py %*) else (py orchestra\orchestra.py %*)
-pause
+if errorlevel 9009 pause

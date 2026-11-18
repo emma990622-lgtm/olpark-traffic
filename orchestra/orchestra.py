@@ -928,7 +928,8 @@ def main(argv):
 
 def wait_enter():
     """orchestra.bat으로 메뉴를 열었을 때 결과를 읽기 전에 창이 닫히지 않게."""
-    if os.environ.get("ORCH_PAUSE") == "1":
+    # 메뉴로 열었을 때(orchestra.bat 또는 orchestra.py 더블클릭)는 항상 기다린다.
+    if os.environ.get("ORCH_PAUSE") == "1" or not sys.argv[1:]:
         try:
             input("\n  다 읽었으면 Enter를 누르세요. (창이 닫혀요)")
         except (EOFError, KeyboardInterrupt):
