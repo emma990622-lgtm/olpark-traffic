@@ -33,8 +33,8 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 CLAUDE_MODEL = "claude-opus-5-5"   # Claude Opus 5.5
 CLAUDE_EFFORT = "high"
-CODEX_MODEL = ""                   # 빈칸 = Codex 기본(최신) 모델. 바꾸려면 codex 안에서 /model 로 이름 확인
-CODEX_EFFORT = "high"
+CODEX_MODEL = "gpt-6.2-sol"        # GPT-6.2 Sol. 빈칸 = Codex 기본 모델. 이름은 codex 안에서 /model 로 확인
+CODEX_EFFORT = "medium"
 GEMINI_MODEL = ""                  # 빈칸 = agy 안에서 /model 로 골라 둔 모델(고른 값이 계속 유지됨)
 
 # 실행 명령 (보통은 고칠 필요 없음)
