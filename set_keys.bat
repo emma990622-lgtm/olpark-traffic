@@ -16,6 +16,9 @@ set "K="
 set /p K=문화공공데이터광장 "2025 입출차정보" 서비스키: 
 if defined K (setx KCISA_KEY "%K%" >nul && echo   - KCISA 키 저장됨) else (echo   - KCISA 키 건너뜀)
 set "K="
+set /p K=공공데이터포털 일반 인증키(주차장 혼잡도 정보용): 
+if defined K (setx DATAGO_KEY "%K%" >nul && echo   - 공공데이터포털 키 저장됨) else (echo   - 공공데이터포털 키 건너뜀)
+set "K="
 echo.
 echo 끝났어요. 이미 열려 있는 검은 창은 닫고, run_*.bat을 새로 더블클릭하세요.
 echo 키를 지우려면 delete_keys.bat을 실행하세요.
