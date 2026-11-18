@@ -926,14 +926,31 @@ def main(argv):
         say(__doc__)
 
 
+def wait_enter():
+    """orchestra.bat으로 메뉴를 열었을 때 결과를 읽기 전에 창이 닫히지 않게."""
+    if os.environ.get("ORCH_PAUSE") == "1":
+        try:
+            input("\n  다 읽었으면 Enter를 누르세요. (창이 닫혀요)")
+        except (EOFError, KeyboardInterrupt):
+            pass
+
+
 if __name__ == "__main__":
+    code = 0
     try:
         main(sys.argv[1:])
     except Stop as e:
         say()
         say("■ 멈췄어요: %s" % e)
         say("  (이어서 하려면 orchestra.bat → '멈춘 곳부터 이어서')")
-        sys.exit(1)
+        code = 1
     except KeyboardInterrupt:
         say("\n■ 중단했어요. 이어서 하려면 orchestra.bat → '멈춘 곳부터 이어서'")
-        sys.exit(130)
+        code = 130
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        say("\n■ 예상하지 못한 오류예요. 위 내용을 Claude에게 보여 주세요.")
+        code = 1
+    wait_enter()
+    sys.exit(code)
