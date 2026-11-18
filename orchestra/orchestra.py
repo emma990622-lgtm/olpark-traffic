@@ -115,7 +115,19 @@ def git(*args, check=True, strip=True):
     return r.stdout.strip() if strip else r.stdout
 
 
+# 공식 설치 프로그램이 CLI를 넣는 곳. PATH보다 먼저 본다.
+# (Antigravity 데스크톱 앱이 'agy' 이름을 가져가도 CLI를 쓰게, 설치 직후 새 창을 안 열어도 찾게)
+KNOWN_EXE = {
+    "agy": [r"%LOCALAPPDATA%\agy\bin\agy.exe", "~/.local/bin/agy"],
+    "claude": [r"%USERPROFILE%\.local\bin\claude.exe", "~/.local/bin/claude"],
+}
+
+
 def which(name):
+    for p in KNOWN_EXE.get(name, []):
+        f = Path(os.path.expanduser(os.path.expandvars(p)))
+        if "%" not in str(f) and f.is_file():
+            return str(f)
     return shutil.which(name)
 
 
@@ -837,9 +849,9 @@ def cmd_doctor():
         show("git 사용자 이름", bool(name), name or "없음 → git config --global user.name \"이름\"")
         show("GitHub 저장소", bool(repo_slug()), repo_slug() or "origin이 GitHub가 아님")
     for cmd, label, hint in [
-        ("claude", "Claude Code", "npm install -g @anthropic-ai/claude-code  (또는 공식 설치 프로그램)"),
+        ("claude", "Claude Code", "PowerShell: irm https://claude.ai/install.ps1 | iex"),
         ("agy", "Antigravity CLI (agy)", "PowerShell: irm https://antigravity.google/cli/install.ps1 | iex"),
-        ("codex", "Codex CLI", "npm install -g @openai/codex"),
+        ("codex", "Codex CLI", "PowerShell: powershell -ExecutionPolicy ByPass -c \"irm https://chatgpt.com/codex/install.ps1 | iex\""),
     ]:
         v = ver(cmd)
         show(label, bool(v), v or "없음 → " + hint)

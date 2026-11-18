@@ -21,11 +21,13 @@
 
 1. 프로그램 설치 — PowerShell에서:
    ```
-   winget install Git.Git Python.Python.3.12 OpenJS.NodeJS.LTS GitHub.cli
-   npm install -g @anthropic-ai/claude-code @openai/codex
+   irm https://claude.ai/install.ps1 | iex
    irm https://antigravity.google/cli/install.ps1 | iex
+   powershell -ExecutionPolicy ByPass -c "irm https://chatgpt.com/codex/install.ps1 | iex"
+   winget install GitHub.cli
    ```
-   (이미 있는 건 건너뛰어도 돼요. Claude Code는 공식 설치 프로그램으로 깔아도 됩니다.)
+   (공식 설치 프로그램이라 Node.js가 없어도 돼요. 이미 있는 건 건너뛰어도 돼요. 설치 후 PowerShell 창을 닫고 새로 여세요.
+   Git·Python이 없을 때만 `winget install Git.Git Python.Python.3.12`. Node.js는 선택 — 있으면 JS 문법 검사를 해요.)
 2. 로그인 — 각각 한 번씩 실행해서 구독 계정으로 로그인:
    - `claude` (Claude Pro/Max 계정)
    - `agy` (Google AI Pro/Ultra 또는 Gemini 계정)
@@ -33,7 +35,7 @@
    - `gh auth login` (GitHub, 선택 — 있으면 PR을 자동으로 만들어요)
 3. GitHub Desktop의 olpark-traffic 폴더에서 `orchestra.bat` 더블클릭 → **7) 환경 점검** → 모두 ✅ 인지 확인.
 
-> `agy --version`을 쳤는데 Antigravity 데스크톱 앱이 열리면, 데스크톱 앱과 CLI의 명령 이름이 겹친 것이에요. Antigravity CLI 설치 안내의 "agy 명령 충돌 해결"을 따르거나, `orchestra/orchestra.py` 위쪽 `GEMINI_CMD`의 `"agy"`를 CLI 실행 파일의 전체 경로로 바꾸세요.
+> `agy`를 쳤는데 Antigravity 데스크톱 앱이 열리면, 데스크톱 앱과 CLI의 명령 이름이 겹친 것이에요. 로그인은 `& "$env:LOCALAPPDATA\agy\bin\agy.exe"`로 하세요. 오케스트라는 이 위치(`%LOCALAPPDATA%\agy\bin\agy.exe`)를 먼저 찾아 쓰므로 따로 고칠 필요가 없어요.
 
 ## 매번 하는 일
 
