@@ -93,7 +93,7 @@ PR 본문에도 인수인계 노트 전체가 들어가요.
 | AI | 지금 설정 | 바꾸는 법 |
 |---|---|---|
 | Claude | `CLAUDE_MODEL = "claude-opus-5-5"`, `CLAUDE_EFFORT = "high"` | effort: low / medium / high / xhigh / max |
-| Codex | `CODEX_MODEL = "gpt-6.2-sol"`, `CODEX_EFFORT = "medium"` | 모델 이름은 `codex` 실행 후 `/model`에서 확인 |
+| Codex | `CODEX_MODEL = "gpt-6.2-astra"`, `CODEX_EFFORT = "medium"` | 모델 이름은 `codex` 실행 후 `/model`에서 확인 |
 | Gemini | `GEMINI_MODEL = ""` | `agy` 실행 후 `/model`에서 고르면 그 선택이 계속 유지돼요 |
 
 effort(생각 깊이)가 높을수록 꼼꼼하지만 느리고 사용량을 더 써요. **7) 환경 점검**에서 지금 설정을 볼 수 있어요.
