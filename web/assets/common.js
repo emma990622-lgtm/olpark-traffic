@@ -144,12 +144,11 @@ const CROWD = {
   linePerMin: { "5": 150, "8": 125, "9": 200, "2": 250 },   // 열차가 실어 나르는 양, 명/분(가정)
   headway: { "5": 10, "8": 8, "9": 6, "2": 6 },             // 밤 시간 열차 간격, 분(가정)
   walkFactor: 1.3,        // 인파가 몰리는 역으로 걸을 때 평소보다 30% 느리게(그 밖의 역은 10%, 가정)
-  venueExit: { "KSPO DOME": 10, "핸드볼경기장": 7, default: 5 },  // 객석에서 건물 밖까지(가정)
   lotExit: 3,             // 역 공영주차장 정산·출차(한산)
   source: "서울시 역별 일별 승하차 인원(2026년 3~11월, KSPO DOME 공연일 31일)",
 };
 
-// 나올 때: 공연장 퇴장 + (인파 속) 역까지 도보 + 개찰·승강장 대기 + 운행 + 환승 + 역→주차장 도보 + 출차
+// 나올 때: (인파 속) 공연장에서 역까지 도보 + 개찰·승강장 대기 + 운행 + 환승 + 역→주차장 도보 + 출차
 function transferOut(lot, station, ev, level = "med") {
   if (lot.toStationMin == null || !station || !lot.segments || !lot.segments.length) return null;
   const go = transferTotal(lot, station);
@@ -165,7 +164,6 @@ function transferOut(lot, station, ev, level = "med") {
   const gateWait = q(atStation / T, CROWD.gatePerMin);
   const lineWait = q(Math.min(onLine / T, CROWD.gatePerMin), CROWD.linePerMin[line] || 150);
   const parts = {
-    exit: CROWD.venueExit[ev.venue] ?? CROWD.venueExit.default,
     walk2: Math.round(station.walkMin * (atStation > 1000 ? CROWD.walkFactor : 1.1)),   // 인파가 가는 역이면 더 느리게
     crowd: Math.round(gateWait + lineWait),
     wait: Math.round((CROWD.headway[line] || 8) / 2),

@@ -74,7 +74,101 @@
     drawBrief(d, list, lv, seats, big, peakAt, showMin);
     drawGates(big);
     renderRoadDay(d, list, showMin);
+    setupTimeline(d, list, showMin);
   }
+
+  // ---------- 3D 지도 시간 슬라이더: 공연 2시간 전 ~ 공연 끝나고 2시간 ----------
+  // 도로 색: 그날 수집한 실측 → 없으면 가장 최근 KSPO DOME 공연일 수집을 같은 시점(공연 시작 기준)으로 맞춰 참고 → 그것도 없으면 회색
+  // 공원 주차: 2024년 7월 KSPO DOME 공연 7회 중앙값(park_profile.json)
+  const parkProf = await loadJSON("park_profile.json").catch(() => null);
+  const roadCache = {};
+  const tl = { mode: "live", d: null, st: null, end: null, day: null, ref: null, refSt: null, timer: null };
+  async function roadsByTime(folder) {
+    if (roadCache[folder]) return roadCache[folder];
+    const { roads } = await loadCollectedFolder(folder);
+    const m = new Map();
+    roads.forEach((r) => {
+      const t = toMin(r["수집시각"].slice(11, 16));
+      if (!m.has(t)) m.set(t, {});
+      m.get(t)[r["LINK_ID"]] = { spd: +r["속도_kmh"], idx: r["혼잡단계"] };
+    });
+    return (roadCache[folder] = m);
+  }
+  const nearest = (m, t, tol = 12) => {
+    let best = null, bd = 1e9;
+    for (const k of m.keys()) { const dd = Math.abs(k - t); if (dd < bd) { bd = dd; best = k; } }
+    return best != null && bd <= tol ? m.get(best) : null;
+  };
+  async function setupTimeline(d, list, showMin) {
+    const big = list.find((e) => e.venue === "KSPO DOME") || list.find((e) => e.venue === "핸드볼경기장") || list[0];
+    const st = toMin(big.times[0]);
+    const lastEnd = Math.max(...list.flatMap((e) => e.times.map(toMin))) + showMin;
+    Object.assign(tl, { d, st, end: lastEnd, venue: big.venue, day: null, ref: null, refSt: null });
+    const sl = $("tSlider");
+    sl.min = st - 120; sl.max = lastEnd + 120;
+    if (tl.mode !== "time" || +sl.value < +sl.min || +sl.value > +sl.max) sl.value = st;
+    try {
+      const folders = await listCollectedFolders();
+      const dated = folders.filter((f) => /^\d{4}-\d{2}-\d{2}_/.test(f) && !/test|baseline/.test(f));
+      const dayF = dated.filter((f) => f.startsWith(d + "_")).at(-1);
+      if (dayF) tl.day = await roadsByTime(dayF);
+      const kspoDates = new Set(events.filter((e) => e.venue === "KSPO DOME").map((e) => e.date));
+      const refF = dated.filter((f) => !f.startsWith(d) && kspoDates.has(f.slice(0, 10)) && f.slice(0, 10) <= today).at(-1);
+      if (refF) {
+        const re = events.find((e) => e.date === refF.slice(0, 10) && e.venue === "KSPO DOME");
+        tl.ref = await roadsByTime(refF); tl.refSt = toMin(re.times[0]); tl.refDate = refF.slice(0, 10);
+      }
+    } catch (_) { /* 수집 기록을 못 불러와도 주차 예측은 보여 줌 */ }
+    if (tl.mode === "time") showTime(+sl.value);
+  }
+  function phaseOf(t) {
+    if (t < tl.st - 30) return "입장 시작";
+    if (t < tl.st) return "입장 몰림";
+    if (t < tl.end) return "공연 중";
+    if (t < tl.end + 60) return "퇴장 몰림";
+    return "퇴장 마무리";
+  }
+  function showTime(t) {
+    tl.mode = "time"; $("tNow").classList.remove("on");
+    const rel = t - tl.st;
+    const sign = rel < 0 ? "−" : "+";
+    $("tLabel").innerHTML = `${toHHMM(t)} <span class="muted small">(공연 시작 ${sign}${durText(Math.abs(rel)) || "0분"})</span><span class="phase">${phaseOf(t)}</span>`;
+    let roads = null, src;
+    if (tl.day && (roads = nearest(tl.day, t))) src = `도로: ${tl.d} 실측`;
+    else if (tl.ref && (roads = nearest(tl.ref, tl.refSt + rel))) src = `도로: ${tl.refDate} KSPO DOME 공연의 같은 시점 실측(참고)`;
+    else src = "도로: 이 시각 수집 기록이 없어 회색으로 보여요 (공연일 자동 수집 후 채워져요)";
+    if (m3) m3.update({ roads: roads || {} });
+    drawRoadMap($("map"), links, places, roads || {});
+    let park = "";
+    if (parkProf) {
+      const i = parkProf.relMin.findIndex((x) => x >= rel);
+      if (i >= 0) {
+        park = `공원 주차 약 <b>${parkProf.parked[i].toLocaleString()}대</b> / ${parkProf.capacity.toLocaleString()}면 · 최근 15분 입차 ${parkProf.in15[i]}대 · 출차 ${parkProf.out15[i]}대
+          <span>(2024년 7월 KSPO DOME 공연 ${parkProf.shows.length}회 중앙값${tl.venue === "KSPO DOME" ? "" : ", 이날은 KSPO DOME 공연이 아니라 참고만"})</span><br>`;
+      }
+    }
+    $("tInfo").innerHTML = park + src;
+  }
+  $("tSlider").addEventListener("input", (e) => { stopPlay(); showTime(+e.target.value); });
+  $("tNow").addEventListener("click", () => {
+    stopPlay(); tl.mode = "live"; $("tNow").classList.add("on");
+    $("tLabel").textContent = "지금 실시간"; $("tInfo").textContent = live ? liveNote(live) : "";
+    if (m3 && live) m3.update(live);
+    drawRoadMap($("map"), links, places, live ? live.roads : null);
+  });
+  function stopPlay() { if (tl.timer) { clearInterval(tl.timer); tl.timer = null; $("tPlay").textContent = "▶"; } }
+  $("tPlay").addEventListener("click", () => {
+    if (tl.timer) return stopPlay();
+    const sl = $("tSlider");
+    if (tl.mode !== "time" || +sl.value >= +sl.max) sl.value = sl.min;
+    $("tPlay").textContent = "❚❚";
+    showTime(+sl.value);
+    tl.timer = setInterval(() => {
+      const v = +sl.value + 5;
+      if (v > +sl.max) return stopPlay();
+      sl.value = v; showTime(v);
+    }, 700);
+  });
 
   // 출차 곡선: 시작 시각이 가장 비슷한 2024-07 KSPO 공연일 vs 공연 없는 평일 평균
   function drawChart(big) {
@@ -275,7 +369,11 @@
     } else start3D(null);
     // 실시간 연결이면 2분마다 새로 고침
     if (live && live.source === "live") setInterval(async () => {
-      try { live = await loadLive(); drawRoadMap($("map"), links, places, live.roads); if (m3) m3.update(live); $("roadNote").textContent = liveNote(live); render(); } catch (_) {}
+      try {
+        live = await loadLive();
+        if (tl.mode === "live") { drawRoadMap($("map"), links, places, live.roads); if (m3) m3.update(live); }
+        $("roadNote").textContent = liveNote(live);
+      } catch (_) {}
     }, 120000);
   } catch (e) {
     start3D(null);

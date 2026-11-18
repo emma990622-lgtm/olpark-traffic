@@ -211,7 +211,7 @@
   function transferOutHTML(ev, startMin, endMin, park, stOf, transfer) {
     const ep = exitProf && ev.venue === "KSPO DOME" ? exitProf.summary : null;
     const parkWalk = Math.round(park[0].walkMin * CROWD.walkFactor);
-    const parkOut = ep ? (CROWD.venueExit[ev.venue] ?? CROWD.venueExit.default) + parkWalk + ep.t50.med : null;
+    const parkOut = ep ? parkWalk + ep.t50.med : null;
     const rows = transfer.map((t) => {
       const st = t.station ? stOf(t.station) : null;
       const a = transferOut(t, st, ev, "med"), b = transferOut(t, st, ev, "high");
@@ -221,14 +221,14 @@
         <div>${st.name}에서 ${t.board ? t.board.replace(/역$/, "") + "역 방향" : ""} 타고 돌아가기</div>
         <div class="ttotal">공연장 → 주차장 빠져나오기까지 <b>약 ${a.total}분</b>${b.total > a.total ? ` <span class="muted small">(관객이 많으면 약 ${b.total}분)</span>` : ""}
           <span class="muted small">· ${toHHMM(endMin)}에 끝나면 ${toHHMM(endMin + a.total)}쯤 출발</span></div>
-        <div class="muted small">공연장 나오기 ${a.exit}분 + 역까지 도보 ${a.walk2}분 + 개찰·승강장 줄 ${a.crowd}분 + 열차 대기 ${a.wait}분 + 지하철 ${a.ride}분${a.transfer ? ` + 환승 ${a.transfer}분` : ""} + 도보 ${a.walk1}분 + 출차 ${a.lotExit}분</div>
+        <div class="muted small">역까지 도보 ${a.walk2}분 + 개찰·승강장 줄 ${a.crowd}분 + 열차 대기 ${a.wait}분 + 지하철 ${a.ride}분${a.transfer ? ` + 환승 ${a.transfer}분` : ""} + 도보 ${a.walk1}분 + 출차 ${a.lotExit}분</div>
         <div class="small">${a.riders > 1000 ? `이 역으로 약 ${a.riders.toLocaleString()}명이 한꺼번에 몰려요` : "이 역은 공연 날에도 승차 인원이 거의 늘지 않아요"}</div>
         ${parkOut ? `<div class="small">${parkOut <= a.total ? `공원 주차장(약 ${parkOut}분)보다 ${a.total - parkOut}분 더 걸려요` : `공원 주차장(약 ${parkOut}분)보다 <b>${parkOut - a.total}분 빨라요</b>`}</div>` : ""}
         ${t.notRecommended ? `<div class="small warnline">비추천: ${t.notRecommended}</div>` : ""}
       </div>`;
     }).join("");
     return `<p class="muted small">공연이 끝나면 관객이 한꺼번에 역으로 몰려요. ${CROWD.source}를 보면 KSPO DOME 공연 날 올림픽공원역 승차가 평소보다 약 ${CROWD.riders.med.toLocaleString()}명 늘어요(9호선 71%, 5호선 29%). 공연 좌석 수에 맞춰 줄여 계산했어요.</p>
-      ${ep ? `<div class="notice">비교: 공원 주차장은 차까지 도보 ${parkWalk}분 + 출차 대기(차 절반이 빠지는 데) 약 ${ep.t50.med}분 + 공연장 나오기 = <b>약 ${parkOut}분</b></div>` : ""}
+      ${ep ? `<div class="notice">비교: 공원 주차장은 차까지 도보 ${parkWalk}분 + 출차 대기(차 절반이 빠지는 데) 약 ${ep.t50.med}분 = <b>약 ${parkOut}분</b></div>` : ""}
       <div class="lots">${rows}</div>
       <p class="muted small">개찰구 처리량(분당 ${CROWD.gatePerMin}명), 열차 간격, 인파 속 도보 속도(30% 느림)는 가정값이에요. 11/21·22 공연일 실측으로 고칠 예정이에요.</p>`;
   }

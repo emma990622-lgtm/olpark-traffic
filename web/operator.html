@@ -36,8 +36,17 @@
       <p class="muted small" id="chartNote"></p>
     </section>
     <section class="card">
-      <h2>주변 도로 (3D, 최근 수집값)</h2>
+      <h2>주변 도로 (3D) · 시간대별로 보기</h2>
       <div id="map3d" class="map3d"></div>
+      <div class="timectl">
+        <div class="trow">
+          <button id="tPlay" title="재생">▶</button>
+          <input type="range" id="tSlider" min="0" max="1" step="5" value="0" aria-label="시각">
+          <button id="tNow" class="on" title="지금 실시간">지금</button>
+        </div>
+        <div id="tLabel" class="tlabel">지금 실시간</div>
+        <div id="tInfo" class="muted small"></div>
+      </div>
       <div id="legend3d"></div>
       <details id="flat"><summary class="muted small">평면 지도로 보기</summary>
         <svg class="map" id="map"></svg>

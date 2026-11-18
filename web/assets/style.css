@@ -163,3 +163,12 @@ details#flat { margin-top: 8px; }
 /* 환승주차 갈 때 / 나올 때 탭 */
 .toggle.tabs { margin: 8px 0 10px; }
 .toggle.tabs button { flex: 1; }
+
+/* 운영자 3D 지도 시간 슬라이더 */
+.timectl { margin: 10px 0 6px; }
+.timectl .trow { display: flex; gap: 8px; align-items: center; }
+.timectl input[type=range] { flex: 1; accent-color: var(--accent); }
+.timectl button { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 4px 10px; cursor: pointer; font: inherit; }
+.timectl button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.timectl .tlabel { font-weight: 600; margin: 6px 0 2px; }
+.timectl .tlabel .phase { font-weight: 500; margin-left: 6px; padding: 1px 8px; border-radius: 10px; background: var(--chip, #eef2fb); font-size: 12px; }
