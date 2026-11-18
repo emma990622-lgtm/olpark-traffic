@@ -1,0 +1,40 @@
+# 이 내용을 GitHub 웹에서 .github/workflows/verify_roads.yml 로 만들어 붙여 넣으세요.
+# 한국 시각 18:00~23:30 사이 30분마다 깨어나서, 공연이 끝나는 때(KSPO DOME·핸드볼경기장)와
+# 공연 없는 평일 퇴근 시간에만 실제로 TMAP과 비교하고 결과를 저장합니다. 그 밖에는 바로 끝납니다.
+# Actions 탭에서 "Run workflow"를 누르면 시간과 상관없이 바로 한 번 비교합니다.
+name: verify-roads
+
+on:
+  schedule:
+    - cron: "0,30 9-14 * * *"   # GitHub 서버는 UTC 기준 → 한국 18:00~23:30
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: verify-roads
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 도로 자료 검증
+        env:
+          TMAP_APP_KEY: ${{ secrets.TMAP_APP_KEY }}
+        run: python scripts/10_verify_roads_tmap.py ${{ github.event_name == 'schedule' && '--auto' || '' }}
+      - name: 결과 저장
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A web/data data/processed data/raw
+          if git diff --cached --quiet; then echo "바뀐 것 없음"; exit 0; fi
+          git commit -m "도로 검증 자동 실행"
+          git pull --rebase
+          git push
