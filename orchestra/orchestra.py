@@ -10,6 +10,8 @@ AI 오케스트라 지휘 스크립트
   python orchestra/orchestra.py review     다시 점검·검수만
   python orchestra/orchestra.py resume     멈춘 단계부터 이어서
   python orchestra/orchestra.py doctor     필요한 프로그램이 다 있는지 점검
+  python orchestra/orchestra.py sheet      구글 시트 작업함의 '대기' 일을 차례로 처리
+  python orchestra/orchestra.py sheet-setup  구글 시트 연결(웹 앱 주소·토큰) 저장
 
 외부 라이브러리 없이 Python 3.8+ 표준 기능만 쓴다.
 """
@@ -33,6 +35,9 @@ CLAUDE_CMD = ["claude", "-p", "{prompt}", "--permission-mode", "acceptEdits"]
 GEMINI_CMD = ["agy", "-p", "{prompt}", "--dangerously-skip-permissions"]
 CODEX_CMD = ["codex", "exec", "--sandbox", "read-only", "-o", "{out}", "{prompt}"]
 STAGE_TIMEOUT_MIN = 45          # AI 한 단계 최대 시간(분)
+AUTO_FIX_ROUNDS = 1             # 구글 시트 작업함: Codex가 '수정필요'면 자동으로 고치는 횟수
+SHEET_URL_ENV, SHEET_TOKEN_ENV = "ORCH_SHEET_URL", "ORCH_SHEET_TOKEN"   # 시트 연결(웹 앱 주소·토큰)
+KIND_MODE = {"": "full", "자동": "full", "둘 다": "full", "코딩": "code", "디자인": "design"}
 BASE_BRANCH = "main"
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -529,6 +534,7 @@ def stage_publish(st):
     gh = which("gh")
     slug = repo_slug()
     compare = "https://github.com/%s/compare/%s...%s?expand=1" % (slug, BASE_BRANCH, st["branch"]) if slug else None
+    st["pr_url"] = compare or st["branch"]
     if not gh:
         say("  gh(GitHub CLI)가 없어서 PR은 직접 만들어야 해요.")
         if compare:
@@ -540,6 +546,7 @@ def stage_publish(st):
     v = ghrun("pr", "view", st["branch"], "--json", "url,state")
     if v.returncode == 0 and '"OPEN"' in v.stdout:
         url = json.loads(v.stdout)["url"]
+        st["pr_url"] = url
         c = ghrun("pr", "comment", st["branch"], "--body-file", str(summary))
         say("  PR에 %d회차 검수 결과를 댓글로 남겼어요: %s" % (st["round"], url) if c.returncode == 0
             else "  PR 댓글 실패: " + c.stderr.strip())
@@ -548,6 +555,7 @@ def stage_publish(st):
         c = ghrun("pr", "create", "--base", BASE_BRANCH, "--head", st["branch"], "--title", title,
                   "--body-file", str(summary))
         if c.returncode == 0:
+            st["pr_url"] = c.stdout.strip().splitlines()[-1]
             say("  PR을 만들었어요: " + c.stdout.strip())
         else:
             say("  PR 만들기 실패: " + c.stderr.strip())
@@ -639,6 +647,7 @@ def cmd_new(task_path, mode, no_push):
     say("  브랜치: %s  (main은 그대로예요)" % branch)
     say("  순서: " + " → ".join(STAGE_NAMES[s] for s in plan))
     run_plan(st)
+    return st
 
 
 def cmd_fix():
@@ -679,6 +688,125 @@ def cmd_resume():
     run_plan(st)
 
 
+# ---------------------------------------------------------------------------
+# 구글 시트 작업함 (팀원이 시트에 적은 할 일을 가져와 처리하고, 결과를 시트에 다시 적음)
+#   시트 쪽 연결 스크립트: orchestra/sheet_inbox.gs
+# ---------------------------------------------------------------------------
+def sheet_conf():
+    url, token = os.environ.get(SHEET_URL_ENV, "").strip(), os.environ.get(SHEET_TOKEN_ENV, "").strip()
+    if not url or not token:
+        raise Stop("구글 시트 연결 정보가 없어요. orchestra.bat → 9) 시트 연결 설정 을 먼저 하세요.\n"
+                   "(설정한 뒤에는 이 창을 닫고 orchestra.bat을 다시 열어야 적용돼요.)")
+    return url, token
+
+
+def sheet_call(payload=None):
+    """payload가 없으면 대기 목록(GET), 있으면 상태 바꾸기(POST)."""
+    import urllib.parse
+    import urllib.request
+    url, token = sheet_conf()
+    if payload is None:
+        req = urllib.request.Request(url + ("&" if "?" in url else "?") + urllib.parse.urlencode({"token": token}))
+    else:
+        body = json.dumps(dict(payload, token=token), ensure_ascii=False).encode("utf-8")
+        req = urllib.request.Request(url, data=body, headers={"Content-Type": "text/plain;charset=utf-8"})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:      # 구글이 한 번 다른 주소로 보내는 것은 자동으로 따라감
+            d = json.loads(r.read().decode("utf-8"))
+    except Exception as e:
+        raise Stop("구글 시트에 연결하지 못했어요: %s" % e)
+    if isinstance(d, dict) and d.get("error"):
+        raise Stop("구글 시트: " + d["error"])
+    return d
+
+
+def sheet_update(task, **kw):
+    try:
+        sheet_call(dict(kw, row=task["row"]))
+    except Stop as e:
+        say("  ⚠ 시트에 결과를 못 적었어요(%s). 시트 %s행을 직접 고쳐 주세요." % (e, task["row"]))
+
+
+def sheet_task_file(task):
+    safe = re.sub(r"[^0-9A-Za-z가-힣_-]+", "_", task["title"])[:30].strip("_") or "작업"
+    f = TASKS / ("시트%s행_%s.md" % (task["row"], safe))
+    detail = task.get("detail", "").strip() or task["title"]
+    write(f, "# %s\n\n- 요청자: %s\n- 출처: 구글 시트 작업함 %s행 (번호 %s), 종류: %s\n\n## 바꿀 것\n%s\n" % (
+        task["title"], task.get("who") or "-", task["row"], task.get("no") or "-", task.get("kind") or "자동", detail))
+    return f
+
+
+def cmd_sheet():
+    banner("구글 시트 작업함")
+    ensure_clean()
+    tasks = sheet_call().get("tasks", [])
+    if not tasks:
+        say("  대기 중인 할 일이 없어요.")
+        return
+    for i, t in enumerate(tasks, 1):
+        say("  %d) [%s행] %s  — %s, 종류: %s" % (i, t["row"], t["title"], t.get("who") or "-", t.get("kind") or "자동"))
+    s = input("\n번호 하나, 또는 그냥 Enter = 위에서부터 전부 차례로: ").strip()
+    if s:
+        if not s.isdigit() or not (1 <= int(s) <= len(tasks)):
+            raise Stop("번호를 잘못 골랐어요.")
+        tasks = [tasks[int(s) - 1]]
+    start_branch = git("rev-parse", "--abbrev-ref", "HEAD")
+    done = []
+    try:
+        for t in tasks:
+            mode = KIND_MODE.get(t.get("kind", ""), "full")
+            claim = sheet_call({"action": "claim", "row": t["row"], "status": "진행중", "verdict": ""})
+            if not claim.get("ok"):
+                say("  [%s행] 다른 곳에서 이미 맡았어요(%s). 건너뜀." % (t["row"], claim.get("status")))
+                continue
+            banner("시트 %s행: %s" % (t["row"], t["title"]))
+            try:
+                st = cmd_new(str(sheet_task_file(t)), mode, False)
+                for _ in range(AUTO_FIX_ROUNDS):
+                    if st.get("verdicts", {}).get(str(st["round"])) != "수정필요":
+                        break
+                    say("  Codex가 수정필요라고 해서 한 번 더 고쳐요.")
+                    cmd_fix()
+                    st = load_state_for_current_branch()
+                v = st.get("verdicts", {}).get(str(st["round"]), "판정없음")
+                sheet_update(t, status="완료" if v == "통과" else "수정필요", result=st.get("pr_url", st["branch"]),
+                             verdict="%s (%d회차)" % (v, st["round"]))
+                done.append((t, v))
+            except Stop as e:
+                say("■ [%s행] 멈췄어요: %s" % (t["row"], e))
+                sheet_update(t, status="실패", verdict=str(e)[:200])
+                done.append((t, "실패"))
+                if changed_entries():           # 다음 작업을 위해 만들다 만 변경을 정리
+                    for c, p in changed_entries():
+                        if not p.startswith(USER_PATHS):
+                            revert_path(p)
+    finally:
+        r = git("switch", BASE_BRANCH if start_branch.startswith("orchestra/") else start_branch, check=False)
+        if r.returncode != 0:
+            git("switch", BASE_BRANCH, check=False)
+    banner("작업함 처리 끝")
+    for t, v in done:
+        say("  [%s행] %s → %s" % (t["row"], t["title"], v))
+    say("  결과(PR 링크)는 구글 시트에 적었어요. 미리보기를 보고 GitHub에서 Merge 하세요.")
+
+
+def cmd_sheet_setup():
+    banner("구글 시트 연결 설정")
+    say("  orchestra/sheet_inbox.gs 맨 위 안내대로 시트에 스크립트를 붙이고 웹 앱으로 배포한 뒤 진행하세요.")
+    say("  토큰은 채팅·문서에 올리지 마세요. 이 컴퓨터의 윈도우 사용자 설정에만 저장돼요.")
+    url = input("\n웹 앱 URL (https://script.google.com/macros/s/.../exec): ").strip()
+    token = input("오케스트라 토큰: ").strip()
+    if not url.startswith("https://script.google.com/") or not token:
+        raise Stop("URL이나 토큰이 비었거나 형식이 달라요.")
+    for k, v in ((SHEET_URL_ENV, url), (SHEET_TOKEN_ENV, token)):
+        r = subprocess.run(["setx", k, v], capture_output=True, text=True, encoding="utf-8", errors="replace")
+        if r.returncode != 0:
+            raise Stop("저장 실패: " + (r.stderr or r.stdout).strip())
+        os.environ[k] = v
+    n = len(sheet_call().get("tasks", []))
+    say("  연결 성공! 지금 대기 중인 할 일 %d개. 다음부터는 8) 시트 작업함 처리 를 고르면 돼요." % n)
+
+
 def cmd_doctor():
     banner("환경 점검")
     ok = True
@@ -717,6 +845,8 @@ def cmd_doctor():
         show(label, bool(v), v or "없음 → " + hint)
     v = ver("gh")
     show("GitHub CLI (gh, 선택)", bool(v), v or "없으면 PR은 링크로 직접 만듦 → winget install GitHub.cli", need=False)
+    show("구글 시트 작업함 (선택)", bool(os.environ.get(SHEET_URL_ENV) and os.environ.get(SHEET_TOKEN_ENV)),
+         "연결됨" if os.environ.get(SHEET_URL_ENV) else "없음 → 9) 시트 연결 설정", need=False)
     v = ver("node")
     show("Node.js (선택)", bool(v), v or "없으면 JS 문법 검사를 건너뜀", need=False)
     say()
@@ -733,6 +863,8 @@ def menu():
     say("  5) 다시 검수만")
     say("  6) 멈춘 곳부터 이어서")
     say("  7) 환경 점검")
+    say("  8) 구글 시트 작업함 처리  팀원이 시트에 적은 '대기' 일을 차례로")
+    say("  9) 구글 시트 연결 설정    처음 한 번")
     s = input("\n번호: ").strip()
     if s == "1":
         cmd_new(None, "full", False)
@@ -748,6 +880,10 @@ def menu():
         cmd_resume()
     elif s == "7":
         cmd_doctor()
+    elif s == "8":
+        cmd_sheet()
+    elif s == "9":
+        cmd_sheet_setup()
     else:
         say("번호를 잘못 골랐어요.")
 
@@ -770,6 +906,10 @@ def main(argv):
         cmd_resume()
     elif cmd == "doctor":
         cmd_doctor()
+    elif cmd == "sheet":
+        cmd_sheet()
+    elif cmd == "sheet-setup":
+        cmd_sheet_setup()
     else:
         say(__doc__)
 
