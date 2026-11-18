@@ -1,21 +1,22 @@
 {
- "checked": "2026-11-18 02:53",
- "roadTime": "2026-11-18 11:50",
+ "checked": "2026-11-18 11:59",
+ "reason": "직접 실행",
+ "roadTime": "2026-11-18 11:55",
  "n": 20,
  "total": 58,
  "sameGrade": 0.3,
- "within1": 0.8,
- "medAbsDiff": 9.8,
- "corr": -0.15,
- "seoulSlower": 5,
- "seoulFaster": 9,
+ "within1": 0.75,
+ "medAbsDiff": 9.0,
+ "corr": 0.01,
+ "seoulSlower": 4,
+ "seoulFaster": 10,
  "worst": [
   {
    "id": "1230034300",
    "road": "강동대로",
    "from": "성내유수지",
    "to": "올림픽대교남단교차로",
-   "seoulSpd": 51.3,
+   "seoulSpd": 50.5,
    "seoulIdx": "원활",
    "tmapSpd": 7.5,
    "tmapIdx": "정체",
@@ -28,25 +29,25 @@
    "road": "위례성대로",
    "from": "올림픽공원남2문",
    "to": "올림픽공원앞교차로",
-   "seoulSpd": 37,
+   "seoulSpd": 38,
    "seoulIdx": "원활",
-   "tmapSpd": 6.6,
+   "tmapSpd": 7.3,
    "tmapIdx": "정체",
    "gap": -2,
    "len": 476,
    "tmapSrc": "경로 시간(신호 대기 포함)"
   },
   {
-   "id": "1230033202",
-   "road": "올림픽로",
-   "from": "성내교(남측)",
+   "id": "1230034700",
+   "road": "강동대로",
+   "from": "풍납동 330-7",
    "to": "올림픽대교남단교차로",
-   "seoulSpd": 39,
+   "seoulSpd": 27,
    "seoulIdx": "원활",
-   "tmapSpd": 10.5,
+   "tmapSpd": 10.8,
    "tmapIdx": "정체",
    "gap": -2,
-   "len": 364,
+   "len": 402,
    "tmapSrc": "경로 시간(신호 대기 포함)"
   },
   {
@@ -63,29 +64,29 @@
    "tmapSrc": "경로 시간(신호 대기 포함)"
   },
   {
-   "id": "1230032902",
-   "road": "올림픽로37길",
-   "from": "최소노드배치점",
-   "to": "성내교(남측)",
-   "seoulSpd": 37,
+   "id": "1230033202",
+   "road": "올림픽로",
+   "from": "성내교(남측)",
+   "to": "올림픽대교남단교차로",
+   "seoulSpd": 39.7,
    "seoulIdx": "원활",
-   "tmapSpd": 21.8,
+   "tmapSpd": 24.7,
    "tmapIdx": "서행",
    "gap": -1,
-   "len": 390,
+   "len": 364,
    "tmapSrc": "경로 시간(신호 대기 포함)"
   },
   {
-   "id": "1230034700",
-   "road": "강동대로",
-   "from": "풍납동 330-7",
-   "to": "올림픽대교남단교차로",
-   "seoulSpd": 24.5,
-   "seoulIdx": "서행",
-   "tmapSpd": 10.7,
-   "tmapIdx": "정체",
-   "gap": -1,
-   "len": 402,
+   "id": "1230024703",
+   "road": "가락로",
+   "from": "에뜨왈리코리아",
+   "to": "방이초교앞교차로",
+   "seoulSpd": 13,
+   "seoulIdx": "정체",
+   "tmapSpd": 25.6,
+   "tmapIdx": "원활",
+   "gap": 2,
+   "len": 223,
    "tmapSrc": "경로 시간(신호 대기 포함)"
   },
   {
@@ -108,7 +109,7 @@
    "to": "올림픽공원북2문앞교차로",
    "seoulSpd": 21.5,
    "seoulIdx": "서행",
-   "tmapSpd": 9.2,
+   "tmapSpd": 9.6,
    "tmapIdx": "정체",
    "gap": -1,
    "len": 421,
@@ -117,9 +118,9 @@
  ],
  "long300": {
   "n": 11,
-  "sameGrade": 0.182,
+  "sameGrade": 0.273,
   "within1": 0.727,
-  "medAbsDiff": 13.8
+  "medAbsDiff": 11.9
  },
  "tmapSrc": {
   "경로 시간(신호 대기 포함)": 20
@@ -140,6 +141,15 @@
    "within1": 0.8,
    "medAbsDiff": 9.8,
    "corr": -0.15
+  },
+  {
+   "checked": "2026-11-18 11:59",
+   "reason": "직접 실행",
+   "n": 20,
+   "sameGrade": 0.3,
+   "within1": 0.75,
+   "medAbsDiff": 9.0,
+   "corr": 0.01
   }
  ]
 }
