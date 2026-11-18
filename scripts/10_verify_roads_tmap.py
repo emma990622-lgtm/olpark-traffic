@@ -6,6 +6,10 @@
   run_verify_roads.bat 더블클릭 (TMAP 키는 set_keys.bat으로 저장해 두면 묻지 않음)
   공연 끝나는 시각에 한 번 더 돌리면 혼잡할 때도 맞는지 볼 수 있다.
 
+자동 실행(GitHub Actions): python scripts/10_verify_roads_tmap.py --auto
+  30분마다 깨어나서 아래 때에만 실제로 비교한다(아니면 바로 끝남).
+   - 공연 끝나는 때: 오늘 KSPO DOME·핸드볼경기장 공연의 시작 2시간 30분 ~ 3시간 30분 뒤 (공연마다 한 번)
+   - 평소 비교: 공연 없는 평일(월~목) 18:30 무렵 퇴근 시간 한 번
 결과: web/data/road_check.json (운영자 화면에 요약이 나옴), 같은 내용을 data/processed/road_check_시각.csv로도 저장
 """
 import csv
@@ -14,6 +18,7 @@ import json
 import math
 import os
 import statistics as stt
+import sys
 import time
 import urllib.request
 from pathlib import Path
@@ -73,13 +78,48 @@ def tmap(key, a, b):
     return total_m, route_spd, cong, "경로 시간(신호 대기 포함)"
 
 
+EVENTS = ROOT / "web" / "data" / "events.json"
+BIG = ("KSPO DOME", "핸드볼경기장")
+KST = dt.timezone(dt.timedelta(hours=9))
+
+
+def auto_reason():
+    """--auto일 때 지금 비교할 때인지 판단. 비교할 이유(문자열) 또는 None."""
+    now = dt.datetime.now(KST).replace(tzinfo=None)
+    today = now.strftime("%Y-%m-%d")
+    done = []
+    if OUT.exists():
+        try:
+            done = [h.get("reason", "") for h in json.loads(OUT.read_text(encoding="utf-8")).get("history", [])]
+        except ValueError:
+            pass
+    shows = [(e["venue"], t) for e in json.loads(EVENTS.read_text(encoding="utf-8"))
+             if e["date"] == today and e["venue"] in BIG for t in e["times"]]
+    for venue, t in shows:
+        start = dt.datetime.strptime(f"{today} {t}", "%Y-%m-%d %H:%M")
+        if start + dt.timedelta(minutes=150) <= now <= start + dt.timedelta(minutes=210):
+            r = f"공연 종료 무렵 {today} {t} {venue}"
+            return None if r in done else r
+    if not shows and now.weekday() <= 3 and dt.time(18, 15) <= now.time() <= dt.time(19, 20):
+        r = f"평소 퇴근 시간 {today}"
+        return None if r in done else r
+    return None
+
+
 def main():
+    reason = "직접 실행"
+    if "--auto" in sys.argv:
+        reason = auto_reason()
+        if not reason:
+            print("지금은 비교할 때가 아니라 끝냅니다.")
+            return
+        print(f"자동 비교: {reason}")
     key = os.environ.get("TMAP_APP_KEY") or input("TMAP(SK 오픈API) 앱키를 붙여넣고 Enter: ").strip()
     if not key:
         raise SystemExit("키가 비어 있습니다.")
     links = {l["id"]: l for l in json.loads(LINKS.read_text(encoding="utf-8"))}
     live = get_json(ROADS_API)
-    print(f"서울시 도로 자료 시각: {live.get('roadTime')}  (지금 {dt.datetime.now():%H:%M})")
+    print(f"서울시 도로 자료 시각: {live.get('roadTime')}  (지금 {dt.datetime.now(KST):%H:%M})")
     rows = []
     for r in live.get("links", []):
         l = links.get(str(r["id"]))
@@ -118,8 +158,8 @@ def main():
     if len(rows) > 3 and stt.pstdev(a) and stt.pstdev(b):
         ma, mb = stt.mean(a), stt.mean(b)
         corr = sum((x - ma) * (y - mb) for x, y in zip(a, b)) / (len(a) * stt.pstdev(a) * stt.pstdev(b))
-    now = dt.datetime.now()
-    out = {"checked": now.strftime("%Y-%m-%d %H:%M"), "roadTime": live.get("roadTime"), "n": len(rows),
+    now = dt.datetime.now(KST).replace(tzinfo=None)
+    out = {"checked": now.strftime("%Y-%m-%d %H:%M"), "reason": reason, "roadTime": live.get("roadTime"), "n": len(rows),
            "total": len(live.get("links", [])), "sameGrade": round(same / len(rows), 3),
            "within1": round(near / len(rows), 3), "medAbsDiff": round(stt.median(diffs), 1),
            "corr": round(corr, 2) if corr is not None else None,
@@ -141,7 +181,7 @@ def main():
             hist = old.get("history", [])
         except ValueError:
             pass
-    hist = (hist + [{k: out[k] for k in ("checked", "n", "sameGrade", "within1", "medAbsDiff", "corr")}])[-20:]
+    hist = (hist + [{k: out.get(k) for k in ("checked", "reason", "n", "sameGrade", "within1", "medAbsDiff", "corr")}])[-40:]
     out["history"] = hist
     OUT.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
     proc = ROOT / "data" / "processed"
