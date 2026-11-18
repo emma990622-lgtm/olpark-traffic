@@ -77,7 +77,7 @@ def parse(body):
 
 
 def ask_keys(names):
-    keys, prev = {}, os.environ.get("KCISA_KEY", "")
+    keys, prev = {}, os.environ.get("KCISA_KEY", "")   # set_keys.bat에 저장하는 키 = 2025 입출차정보(API_CPM_008) 키
     for n in names:
         if os.environ.get("KCISA_KEY"):
             keys[n] = prev
@@ -206,7 +206,7 @@ def check_linked(key):
 
 def main():
     # 더블클릭 기본: 연계 데이터 확인(3번 요청) → 입출차 전체 받기
-    args = sys.argv[1:] or ["check_linked", "inout"]
+    args = sys.argv[1:] or ["inout"]          # 연계 데이터(CPM_009)는 값이 비어 있어 기본으로는 받지 않음
     valid = set(APIS) | {"probe", "check_linked"}
     if any(a not in valid for a in args):
         raise SystemExit("사용법: 03_fetch_kcisa_2025.py [probe | check_linked | linked | inout]")

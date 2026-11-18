@@ -5,11 +5,21 @@
     loadSubwayTimes(),
   ]);
   const ref = kspoReference(exits);
+  // 선택 자료: 공연 후 출차 소요(과거 기록 분석), 역 주차장 → 공원 주차장 운전 시간
+  const optJSON = (n) => loadJSON(n).catch(() => null);
+  const [exitProf, stDrive] = await Promise.all([optJSON("exit_profile.json"), optJSON("station_drive.json")]);
+  let liveDrive = null;
+  fetch("/api/drivetime").then((r) => (r.ok ? r.json() : null)).then((d) => { if (d && evSel.value) { liveDrive = d; render(); } }).catch(() => {});
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = events.filter((e) => e.date >= today && e.times.length);
   const byDate = groupByDate(upcoming);
   let live = null;
   let places = placesFor(allPlaces, "KSPO DOME");   // 고른 공연장 기준 장소 정보
+  let tMode = "go";                                   // 환승주차 탭: go(공연장 갈 때) / out(공연장에서 나올 때)
+  document.getElementById("options").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-tmode]");
+    if (b && b.dataset.tmode !== tMode) { tMode = b.dataset.tmode; render(); }
+  });
 
   const $ = (id) => document.getElementById(id);
   const dateSel = $("date"), evSel = $("event");
@@ -72,6 +82,18 @@
     renderTransit();
   }
 
+  // 역 주차장 → 공원 주차장 운전 시간: 공연별 예측(TMAP 타임머신) > 지금 실시간 > 계산해 둔 값
+  function driveOn(name, ev, start) {
+    if (stDrive && stDrive.predicted) {
+      const p = stDrive.predicted[`${dateSel.value} ${start}`];
+      if (p && p[name] != null) return { min: p[name], src: `TMAP 예측, 시작 ${durText(stDrive.leadMin)} 전 출발` };
+    }
+    if (liveDrive && liveDrive.lots && liveDrive.lots[name] && liveDrive.lots[name].min != null)
+      return { min: liveDrive.lots[name].min, src: `TMAP 실시간 ${String(liveDrive.time).slice(11, 16)}` };
+    if (stDrive && stDrive.now && stDrive.now[name]) return { min: stDrive.now[name].min, src: `TMAP ${stDrive.measured} 기준` };
+    return null;
+  }
+
   function renderCar(ev, startMin, endMin, seats, lv) {
     const stay = (endMin + 30) - (startMin - 60);
     const lots = places.lots;
@@ -88,9 +110,14 @@
 
     // 귀가 혼잡 참고: KSPO DOME 공연은 2024-07 실제 기록, 그 외는 아직 없음
     const isBig = ev.venue === "KSPO DOME";
-    const peakText = isBig
-      ? `공연 시작 약 ${durText(ref.lagMed)} 뒤(${toHHMM(startMin + ref.lagMed)} 무렵) 출차가 가장 몰려요. 15분에 ${ref.peakMin}~${ref.peakMax}대`
-      : "이 공연장의 과거 기록은 2025 데이터로 채울 예정이에요";
+    const ep = exitProf && exitProf.summary;
+    const peakText = isBig && ep
+      ? `공연 시작 약 ${durText(ep.surgeMin.med)} 뒤(${toHHMM(startMin + ep.surgeMin.med)} 무렵)부터 출차가 몰려요.
+         그때부터 공원 주차장 차의 <b>절반이 빠지는 데 약 ${ep.t50.med}분</b>, <b>90%는 약 ${ep.t90.med}분</b> 걸려요
+         <span class="muted small">(보통 ${ep.t50.p25}~${ep.t50.p75}분 / ${ep.t90.p25}~${ep.t90.p75}분, KSPO DOME 공연 ${ep.shows}회 입출차 기록)</span>`
+      : isBig
+        ? `공연 시작 약 ${durText(ref.lagMed)} 뒤(${toHHMM(startMin + ref.lagMed)} 무렵) 출차가 가장 몰려요. 15분에 ${ref.peakMin}~${ref.peakMax}대`
+        : "이 공연장의 출차 기록은 2025 데이터로 채울 예정이에요";
 
     // 추천 (예측 모델 연결 전: 공연 규모 규칙)
     let reco;
@@ -144,26 +171,66 @@
       <div class="opt ${lv.key === "focus" ? "recommended" : ""}">
         <div class="kind">환승주차 (역 주차장 + 지하철)</div>
         <h3>공원 정체를 피하는 방법</h3>
-        <dl>
-          <dt>귀가할 때</dt><dd>공원 출구 대기 없음. 대신 공연 직후 역이 붐벼요</dd>
-          <dt>총 이동시간</dt><dd>주차장에서 ${places.dome.name}까지. 도보는 TMAP 계산, 지하철은 ${SUBWAY.official ? "서울교통공사 표준 운행시간" : "가정값"}</dd>
-        </dl>
-        <div class="lots">
-          ${transfer.map((t) => {
-            const st = t.station ? stOf(t.station) : null;
-            const lv2 = liveOf(t.name);
-            const free = lv2 && lv2.now != null ? `빈자리 <b>${Math.max(0, lv2.cap - lv2.now)}면</b> <span class="muted small">(${String(lv2.time).slice(11, 16)} 기준)</span>` : (live && live.source === "live" ? "빈자리 정보 없음" : "빈자리: 공연일에 수집");
-            return `<div class="tlot${t.notRecommended ? " skip" : ""}">
-              <div class="tname">${t.name} <span class="muted small">${t.cap}면 · ${t.hours}</span></div>
-              <div>${t.board ? t.board + "에서 " : ""}${t.route}</div>
-              ${(() => { const tt = transferTotal(t, st); return tt ? `<div class="ttotal">주차장 → ${places.dome.name} 총 <b>약 ${tt.total}분</b></div>
-              <div class="muted small">도보 ${tt.walk1}분 + 대기 ${tt.wait}분 + 지하철 ${tt.ride}분${tt.transfer ? ` + 환승 ${tt.transfer}분` : ""} + 내려서 도보 ${tt.walk2}분 · 예상 요금 ${won(parkingFee(t, stay))}</div>` : `<div class="muted small">예상 요금 ${won(parkingFee(t, stay))}</div>`; })()}
-              <div class="small">${free}</div>
-              ${t.notRecommended ? `<div class="small warnline">비추천: ${t.notRecommended}</div>` : ""}
-            </div>`;
-          }).join("")}
+        <div class="toggle tabs" role="tablist">
+          <button data-tmode="go" class="${tMode === "go" ? "on" : ""}" role="tab">공연장 갈 때</button>
+          <button data-tmode="out" class="${tMode === "out" ? "on" : ""}" role="tab">공연장에서 나올 때</button>
         </div>
+        ${tMode === "go" ? transferGo(ev, startMin, park, stOf, liveOf, stay, transfer) : transferOutHTML(ev, startMin, endMin, park, stOf, transfer)}
       </div>`;
+  }
+
+  // 환승주차 · 공연장 갈 때: 관객이 2시간 넘게 나눠서 오므로 평소 시간으로 계산
+  function transferGo(ev, startMin, park, stOf, liveOf, stay, transfer) {
+    return `<p class="muted small">주차장에서 ${places.dome.name}까지. 관객이 나눠서 오므로 평소 시간으로 계산했어요. 도보는 TMAP, 지하철은 ${SUBWAY.official ? "서울교통공사 표준 운행시간" : "가정값"}이에요.</p>
+      <div class="lots">
+      ${transfer.map((t) => {
+        const st = t.station ? stOf(t.station) : null;
+        const lv2 = liveOf(t.name);
+        const free = lv2 && lv2.now != null ? `빈자리 <b>${Math.max(0, lv2.cap - lv2.now)}면</b> <span class="muted small">(${String(lv2.time).slice(11, 16)} 기준)</span>` : (live && live.source === "live" ? "빈자리 정보 없음" : "빈자리: 공연일에 수집");
+        const tt = transferTotal(t, st);
+        return `<div class="tlot${t.notRecommended ? " skip" : ""}">
+          <div class="tname">${t.name} <span class="muted small">${t.cap}면 · ${t.hours}</span></div>
+          <div>${t.board ? t.board + "에서 " : ""}${t.route}</div>
+          ${tt ? `<div class="ttotal">주차장 → ${places.dome.name} 총 <b>약 ${tt.total}분</b>
+              <span class="muted small">· 공연 시작 30분 전에 닿으려면 ${toHHMM(startMin - 30 - tt.total)}까지 주차</span></div>
+            <div class="muted small">도보 ${tt.walk1}분 + 대기 ${tt.wait}분 + 지하철 ${tt.ride}분${tt.transfer ? ` + 환승 ${tt.transfer}분` : ""} + 내려서 도보 ${tt.walk2}분 · 예상 요금 ${won(parkingFee(t, stay))}</div>`
+            : `<div class="muted small">예상 요금 ${won(parkingFee(t, stay))}</div>`}
+          ${(() => { const dv = driveOn(t.name, ev, toHHMM(startMin)); if (!dv) return "";
+            const parkWalk = park[0].walkMin;
+            return `<div class="small">차로 공원 주차장까지 더 가면 <b>약 ${dv.min}분</b> + 도보 ${parkWalk}분 = 총 ${dv.min + parkWalk}분
+              <span class="muted">(${dv.src})</span>${tt ? (() => { const gap = tt.total - (dv.min + parkWalk);
+              return gap > 0 ? `<br>도착만 보면 차로 가는 게 ${gap}분 빨라요. 나올 때 시간은 옆 탭에서 비교해 보세요` : `<br>여기 대고 지하철이 도착도 빨라요`; })() : ""}</div>`; })()}
+          <div class="small">${free}</div>
+          ${t.notRecommended ? `<div class="small warnline">비추천: ${t.notRecommended}</div>` : ""}
+        </div>`;
+      }).join("")}
+      </div>`;
+  }
+
+  // 환승주차 · 공연장에서 나올 때: 관객이 한꺼번에 역으로 몰리는 경우
+  function transferOutHTML(ev, startMin, endMin, park, stOf, transfer) {
+    const ep = exitProf && ev.venue === "KSPO DOME" ? exitProf.summary : null;
+    const parkWalk = Math.round(park[0].walkMin * CROWD.walkFactor);
+    const parkOut = ep ? (CROWD.venueExit[ev.venue] ?? CROWD.venueExit.default) + parkWalk + ep.t50.med : null;
+    const rows = transfer.map((t) => {
+      const st = t.station ? stOf(t.station) : null;
+      const a = transferOut(t, st, ev, "med"), b = transferOut(t, st, ev, "high");
+      if (!a) return `<div class="tlot"><div class="tname">${t.name}</div><div class="muted small">경로 정보 없음</div></div>`;
+      return `<div class="tlot${t.notRecommended ? " skip" : ""}">
+        <div class="tname">${t.name} <span class="muted small">${t.hours}</span></div>
+        <div>${st.name}에서 ${t.board ? t.board.replace(/역$/, "") + "역 방향" : ""} 타고 돌아가기</div>
+        <div class="ttotal">공연장 → 주차장 빠져나오기까지 <b>약 ${a.total}분</b>${b.total > a.total ? ` <span class="muted small">(관객이 많으면 약 ${b.total}분)</span>` : ""}
+          <span class="muted small">· ${toHHMM(endMin)}에 끝나면 ${toHHMM(endMin + a.total)}쯤 출발</span></div>
+        <div class="muted small">공연장 나오기 ${a.exit}분 + 역까지 도보 ${a.walk2}분 + 개찰·승강장 줄 ${a.crowd}분 + 열차 대기 ${a.wait}분 + 지하철 ${a.ride}분${a.transfer ? ` + 환승 ${a.transfer}분` : ""} + 도보 ${a.walk1}분 + 출차 ${a.lotExit}분</div>
+        <div class="small">${a.riders > 1000 ? `이 역으로 약 ${a.riders.toLocaleString()}명이 한꺼번에 몰려요` : "이 역은 공연 날에도 승차 인원이 거의 늘지 않아요"}</div>
+        ${parkOut ? `<div class="small">${parkOut <= a.total ? `공원 주차장(약 ${parkOut}분)보다 ${a.total - parkOut}분 더 걸려요` : `공원 주차장(약 ${parkOut}분)보다 <b>${parkOut - a.total}분 빨라요</b>`}</div>` : ""}
+        ${t.notRecommended ? `<div class="small warnline">비추천: ${t.notRecommended}</div>` : ""}
+      </div>`;
+    }).join("");
+    return `<p class="muted small">공연이 끝나면 관객이 한꺼번에 역으로 몰려요. ${CROWD.source}를 보면 KSPO DOME 공연 날 올림픽공원역 승차가 평소보다 약 ${CROWD.riders.med.toLocaleString()}명 늘어요(9호선 71%, 5호선 29%). 공연 좌석 수에 맞춰 줄여 계산했어요.</p>
+      ${ep ? `<div class="notice">비교: 공원 주차장은 차까지 도보 ${parkWalk}분 + 출차 대기(차 절반이 빠지는 데) 약 ${ep.t50.med}분 + 공연장 나오기 = <b>약 ${parkOut}분</b></div>` : ""}
+      <div class="lots">${rows}</div>
+      <p class="muted small">개찰구 처리량(분당 ${CROWD.gatePerMin}명), 열차 간격, 인파 속 도보 속도(30% 느림)는 가정값이에요. 11/21·22 공연일 실측으로 고칠 예정이에요.</p>`;
   }
 
   function renderTransit() {

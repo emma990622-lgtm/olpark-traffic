@@ -129,6 +129,51 @@ function transferTotal(lot, station) {
   return { total: Object.values(parts).reduce((a, b) => a + b, 0), official, ...parts };
 }
 
+// ---------- 공연 끝나고 나올 때 (사람이 한꺼번에 몰리는 경우) ----------
+// 근거: 서울시 역별 일별 승하차(CardSubwayStatsNew, 2026-03~11)에서 KSPO DOME 공연일 31일의 승차 인원을
+// 같은 요일 종류(금요일/주말)의 공연 없는 날(±6주) 중앙값과 비교한 '늘어난 승차 인원'.
+//   1만 5천 석 공연 1회 → 올림픽공원역에서 약 8,400명 더 탐(보통 4,000~10,300명). 9호선 71%, 5호선 29%.
+//   몽촌토성역·한성백제역은 거의 늘지 않음.
+// 나머지(개찰구 처리량, 열차 간격·여유 정원, 사람 많을 때 걷는 속도)는 가정값이고, 공연일 실측으로 고친다.
+const CROWD = {
+  riders: { med: 8400, high: 10300, seats: 15000 },          // KSPO DOME 1회 기준, 좌석 수에 비례
+  share: { olympic5: { "5": 0.29, "9": 0.71 }, mongchon: { "8": 0.005 }, hanseong: { "9": 0.005 } },
+  dirShare: 0.8,          // 그 호선 승객 중 내가 탈 방향 비율(가정)
+  spreadMin: 20,          // 관객이 역에 도착하는 시간 폭(가정)
+  gatePerMin: 250,        // 역 개찰구·계단 처리량, 명/분(가정)
+  linePerMin: { "5": 150, "8": 125, "9": 200, "2": 250 },   // 열차가 실어 나르는 양, 명/분(가정)
+  headway: { "5": 10, "8": 8, "9": 6, "2": 6 },             // 밤 시간 열차 간격, 분(가정)
+  walkFactor: 1.3,        // 인파가 몰리는 역으로 걸을 때 평소보다 30% 느리게(그 밖의 역은 10%, 가정)
+  venueExit: { "KSPO DOME": 10, "핸드볼경기장": 7, default: 5 },  // 객석에서 건물 밖까지(가정)
+  lotExit: 3,             // 역 공영주차장 정산·출차(한산)
+  source: "서울시 역별 일별 승하차 인원(2026년 3~11월, KSPO DOME 공연일 31일)",
+};
+
+// 나올 때: 공연장 퇴장 + (인파 속) 역까지 도보 + 개찰·승강장 대기 + 운행 + 환승 + 역→주차장 도보 + 출차
+function transferOut(lot, station, ev, level = "med") {
+  if (lot.toStationMin == null || !station || !lot.segments || !lot.segments.length) return null;
+  const go = transferTotal(lot, station);
+  if (!go) return null;
+  const line = lot.segments.at(-1).line;                       // 공연장 쪽에서 타는 호선
+  const scale = (ev.seats || CROWD.riders.seats) / CROWD.riders.seats;
+  const R = CROWD.riders[level] * scale;                       // 공원 근처 역으로 몰리는 사람
+  const sh = CROWD.share[lot.station] || {};
+  const T = CROWD.spreadMin;
+  const atStation = R * Object.values(sh).reduce((a, b) => a + b, 0);
+  const onLine = R * (sh[line] || 0) * CROWD.dirShare;
+  const q = (lam, mu) => Math.max(0, lam - mu) * (T / 2) / mu;   // 가운데쯤 도착한 사람이 줄 서는 분
+  const gateWait = q(atStation / T, CROWD.gatePerMin);
+  const lineWait = q(Math.min(onLine / T, CROWD.gatePerMin), CROWD.linePerMin[line] || 150);
+  const parts = {
+    exit: CROWD.venueExit[ev.venue] ?? CROWD.venueExit.default,
+    walk2: Math.round(station.walkMin * (atStation > 1000 ? CROWD.walkFactor : 1.1)),   // 인파가 가는 역이면 더 느리게
+    crowd: Math.round(gateWait + lineWait),
+    wait: Math.round((CROWD.headway[line] || 8) / 2),
+    ride: go.ride, transfer: go.transfer, walk1: go.walk1, lotExit: CROWD.lotExit,
+  };
+  return { total: Object.values(parts).reduce((a, b) => a + b, 0), riders: Math.round(atStation), ...parts };
+}
+
 // ---------- 요금 ----------
 function parkingFee(lot, minutes) {
   if (!lot.won || !lot.per) return null;

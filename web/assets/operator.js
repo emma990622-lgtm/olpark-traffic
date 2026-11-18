@@ -4,6 +4,15 @@
     loadJSON("events.json"), loadJSON("links.json"), loadPlaces(), loadJSON("exits_2024_07.json"),
   ]);
   const ref = kspoReference(exits);
+  const exitProf = await loadJSON("exit_profile.json").catch(() => null);
+  // 실시간 도로 자료 검증 결과(서울시 도시데이터 vs TMAP 실시간 교통, scripts/10_verify_roads_tmap.py)
+  loadJSON("road_check.json").then((c) => {
+    const pct = (x) => Math.round(x * 100) + "%";
+    document.getElementById("roadCheck").innerHTML = `<b>도로 자료 검증</b> · ${c.checked} TMAP 실시간 교통과 비교한 ${c.n}개 구간:
+      소통 등급 같음 ${pct(c.sameGrade)}, 한 단계 차이까지 ${pct(c.within1)}, 속도 차이 중앙값 ${c.medAbsDiff}km/h${c.corr != null ? `, 상관계수 ${c.corr}` : ""}` +
+      (c.history && c.history.length > 1 ? ` (검증 ${c.history.length}회)` : "");
+  }).catch(() => {});
+  const GATE_ROAD = { "남2문": "위례성대로", "북2문": "강동대로" };   // 현장 확인 필요
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = events.filter((e) => e.date >= today && e.times.length);
   const byDate = groupByDate(upcoming);
@@ -60,6 +69,7 @@
 
     drawChart(big);
     drawBrief(d, list, lv, seats, big, peakAt, showMin);
+    drawGates(big);
     renderRoadDay(d, list, showMin);
   }
 
@@ -97,6 +107,23 @@
       : "KSPO DOME 공연이 없는 날이라 참고 곡선이 없어요. 다른 공연장 곡선은 2025 데이터로 추가해요.";
   }
 
+  // 출구별 대응: 2025 입출차 기록(KSPO DOME 공연)으로 출구별 비중과 빠지는 시간
+  function drawGates(big) {
+    if (!exitProf) { $("gateTable").innerHTML = "<tr><td>출차 분석 파일이 아직 없어요</td></tr>"; return; }
+    const sm = exitProf.summary;
+    const st = big ? toMin(big.times[0]) : null;
+    const surge = st != null ? st + sm.surgeMin.med : null;
+    const g = Object.entries(exitProf.gates);
+    $("gateNote").innerHTML = big
+      ? `${big.times[0]} 공연이면 <b>${toHHMM(surge)} 무렵</b>부터 출차가 몰리고, 공원 주차장 차의 절반은 약 ${sm.t50.med}분, 90%는 약 ${sm.t90.med}분 뒤(${toHHMM(surge + sm.t90.med)})에 빠져나가요.`
+      : "이날은 KSPO DOME 공연이 없어요. 아래는 KSPO DOME 공연일 기준 참고값이에요.";
+    $("gateTable").innerHTML = `<tr><th>출구</th><th>관객 차 비중</th><th>절반이 빠지는 데</th><th>90%가 빠지는 데</th><th>연결 도로(현장 확인 필요)</th><th>요원 배치 제안</th></tr>` +
+      g.map(([name, v], i) => `<tr><td>${name}</td><td>${Math.round(v.share * 100)}%</td><td>약 ${v.t50}분</td><td>약 ${v.t90}분</td>
+        <td>${GATE_ROAD[name] || "-"}</td>
+        <td>${surge != null ? `${toHHMM(surge - 15)}~${toHHMM(surge + v.t90)}` : `몰리기 15분 전~${v.t90}분 뒤`}${i === 0 ? " · 가장 많음, 먼저 배치" : ""}</td></tr>`).join("");
+    $("gateSrc").textContent = `2025년 입출차 기록(받은 만큼) 중 KSPO DOME 공연 ${Object.values(exitProf.gates)[0].shows}회, 2024년 7월 포함 전체 ${sm.shows}회 기준. 시간은 출차가 몰리기 시작한 때부터 잰 값이에요. 다운로드가 끝나면 다시 계산해요.`;
+  }
+
   function drawBrief(d, list, lv, seats, big, peakAt, showMin) {
     // 영향 도로: 수집값이 있으면 지금 느린 순, 없으면 공원 접근 도로 목록
     let roadsTxt = "위례성대로, 강동대로, 양재대로, 올림픽로 (공연일 실측 후 속도가 많이 떨어지는 순서로 바뀜)";
@@ -114,7 +141,8 @@
         <tr><th>공연</th><td>${list.map((e) => `${e.venue} ${e.times.join("·")} ${e.title}`).join("<br>")}</td></tr>
         <tr><th>대응 수준</th><td>${lv.label} (공원 공연 좌석 합 약 ${seats.toLocaleString()}석)</td></tr>
         <tr><th>출차 최대 예상</th><td>${big ? `${peakAt} 무렵, 15분에 ${ref.peakMin}~${ref.peakMax}대 (2024년 7월 KSPO DOME 공연 ${ref.n}회 기준 참고값)` : "참고 기록 없음"}</td></tr>
-        <tr><th>집중 관리 출구</th><td>2025 입출차 데이터 반영 후 제시 (동2문·남2문·북2문)</td></tr>
+        <tr><th>집중 관리 출구</th><td>${exitProf ? Object.entries(exitProf.gates).map(([n, v]) => `${n} ${Math.round(v.share * 100)}%`).join(" · ") + ` (관객 차 비중, 2025 기록)` : "2025 입출차 데이터 반영 후 제시"}</td></tr>
+        <tr><th>출차 소요</th><td>${exitProf ? `몰리기 시작해서 절반 약 ${exitProf.summary.t50.med}분, 90% 약 ${exitProf.summary.t90.med}분 (KSPO DOME 공연 ${exitProf.summary.shows}회)` : "-"}</td></tr>
         <tr><th>영향 도로</th><td>${roadsTxt}</td></tr>
         <tr><th>관객 안내</th><td>공원 주차장 혼잡 시 천호역 공영주차장(1,431면) + 5호선 올림픽공원역 환승 안내. 공원 차량 출입 22시까지(심야 행사 시 조정)</td></tr>
         <tr><th>기관별 확인 요청</th><td>한국체육산업개발: 출구별 요원 배치 · 송파구청: 주변 공영주차장 안내 · 관할 경찰서: 출차 집중 시간대 교차로 관리 · 서울시: 도로전광판 안내</td></tr>
