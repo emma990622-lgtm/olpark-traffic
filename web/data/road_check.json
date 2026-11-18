@@ -1,13 +1,13 @@
 {
- "checked": "2026-11-18 11:39",
- "roadTime": "2026-11-18 11:35",
+ "checked": "2026-11-18 02:53",
+ "roadTime": "2026-11-18 11:50",
  "n": 20,
  "total": 58,
- "sameGrade": 0.35,
- "within1": 0.75,
- "medAbsDiff": 7.1,
- "corr": -0.13,
- "seoulSlower": 4,
+ "sameGrade": 0.3,
+ "within1": 0.8,
+ "medAbsDiff": 9.8,
+ "corr": -0.15,
+ "seoulSlower": 5,
  "seoulFaster": 9,
  "worst": [
   {
@@ -15,44 +15,39 @@
    "road": "강동대로",
    "from": "성내유수지",
    "to": "올림픽대교남단교차로",
-   "seoulSpd": 49.7,
+   "seoulSpd": 51.3,
    "seoulIdx": "원활",
-   "tmapSpd": 9.2,
+   "tmapSpd": 7.5,
    "tmapIdx": "정체",
-   "gap": -2
+   "gap": -2,
+   "len": 493,
+   "tmapSrc": "경로 시간(신호 대기 포함)"
   },
   {
    "id": "1230026202",
    "road": "위례성대로",
    "from": "올림픽공원남2문",
    "to": "올림픽공원앞교차로",
-   "seoulSpd": 43,
+   "seoulSpd": 37,
    "seoulIdx": "원활",
-   "tmapSpd": 6.3,
+   "tmapSpd": 6.6,
    "tmapIdx": "정체",
-   "gap": -2
+   "gap": -2,
+   "len": 476,
+   "tmapSrc": "경로 시간(신호 대기 포함)"
   },
   {
    "id": "1230033202",
    "road": "올림픽로",
    "from": "성내교(남측)",
    "to": "올림픽대교남단교차로",
-   "seoulSpd": 36,
+   "seoulSpd": 39,
    "seoulIdx": "원활",
-   "tmapSpd": 9.5,
+   "tmapSpd": 10.5,
    "tmapIdx": "정체",
-   "gap": -2
-  },
-  {
-   "id": "1230034700",
-   "road": "강동대로",
-   "from": "풍납동 330-7",
-   "to": "올림픽대교남단교차로",
-   "seoulSpd": 32,
-   "seoulIdx": "원활",
-   "tmapSpd": 8.0,
-   "tmapIdx": "정체",
-   "gap": -2
+   "gap": -2,
+   "len": 364,
+   "tmapSrc": "경로 시간(신호 대기 포함)"
   },
   {
    "id": "1230085800",
@@ -63,7 +58,35 @@
    "seoulIdx": "원활",
    "tmapSpd": 40.6,
    "tmapIdx": "원활",
-   "gap": 0
+   "gap": 0,
+   "len": 333,
+   "tmapSrc": "경로 시간(신호 대기 포함)"
+  },
+  {
+   "id": "1230032902",
+   "road": "올림픽로37길",
+   "from": "최소노드배치점",
+   "to": "성내교(남측)",
+   "seoulSpd": 37,
+   "seoulIdx": "원활",
+   "tmapSpd": 21.8,
+   "tmapIdx": "서행",
+   "gap": -1,
+   "len": 390,
+   "tmapSrc": "경로 시간(신호 대기 포함)"
+  },
+  {
+   "id": "1230034700",
+   "road": "강동대로",
+   "from": "풍납동 330-7",
+   "to": "올림픽대교남단교차로",
+   "seoulSpd": 24.5,
+   "seoulIdx": "서행",
+   "tmapSpd": 10.7,
+   "tmapIdx": "정체",
+   "gap": -1,
+   "len": 402,
+   "tmapSrc": "경로 시간(신호 대기 포함)"
   },
   {
    "id": "1230081200",
@@ -74,31 +97,33 @@
    "seoulIdx": "정체",
    "tmapSpd": 26.4,
    "tmapIdx": "원활",
-   "gap": 2
+   "gap": 2,
+   "len": 292,
+   "tmapSrc": "경로 시간(신호 대기 포함)"
   },
   {
-   "id": "1230032902",
-   "road": "올림픽로37길",
-   "from": "최소노드배치점",
-   "to": "성내교(남측)",
-   "seoulSpd": 33,
-   "seoulIdx": "원활",
-   "tmapSpd": 21.8,
-   "tmapIdx": "서행",
-   "gap": -1
-  },
-  {
-   "id": "1230079600",
-   "road": "올림픽선수촌아파트내부길",
-   "from": "오륜초등학교",
-   "to": "방이동 89-28",
-   "seoulSpd": 18,
+   "id": "1230088300",
+   "road": "양재대로.강동대로사이길",
+   "from": "꿈나무다리(북측)",
+   "to": "올림픽공원북2문앞교차로",
+   "seoulSpd": 21.5,
    "seoulIdx": "서행",
-   "tmapSpd": 28.4,
-   "tmapIdx": "원활",
-   "gap": 1
+   "tmapSpd": 9.2,
+   "tmapIdx": "정체",
+   "gap": -1,
+   "len": 421,
+   "tmapSrc": "경로 시간(신호 대기 포함)"
   }
  ],
+ "long300": {
+  "n": 11,
+  "sameGrade": 0.182,
+  "within1": 0.727,
+  "medAbsDiff": 13.8
+ },
+ "tmapSrc": {
+  "경로 시간(신호 대기 포함)": 20
+ },
  "history": [
   {
    "checked": "2026-11-18 11:39",
@@ -107,6 +132,14 @@
    "within1": 0.75,
    "medAbsDiff": 7.1,
    "corr": -0.13
+  },
+  {
+   "checked": "2026-11-18 02:53",
+   "n": 20,
+   "sameGrade": 0.3,
+   "within1": 0.8,
+   "medAbsDiff": 9.8,
+   "corr": -0.15
   }
  ]
 }
