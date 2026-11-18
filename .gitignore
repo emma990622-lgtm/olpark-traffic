@@ -12,3 +12,6 @@ __pycache__/
 venv/
 Thumbs.db
 desktop.ini
+
+# AI 오케스트라 실행 기록 (실행한 컴퓨터에만 남김. PR 본문에 요약이 올라감)
+orchestra/runs/

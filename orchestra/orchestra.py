@@ -1,0 +1,927 @@
+# -*- coding: utf-8 -*-
+"""
+AI 오케스트라 지휘 스크립트
+  Claude(코딩) → Gemini/Antigravity(디자인) → 자동 점검 → Codex(최종 검수) → GitHub에 올리기(PR)
+
+사용법 (저장소 맨 위 폴더에서):
+  python orchestra/orchestra.py            메뉴로 고르기 (orchestra.bat 더블클릭과 같음)
+  python orchestra/orchestra.py new [작업파일] [--design-only | --code-only] [--no-push]
+  python orchestra/orchestra.py fix        Codex 검수 의견을 Claude·Gemini가 반영 → 다시 검수
+  python orchestra/orchestra.py review     다시 점검·검수만
+  python orchestra/orchestra.py resume     멈춘 단계부터 이어서
+  python orchestra/orchestra.py doctor     필요한 프로그램이 다 있는지 점검
+  python orchestra/orchestra.py sheet      구글 시트 작업함의 '대기' 일을 차례로 처리
+  python orchestra/orchestra.py sheet-setup  구글 시트 연결(웹 앱 주소·토큰) 저장
+
+외부 라이브러리 없이 Python 3.8+ 표준 기능만 쓴다.
+"""
+import fnmatch
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+
+# ---------------------------------------------------------------------------
+# 설정 (모델을 바꾸고 싶으면 여기 명령에 옵션을 더한다. 예: "--model", "opus")
+#   {prompt} 자리에 "이 파일을 읽고 따라 해" 라는 짧은 영어 문장이 들어간다.
+#   (윈도우에서 긴 한글 프롬프트를 명령줄로 넘기면 깨질 수 있어서, 지시는 파일로 넘긴다.)
+# ---------------------------------------------------------------------------
+CLAUDE_CMD = ["claude", "-p", "{prompt}", "--permission-mode", "acceptEdits"]
+GEMINI_CMD = ["agy", "-p", "{prompt}", "--dangerously-skip-permissions"]
+CODEX_CMD = ["codex", "exec", "--sandbox", "read-only", "-o", "{out}", "{prompt}"]
+STAGE_TIMEOUT_MIN = 45          # AI 한 단계 최대 시간(분)
+AUTO_FIX_ROUNDS = 1             # 구글 시트 작업함: Codex가 '수정필요'면 자동으로 고치는 횟수
+SHEET_URL_ENV, SHEET_TOKEN_ENV = "ORCH_SHEET_URL", "ORCH_SHEET_TOKEN"   # 시트 연결(웹 앱 주소·토큰)
+KIND_MODE = {"": "full", "자동": "full", "둘 다": "full", "코딩": "code", "디자인": "design"}
+BASE_BRANCH = "main"
+
+ROOT = Path(__file__).resolve().parent.parent
+ORCH = ROOT / "orchestra"
+RUNS = ORCH / "runs"
+TASKS = ORCH / "tasks"
+ROLES = ORCH / "roles"
+
+# 역할별 파일 범위 (AGENTS.md 표와 같게 유지)
+CLAUDE_DENY = [
+    "web/assets/*.css", "docs/design.md",
+    "AGENTS.md", "CLAUDE.md", "GEMINI.md", ".claude/*", "orchestra/*",
+    "set_keys.bat", "delete_keys.bat", "data/raw/*",
+]
+GEMINI_ALLOW = [
+    "web/*.html", "web/assets/*.css", "web/assets/img/*", "web/assets/fonts/*", "docs/design.md",
+]
+
+# 사람이 관리하는 폴더: AI 범위 검사·되돌리기에서 제외
+USER_PATHS = ("orchestra/runs/", "orchestra/tasks/")
+
+STAGE_NAMES = {
+    "claude": "1. Claude 코딩",
+    "gemini": "2. Gemini 디자인",
+    "checks": "3. 자동 점검",
+    "codex": "4. Codex 검수",
+    "publish": "5. GitHub에 올리기",
+}
+
+
+# ---------------------------------------------------------------------------
+# 공통 도우미
+# ---------------------------------------------------------------------------
+try:
+    sys.stdout.reconfigure(errors="replace")
+    sys.stderr.reconfigure(errors="replace")
+except Exception:
+    pass
+
+
+class Stop(Exception):
+    """사용자에게 보여 줄 메시지와 함께 멈춘다."""
+
+
+def say(msg=""):
+    print(msg, flush=True)
+
+
+def banner(msg):
+    say()
+    say("=" * 62)
+    say("  " + msg)
+    say("=" * 62)
+
+
+def read(p):
+    return Path(p).read_text(encoding="utf-8", errors="replace")
+
+
+def write(p, text):
+    p = Path(p)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(text, encoding="utf-8", newline="\n")
+
+
+def git(*args, check=True, strip=True):
+    r = subprocess.run(
+        ["git", "-c", "core.quotepath=false", *args],
+        cwd=str(ROOT), capture_output=True, text=True, encoding="utf-8", errors="replace",
+    )
+    if check and r.returncode != 0:
+        raise Stop("git %s 실패:\n%s" % (" ".join(args), (r.stderr or r.stdout).strip()))
+    if not check:
+        return r
+    return r.stdout.strip() if strip else r.stdout
+
+
+def which(name):
+    return shutil.which(name)
+
+
+def rel(p):
+    return Path(p).resolve().relative_to(ROOT).as_posix()
+
+
+def now_id():
+    return datetime.now().strftime("%Y%m%d-%H%M%S")
+
+
+# ---------------------------------------------------------------------------
+# 상태 (orchestra/runs/<id>/state.json, git에는 안 올라감)
+# ---------------------------------------------------------------------------
+def run_dir(run_id):
+    return RUNS / run_id
+
+
+def save_state(st):
+    write(run_dir(st["id"]) / "state.json", json.dumps(st, ensure_ascii=False, indent=2))
+
+
+def load_state_for_current_branch():
+    branch = git("rev-parse", "--abbrev-ref", "HEAD")
+    if not branch.startswith("orchestra/"):
+        raise Stop(
+            "지금 브랜치는 '%s' 이에요. 오케스트라 작업 브랜치(orchestra/...)에서만 할 수 있어요.\n"
+            "GitHub Desktop에서 해당 orchestra/ 브랜치로 바꾼 뒤 다시 실행하세요." % branch)
+    run_id = branch.split("/", 1)[1]
+    f = run_dir(run_id) / "state.json"
+    if not f.exists():
+        raise Stop("이 브랜치의 작업 기록(%s)이 이 컴퓨터에 없어요. 처음 실행한 컴퓨터에서 이어 주세요." % rel(f))
+    return json.loads(read(f))
+
+
+def fname(st, key):
+    """회차별 파일 이름. 예: r1_1_claude_report.md"""
+    r = "r%d" % st["round"]
+    return {
+        "claude_prompt": r + "_1_claude_prompt.md",
+        "claude_report": r + "_1_claude_report.md",
+        "gemini_prompt": r + "_2_gemini_prompt.md",
+        "gemini_report": r + "_2_gemini_report.md",
+        "checks": r + "_3_checks.md",
+        "diff": r + "_diff.patch",
+        "codex_prompt": r + "_4_codex_prompt.md",
+        "codex_review": r + "_4_codex_review.md",
+    }[key]
+
+
+def prev_review_path(st):
+    if st["round"] <= 1:
+        return None
+    p = run_dir(st["id"]) / ("r%d_4_codex_review.md" % (st["round"] - 1))
+    return p if p.exists() else None
+
+
+def fill(template_name, mapping):
+    text = read(ROLES / template_name)
+    for k, v in mapping.items():
+        text = text.replace("{{%s}}" % k, v)
+    return text
+
+
+# ---------------------------------------------------------------------------
+# 변경 파일 목록과 범위 지키기
+# ---------------------------------------------------------------------------
+def changed_entries():
+    """[(상태코드, 경로)] — 작업 폴더에서 아직 커밋 안 된 변경."""
+    out = git("status", "--porcelain", "-z", "-uall", strip=False)
+    items, parts, i = [], out.split("\0"), 0
+    while i < len(parts):
+        e = parts[i]
+        i += 1
+        if not e:
+            continue
+        code, path = e[:2], e[3:]
+        items.append((code, path))
+        if code[0] in "RC" and i < len(parts):   # 이름 바꾸기: 다음 칸이 옛 이름
+            items.append(("D ", parts[i]))
+            i += 1
+    return items
+
+
+def match_any(path, patterns):
+    return any(fnmatch.fnmatch(path, p) for p in patterns)
+
+
+def in_head(path):
+    return git("cat-file", "-e", "HEAD:" + path, check=False).returncode == 0
+
+
+def revert_path(path):
+    if in_head(path):
+        git("checkout", "HEAD", "--", path)
+    else:
+        git("rm", "-q", "--cached", "--ignore-unmatch", "--", path, check=False)
+        f = ROOT / path
+        if f.exists():
+            f.unlink()
+
+
+def fold_ai_commits(before_sha, log):
+    """AI가 규칙을 어기고 직접 커밋했으면, 커밋을 풀어서 변경으로 되돌려 놓는다."""
+    head = git("rev-parse", "HEAD")
+    if head != before_sha:
+        git("reset", "--soft", before_sha)
+        git("reset", "-q")
+        log.append("AI가 직접 만든 커밋을 풀었어요(스크립트가 다시 커밋합니다).")
+
+
+def guard(role, log):
+    reverted = []
+    for code, path in changed_entries():
+        if path.startswith(USER_PATHS):
+            continue
+        bad = match_any(path, CLAUDE_DENY) if role == "claude" else not match_any(path, GEMINI_ALLOW)
+        if bad:
+            revert_path(path)
+            reverted.append(path)
+    if reverted:
+        log.append("[%s] 담당 범위 밖이라 되돌린 파일: %s" % (role, ", ".join(sorted(set(reverted)))))
+    if role == "gemini":
+        id_guard(log)
+
+
+ID_RE = re.compile(r"""\bid\s*=\s*["']([^"']+)["']""")
+DATA_RE = re.compile(r"""\b(data-[\w-]+)\s*=""")
+
+
+def id_guard(log):
+    """HTML에서 JS가 쓰는 id·data-* 가 사라졌으면 그 HTML 파일을 되돌린다."""
+    for code, path in changed_entries():
+        if not fnmatch.fnmatch(path, "web/*.html") or not in_head(path) or not (ROOT / path).exists():
+            continue
+        old = git("show", "HEAD:" + path, strip=False)
+        new = read(ROOT / path)
+        lost = (set(ID_RE.findall(old)) - set(ID_RE.findall(new))) | (set(DATA_RE.findall(old)) - set(DATA_RE.findall(new)))
+        if lost:
+            revert_path(path)
+            log.append("[gemini] %s 에서 JS가 쓰는 %s 가 사라져서 이 파일 변경을 되돌렸어요."
+                       % (path, ", ".join(sorted(lost))))
+
+
+def commit_stage(st, label):
+    if not changed_entries():
+        say("  (바뀐 파일 없음)")
+        return False
+    git("add", "-A")
+    git("commit", "-q", "-m", "[오케스트라/%s] %s" % (label, st["title"]))
+    say("  커밋했어요: " + git("log", "-1", "--format=%h %s"))
+    return True
+
+
+def write_guard_log(st, lines):
+    if not lines:
+        return
+    f = run_dir(st["id"]) / "guard.log"
+    old = read(f) if f.exists() else ""
+    stamp = datetime.now().strftime("%m-%d %H:%M")
+    write(f, old + "".join("%s r%d %s\n" % (stamp, st["round"], l) for l in lines))
+    for l in lines:
+        say("  ⚠ " + l)
+
+
+# ---------------------------------------------------------------------------
+# AI 실행
+# ---------------------------------------------------------------------------
+def run_ai(cmd_template, prompt_rel, out_rel=None):
+    exe = which(cmd_template[0])
+    if not exe:
+        raise Stop("'%s' 명령을 찾을 수 없어요. orchestra/README.md의 설치 안내를 보세요." % cmd_template[0])
+    prompt = "Read the file %s and carry out the instructions in it exactly. Write in Korean." % prompt_rel
+    cmd = [exe] + [a.replace("{prompt}", prompt).replace("{out}", out_rel or "") for a in cmd_template[1:]]
+    say("  실행: %s ..." % cmd_template[0])
+    t0 = time.time()
+    try:
+        r = subprocess.run(cmd, cwd=str(ROOT), timeout=STAGE_TIMEOUT_MIN * 60)
+    except subprocess.TimeoutExpired:
+        raise Stop("%s 이(가) %d분 안에 끝나지 않았어요." % (cmd_template[0], STAGE_TIMEOUT_MIN))
+    say("  끝 (%d분 %d초, 종료코드 %d)" % (divmod(int(time.time() - t0), 60) + (r.returncode,)))
+    if r.returncode != 0:
+        raise Stop("%s 이(가) 오류로 끝났어요(종료코드 %d). 위 메시지를 확인하세요.\n"
+                   "로그인이 풀렸다면 터미널에서 '%s' 를 한 번 직접 실행해 로그인하세요."
+                   % (cmd_template[0], r.returncode, cmd_template[0]))
+
+
+def extra_for_fix(st, role):
+    prev = prev_review_path(st)
+    if not prev:
+        return ""
+    tag = "[코딩]" if role == "claude" else "[디자인]"
+    return ("- **이번은 수정 회차(%d회차)다.** 이전 검수 의견 `%s` 을 읽고, \"반드시 고칠 것\" 중 `%s` 항목을 고친다. "
+            "\"고치면 좋은 것\"도 담당 범위면 반영해도 된다. 해당 항목이 없으면 아무것도 바꾸지 말고 보고서에 \"해당 없음\"이라고 쓴다."
+            % (st["round"], rel(prev), tag))
+
+
+def stage_ai(st, role):
+    d = run_dir(st["id"])
+    rd = rel(d)
+    if role == "claude":
+        mapping = {"RUN_DIR": rd, "REPORT": fname(st, "claude_report"), "EXTRA": extra_for_fix(st, "claude")}
+        prompt_f, report_f, cmd, label = d / fname(st, "claude_prompt"), d / fname(st, "claude_report"), CLAUDE_CMD, "Claude"
+    else:
+        mapping = {"RUN_DIR": rd, "REPORT": fname(st, "gemini_report"),
+                   "CLAUDE_REPORT": fname(st, "claude_report"), "EXTRA": extra_for_fix(st, "gemini")}
+        prompt_f, report_f, cmd, label = d / fname(st, "gemini_prompt"), d / fname(st, "gemini_report"), GEMINI_CMD, "Gemini"
+    write(prompt_f, fill(role + ".md", mapping))
+    before = git("rev-parse", "HEAD")
+    run_ai(cmd, rel(prompt_f))
+    log = []
+    fold_ai_commits(before, log)
+    guard(role, log)
+    write_guard_log(st, log)
+    if not report_f.exists():
+        write(report_f, "# %s 보고서\n(%s가 보고서를 남기지 않았어요.)\n" % (label, label))
+        say("  ⚠ %s가 보고서를 남기지 않았어요." % label)
+    commit_stage(st, label)
+
+
+# ---------------------------------------------------------------------------
+# 자동 점검 (AI 없이 스크립트가 직접)
+# ---------------------------------------------------------------------------
+SECRET_RE = re.compile(r"""(?i)(api[_-]?key|secret|token|passw(or)?d|app[_-]?key)\s*[:=]\s*["']?[A-Za-z0-9_\-]{16,}""")
+JS_ID_RE = re.compile(r"""(?:getElementById|\$)\(\s*["']([A-Za-z][\w-]*)["']\s*\)""")
+
+
+def stage_checks(st):
+    d = run_dir(st["id"])
+    lines, fails, warns = [], 0, 0
+
+    # 1) JS 문법
+    node = which("node")
+    js_files = sorted(list((ROOT / "web" / "assets").glob("*.js")) + list((ROOT / "api").glob("*.js")))
+    if node:
+        bad = []
+        for f in js_files:
+            r = subprocess.run([node, "--check", str(f)], capture_output=True, text=True, encoding="utf-8", errors="replace")
+            if r.returncode != 0:
+                bad.append("%s\n```\n%s\n```" % (rel(f), (r.stderr or "").strip()[-800:]))
+        if bad:
+            fails += 1
+            lines.append("❌ JS 문법 오류\n" + "\n".join(bad))
+        else:
+            lines.append("✅ JS 문법 (%d개 파일)" % len(js_files))
+    else:
+        warns += 1
+        lines.append("⚠ node가 없어서 JS 문법 검사를 건너뛰었어요")
+
+    # 2) 데이터 JSON
+    bad = []
+    data_files = sorted(list((ROOT / "web" / "data").glob("*.json")) + list((ROOT / "web" / "data").glob("*.geojson")))
+    for f in data_files:
+        try:
+            json.loads(read(f))
+        except Exception as e:
+            bad.append("%s — %s" % (rel(f), e))
+    if bad:
+        fails += 1
+        lines.append("❌ 데이터 JSON 오류\n- " + "\n- ".join(bad))
+    else:
+        lines.append("✅ 데이터 JSON (%d개 파일)" % len(data_files))
+
+    # 3) HTML이 부르는 파일이 실제로 있는지
+    missing = []
+    html_files = sorted((ROOT / "web").glob("*.html"))
+    for h in html_files:
+        for ref in re.findall(r"""(?:src|href)\s*=\s*["']([^"'#?]+)""", read(h)):
+            if re.match(r"^(https?:|//|mailto:|tel:|data:|/api)", ref):
+                continue
+            if not (h.parent / ref).exists():
+                missing.append("%s → %s" % (rel(h), ref))
+    if missing:
+        fails += 1
+        lines.append("❌ HTML이 부르는 파일이 없어요\n- " + "\n- ".join(missing))
+    else:
+        lines.append("✅ HTML이 부르는 파일 (%d개 화면)" % len(html_files))
+
+    # 4) JS가 찾는 id가 HTML(또는 JS가 만드는 HTML)에 있는지
+    defined = set()
+    for h in html_files:
+        defined |= set(ID_RE.findall(read(h)))
+    js_text = {f: read(f) for f in js_files if f.parent.name == "assets"}
+    for t in js_text.values():
+        defined |= set(ID_RE.findall(t))
+        defined |= set(re.findall(r"""\.id\s*=\s*["']([\w-]+)["']""", t))
+    used = {}
+    for f, t in js_text.items():
+        for i in JS_ID_RE.findall(t):
+            used.setdefault(i, set()).add(f.name)
+    lost = sorted(i for i in used if i not in defined)
+    if lost:
+        warns += 1
+        lines.append("⚠ JS가 찾는데 HTML에 없는 id (동적으로 만드는 것일 수도 있음)\n- " +
+                     "\n- ".join("%s (%s)" % (i, ", ".join(sorted(used[i]))) for i in lost))
+    else:
+        lines.append("✅ JS가 찾는 id %d개 모두 있음" % len(used))
+
+    # 5) CSS 괄호 짝
+    for f in sorted((ROOT / "web" / "assets").glob("*.css")):
+        t = re.sub(r"/\*.*?\*/", "", read(f), flags=re.S)
+        if t.count("{") != t.count("}"):
+            fails += 1
+            lines.append("❌ %s 괄호 짝이 안 맞아요 ({ %d개, } %d개)" % (rel(f), t.count("{"), t.count("}")))
+        else:
+            lines.append("✅ %s 괄호 짝" % rel(f))
+
+    # 6) 이번 작업 변경 + 비밀값 검사
+    diff = git("diff", st["base"], "HEAD", "--", ".", ":(exclude)data/**", ":(exclude)web/data/**",
+               ":(exclude)orchestra/runs/**")
+    stat = git("diff", "--stat", st["base"], "HEAD")
+    big = len(diff) > 300_000
+    write(d / fname(st, "diff"),
+          "# 변경 요약 (데이터 파일 포함)\n" + stat + "\n\n# 변경 내용 (data/, web/data/ 제외)\n" +
+          (diff[:300_000] + "\n\n...(너무 길어서 잘랐어요)" if big else diff))
+    added = [l[1:] for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++")]
+    leaks = [l.strip()[:120] for l in added if SECRET_RE.search(l)]
+    if leaks:
+        fails += 1
+        lines.append("❌ 인증키처럼 보이는 값이 새로 들어갔어요\n- " + "\n- ".join(leaks))
+    else:
+        lines.append("✅ 새로 들어간 인증키 없음")
+    lines.append("ℹ 이번 작업에서 바뀐 파일:\n```\n%s\n```" % (stat or "(없음)"))
+
+    head = "# 자동 점검 결과 (%d회차)\n오류 %d · 주의 %d\n\n" % (st["round"], fails, warns)
+    write(d / fname(st, "checks"), head + "\n\n".join(lines) + "\n")
+    st["checks"] = {"fails": fails, "warns": warns}
+    say("  오류 %d · 주의 %d → %s" % (fails, warns, rel(d / fname(st, "checks"))))
+
+
+# ---------------------------------------------------------------------------
+# Codex 검수
+# ---------------------------------------------------------------------------
+VERDICT_RE = re.compile(r"판정\s*[:：]\s*\**\s*(통과|수정\s*필요)")
+
+
+def stage_codex(st):
+    d = run_dir(st["id"])
+    prev = prev_review_path(st)
+    extra = ""
+    if prev:
+        extra = "- 이전 회차 검수 의견: `%s` — 그때 \"반드시 고칠 것\"이 이번에 고쳐졌는지도 확인한다." % rel(prev)
+    mapping = {
+        "RUN_DIR": rel(d), "CLAUDE_REPORT": fname(st, "claude_report"), "GEMINI_REPORT": fname(st, "gemini_report"),
+        "CHECKS": fname(st, "checks"), "DIFF": fname(st, "diff"), "BASE": st["base"][:8], "EXTRA": extra,
+    }
+    prompt_f, out_f = d / fname(st, "codex_prompt"), d / fname(st, "codex_review")
+    write(prompt_f, fill("codex.md", mapping))
+    run_ai(CODEX_CMD, rel(prompt_f), rel(out_f))
+    if not out_f.exists() or not read(out_f).strip():
+        raise Stop("Codex가 검수 결과를 남기지 않았어요. 'review'로 다시 검수해 보세요.")
+    m = VERDICT_RE.search(read(out_f))
+    verdict = m.group(1).replace(" ", "") if m else "판정없음"
+    st.setdefault("verdicts", {})[str(st["round"])] = verdict
+    say("  Codex 판정: %s" % verdict)
+    # 검수 중에 혹시 파일이 바뀌었으면 되돌린다 (Codex는 읽기만)
+    for code, path in changed_entries():
+        if not path.startswith(USER_PATHS):
+            revert_path(path)
+            write_guard_log(st, ["[codex] 검수 담당이 바꾼 %s 을(를) 되돌렸어요." % path])
+
+
+# ---------------------------------------------------------------------------
+# 요약 + GitHub 올리기
+# ---------------------------------------------------------------------------
+def section(path, title):
+    p = Path(path)
+    body = read(p).strip() if p.exists() else "(이번 회차엔 없음)"
+    return "<details><summary><b>%s</b></summary>\n\n%s\n\n</details>\n" % (title, body)
+
+
+def build_summary(st):
+    d = run_dir(st["id"])
+    verdict = st.get("verdicts", {}).get(str(st["round"]), "판정없음")
+    ck = st.get("checks", {})
+    icon = {"통과": "✅", "수정필요": "🛠"}.get(verdict, "❔")
+    parts = [
+        "## %s Codex 판정: %s  (%d회차)" % (icon, verdict, st["round"]),
+        "자동 점검: 오류 %s · 주의 %s" % (ck.get("fails", "?"), ck.get("warns", "?")),
+        "",
+        "**미리보기**: 이 PR에 Vercel이 남기는 댓글(Preview 링크)에서 바뀐 화면을 확인하세요. "
+        "괜찮으면 Merge, 고칠 게 있으면 `orchestra.bat` → '검수 의견 반영'.",
+        "",
+        section(d / fname(st, "codex_review"), "Codex 검수 의견"),
+        section(d / "task.md", "작업 요청서"),
+        section(d / fname(st, "claude_report"), "Claude 보고서 (코딩)"),
+        section(d / fname(st, "gemini_report"), "Gemini 보고서 (디자인)"),
+        section(d / fname(st, "checks"), "자동 점검"),
+    ]
+    if (d / "guard.log").exists():
+        parts.append(section(d / "guard.log", "범위 지키기 기록"))
+    parts.append("\n---\n_AI 오케스트라(orchestra/orchestra.py)가 만든 PR입니다. 실행 id: `%s`_" % st["id"])
+    text = "\n".join(parts)
+    if len(text) > 60000:
+        text = text[:60000] + "\n\n...(길어서 잘랐어요. 전체는 실행한 컴퓨터의 orchestra/runs/%s 에 있어요)" % st["id"]
+    write(d / ("r%d_summary.md" % st["round"]), text)
+    return d / ("r%d_summary.md" % st["round"])
+
+
+def repo_slug():
+    url = git("remote", "get-url", "origin", check=False)
+    url = url.stdout.strip() if hasattr(url, "stdout") else ""
+    m = re.search(r"github\.com[:/](.+?)(?:\.git)?$", url)
+    return m.group(1) if m else None
+
+
+def stage_publish(st):
+    summary = build_summary(st)
+    if st.get("no_push"):
+        say("  --no-push: GitHub에 올리지 않았어요. 요약: " + rel(summary))
+        return
+    r = git("push", "-u", "origin", st["branch"], check=False)
+    if r.returncode != 0:
+        raise Stop("GitHub에 올리기(push) 실패:\n%s\nGitHub Desktop에서 이 브랜치를 Push 해도 돼요." % r.stderr.strip())
+    say("  브랜치를 올렸어요: " + st["branch"])
+    gh = which("gh")
+    slug = repo_slug()
+    compare = "https://github.com/%s/compare/%s...%s?expand=1" % (slug, BASE_BRANCH, st["branch"]) if slug else None
+    st["pr_url"] = compare or st["branch"]
+    if not gh:
+        say("  gh(GitHub CLI)가 없어서 PR은 직접 만들어야 해요.")
+        if compare:
+            say("  → 이 주소를 열고 'Create pull request': " + compare)
+            say("    본문에는 이 파일 내용을 붙여 넣으세요: " + rel(summary))
+        return
+    ghrun = lambda *a: subprocess.run([gh, *a], cwd=str(ROOT), capture_output=True, text=True,
+                                      encoding="utf-8", errors="replace")
+    v = ghrun("pr", "view", st["branch"], "--json", "url,state")
+    if v.returncode == 0 and '"OPEN"' in v.stdout:
+        url = json.loads(v.stdout)["url"]
+        st["pr_url"] = url
+        c = ghrun("pr", "comment", st["branch"], "--body-file", str(summary))
+        say("  PR에 %d회차 검수 결과를 댓글로 남겼어요: %s" % (st["round"], url) if c.returncode == 0
+            else "  PR 댓글 실패: " + c.stderr.strip())
+    else:
+        title = "[AI 오케스트라] " + st["title"]
+        c = ghrun("pr", "create", "--base", BASE_BRANCH, "--head", st["branch"], "--title", title,
+                  "--body-file", str(summary))
+        if c.returncode == 0:
+            st["pr_url"] = c.stdout.strip().splitlines()[-1]
+            say("  PR을 만들었어요: " + c.stdout.strip())
+        else:
+            say("  PR 만들기 실패: " + c.stderr.strip())
+            if compare:
+                say("  → 직접 만들기: " + compare)
+
+
+# ---------------------------------------------------------------------------
+# 흐름
+# ---------------------------------------------------------------------------
+def run_plan(st):
+    for stage in st["plan"]:
+        if stage in st["done"]:
+            continue
+        banner(STAGE_NAMES[stage] + "  (%d회차)" % st["round"])
+        if stage in ("claude", "gemini"):
+            stage_ai(st, stage)
+        elif stage == "checks":
+            stage_checks(st)
+        elif stage == "codex":
+            stage_codex(st)
+        elif stage == "publish":
+            stage_publish(st)
+        st["done"].append(stage)
+        save_state(st)
+    v = st.get("verdicts", {}).get(str(st["round"]), "")
+    banner("끝! Codex 판정: %s" % (v or "-"))
+    say("  기록 폴더: " + rel(run_dir(st["id"])))
+    if v == "수정필요":
+        say("  다음: 검수 의견을 반영하려면 orchestra.bat → '검수 의견 반영'")
+    say("  다음: PR의 Vercel 미리보기에서 화면 확인 → 괜찮으면 GitHub에서 Merge")
+
+
+def ensure_clean():
+    dirty = [p for c, p in changed_entries() if not p.startswith(USER_PATHS)]
+    if dirty:
+        raise Stop("아직 저장(커밋)하지 않은 변경이 있어요:\n  " + "\n  ".join(dirty[:15]) +
+                   "\nGitHub Desktop에서 Commit 하거나 되돌린 뒤 다시 실행하세요.")
+
+
+def task_title(text, fallback):
+    for line in text.splitlines():
+        if line.startswith("# "):
+            return line[2:].strip()
+    return fallback
+
+
+def pick_task():
+    files = sorted([f for f in TASKS.glob("*.md") if not f.name.startswith("_")],
+                   key=lambda f: f.stat().st_mtime, reverse=True)
+    if not files:
+        raise Stop("orchestra/tasks/ 에 작업 요청서가 없어요. _양식.md 를 복사해서 하나 만드세요.")
+    say("\n작업 요청서를 고르세요 (최근 수정 순):")
+    for i, f in enumerate(files[:15], 1):
+        say("  %d) %s — %s" % (i, f.name, task_title(read(f), "")))
+    s = input("번호 (그냥 Enter = 1): ").strip() or "1"
+    if not s.isdigit() or not (1 <= int(s) <= len(files[:15])):
+        raise Stop("번호를 잘못 골랐어요.")
+    return files[int(s) - 1]
+
+
+def cmd_new(task_path, mode, no_push):
+    ensure_clean()
+    task_path = Path(task_path) if task_path else pick_task()
+    if not task_path.is_absolute():
+        task_path = (Path.cwd() / task_path).resolve()
+    if not task_path.exists():
+        raise Stop("작업 요청서가 없어요: %s" % task_path)
+    text = read(task_path)
+    say("\n최신 %s 를 받아 오는 중..." % BASE_BRANCH)
+    r = git("fetch", "origin", BASE_BRANCH, check=False)
+    base_ref = "origin/" + BASE_BRANCH if r.returncode == 0 else BASE_BRANCH
+    if r.returncode != 0:
+        say("  ⚠ 받아 오기 실패, 이 컴퓨터의 %s 기준으로 시작해요." % BASE_BRANCH)
+    run_id = now_id()
+    branch = "orchestra/" + run_id
+    git("switch", "-c", branch, base_ref)
+    plan = {"full": ["claude", "gemini"], "design": ["gemini"], "code": ["claude"]}[mode] + ["checks", "codex", "publish"]
+    st = {
+        "id": run_id, "branch": branch, "base": git("rev-parse", "HEAD"), "title": task_title(text, task_path.stem),
+        "task_src": str(task_path), "mode": mode, "round": 1, "plan": plan, "done": [], "no_push": no_push,
+    }
+    write(run_dir(run_id) / "task.md", text)
+    save_state(st)
+    if any(p.startswith("orchestra/tasks/") for c, p in changed_entries()):
+        git("add", "--", "orchestra/tasks")
+        git("commit", "-q", "-m", "[오케스트라] 작업 요청서: " + st["title"])
+    banner("새 작업: %s" % st["title"])
+    say("  브랜치: %s  (main은 그대로예요)" % branch)
+    say("  순서: " + " → ".join(STAGE_NAMES[s] for s in plan))
+    run_plan(st)
+    return st
+
+
+def cmd_fix():
+    ensure_clean()
+    st = load_state_for_current_branch()
+    if "codex" not in st["done"]:
+        raise Stop("아직 이번 회차 검수가 끝나지 않았어요. 'resume'으로 이어서 하세요.")
+    st["round"] += 1
+    ai = [s for s in ("claude", "gemini") if s in st["plan"]] or ["claude"]
+    if st["mode"] == "code":
+        ai = ["claude"]
+    st["plan"], st["done"] = ai + ["checks", "codex", "publish"], []
+    save_state(st)
+    run_plan(st)
+
+
+def cmd_review():
+    ensure_clean()
+    st = load_state_for_current_branch()
+    st["plan"] = [s for s in st["plan"] if s in ("claude", "gemini")] + ["checks", "codex", "publish"]
+    st["done"] = [s for s in ("claude", "gemini") if s in st["plan"]]
+    save_state(st)
+    run_plan(st)
+
+
+def cmd_resume():
+    st = load_state_for_current_branch()
+    left = [s for s in st["plan"] if s not in st["done"]]
+    if not left:
+        say("이 작업은 이미 끝까지 진행됐어요.")
+        return
+    nxt = left[0]
+    if nxt in ("claude", "gemini") and changed_entries():
+        say("⚠ 멈춘 단계(%s)에서 만들다 만 변경이 있어요. 지우고 그 단계를 처음부터 다시 해요." % nxt)
+        for c, p in changed_entries():
+            if not p.startswith(USER_PATHS):
+                revert_path(p)
+    run_plan(st)
+
+
+# ---------------------------------------------------------------------------
+# 구글 시트 작업함 (팀원이 시트에 적은 할 일을 가져와 처리하고, 결과를 시트에 다시 적음)
+#   시트 쪽 연결 스크립트: orchestra/sheet_inbox.gs
+# ---------------------------------------------------------------------------
+def sheet_conf():
+    url, token = os.environ.get(SHEET_URL_ENV, "").strip(), os.environ.get(SHEET_TOKEN_ENV, "").strip()
+    if not url or not token:
+        raise Stop("구글 시트 연결 정보가 없어요. orchestra.bat → 9) 시트 연결 설정 을 먼저 하세요.\n"
+                   "(설정한 뒤에는 이 창을 닫고 orchestra.bat을 다시 열어야 적용돼요.)")
+    return url, token
+
+
+def sheet_call(payload=None):
+    """payload가 없으면 대기 목록(GET), 있으면 상태 바꾸기(POST)."""
+    import urllib.parse
+    import urllib.request
+    url, token = sheet_conf()
+    if payload is None:
+        req = urllib.request.Request(url + ("&" if "?" in url else "?") + urllib.parse.urlencode({"token": token}))
+    else:
+        body = json.dumps(dict(payload, token=token), ensure_ascii=False).encode("utf-8")
+        req = urllib.request.Request(url, data=body, headers={"Content-Type": "text/plain;charset=utf-8"})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:      # 구글이 한 번 다른 주소로 보내는 것은 자동으로 따라감
+            d = json.loads(r.read().decode("utf-8"))
+    except Exception as e:
+        raise Stop("구글 시트에 연결하지 못했어요: %s" % e)
+    if isinstance(d, dict) and d.get("error"):
+        raise Stop("구글 시트: " + d["error"])
+    return d
+
+
+def sheet_update(task, **kw):
+    try:
+        sheet_call(dict(kw, row=task["row"]))
+    except Stop as e:
+        say("  ⚠ 시트에 결과를 못 적었어요(%s). 시트 %s행을 직접 고쳐 주세요." % (e, task["row"]))
+
+
+def sheet_task_file(task):
+    safe = re.sub(r"[^0-9A-Za-z가-힣_-]+", "_", task["title"])[:30].strip("_") or "작업"
+    f = TASKS / ("시트%s행_%s.md" % (task["row"], safe))
+    detail = task.get("detail", "").strip() or task["title"]
+    write(f, "# %s\n\n- 요청자: %s\n- 출처: 구글 시트 작업함 %s행 (번호 %s), 종류: %s\n\n## 바꿀 것\n%s\n" % (
+        task["title"], task.get("who") or "-", task["row"], task.get("no") or "-", task.get("kind") or "자동", detail))
+    return f
+
+
+def cmd_sheet():
+    banner("구글 시트 작업함")
+    ensure_clean()
+    tasks = sheet_call().get("tasks", [])
+    if not tasks:
+        say("  대기 중인 할 일이 없어요.")
+        return
+    for i, t in enumerate(tasks, 1):
+        say("  %d) [%s행] %s  — %s, 종류: %s" % (i, t["row"], t["title"], t.get("who") or "-", t.get("kind") or "자동"))
+    s = input("\n번호 하나, 또는 그냥 Enter = 위에서부터 전부 차례로: ").strip()
+    if s:
+        if not s.isdigit() or not (1 <= int(s) <= len(tasks)):
+            raise Stop("번호를 잘못 골랐어요.")
+        tasks = [tasks[int(s) - 1]]
+    start_branch = git("rev-parse", "--abbrev-ref", "HEAD")
+    done = []
+    try:
+        for t in tasks:
+            mode = KIND_MODE.get(t.get("kind", ""), "full")
+            claim = sheet_call({"action": "claim", "row": t["row"], "status": "진행중", "verdict": ""})
+            if not claim.get("ok"):
+                say("  [%s행] 다른 곳에서 이미 맡았어요(%s). 건너뜀." % (t["row"], claim.get("status")))
+                continue
+            banner("시트 %s행: %s" % (t["row"], t["title"]))
+            try:
+                st = cmd_new(str(sheet_task_file(t)), mode, False)
+                for _ in range(AUTO_FIX_ROUNDS):
+                    if st.get("verdicts", {}).get(str(st["round"])) != "수정필요":
+                        break
+                    say("  Codex가 수정필요라고 해서 한 번 더 고쳐요.")
+                    cmd_fix()
+                    st = load_state_for_current_branch()
+                v = st.get("verdicts", {}).get(str(st["round"]), "판정없음")
+                sheet_update(t, status="완료" if v == "통과" else "수정필요", result=st.get("pr_url", st["branch"]),
+                             verdict="%s (%d회차)" % (v, st["round"]))
+                done.append((t, v))
+            except Stop as e:
+                say("■ [%s행] 멈췄어요: %s" % (t["row"], e))
+                sheet_update(t, status="실패", verdict=str(e)[:200])
+                done.append((t, "실패"))
+                if changed_entries():           # 다음 작업을 위해 만들다 만 변경을 정리
+                    for c, p in changed_entries():
+                        if not p.startswith(USER_PATHS):
+                            revert_path(p)
+    finally:
+        r = git("switch", BASE_BRANCH if start_branch.startswith("orchestra/") else start_branch, check=False)
+        if r.returncode != 0:
+            git("switch", BASE_BRANCH, check=False)
+    banner("작업함 처리 끝")
+    for t, v in done:
+        say("  [%s행] %s → %s" % (t["row"], t["title"], v))
+    say("  결과(PR 링크)는 구글 시트에 적었어요. 미리보기를 보고 GitHub에서 Merge 하세요.")
+
+
+def cmd_sheet_setup():
+    banner("구글 시트 연결 설정")
+    say("  orchestra/sheet_inbox.gs 맨 위 안내대로 시트에 스크립트를 붙이고 웹 앱으로 배포한 뒤 진행하세요.")
+    say("  토큰은 채팅·문서에 올리지 마세요. 이 컴퓨터의 윈도우 사용자 설정에만 저장돼요.")
+    url = input("\n웹 앱 URL (https://script.google.com/macros/s/.../exec): ").strip()
+    token = input("오케스트라 토큰: ").strip()
+    if not url.startswith("https://script.google.com/") or not token:
+        raise Stop("URL이나 토큰이 비었거나 형식이 달라요.")
+    for k, v in ((SHEET_URL_ENV, url), (SHEET_TOKEN_ENV, token)):
+        r = subprocess.run(["setx", k, v], capture_output=True, text=True, encoding="utf-8", errors="replace")
+        if r.returncode != 0:
+            raise Stop("저장 실패: " + (r.stderr or r.stdout).strip())
+        os.environ[k] = v
+    n = len(sheet_call().get("tasks", []))
+    say("  연결 성공! 지금 대기 중인 할 일 %d개. 다음부터는 8) 시트 작업함 처리 를 고르면 돼요." % n)
+
+
+def cmd_doctor():
+    banner("환경 점검")
+    ok = True
+
+    def show(name, good, detail, need=True):
+        nonlocal ok
+        mark = "✅" if good else ("❌" if need else "⚠")
+        if need and not good:
+            ok = False
+        say("  %s %-22s %s" % (mark, name, detail))
+
+    def ver(cmd):
+        exe = which(cmd)
+        if not exe:
+            return None
+        try:
+            r = subprocess.run([exe, "--version"], capture_output=True, text=True, encoding="utf-8",
+                               errors="replace", timeout=60)
+            return (r.stdout or r.stderr).strip().splitlines()[0] if (r.stdout or r.stderr).strip() else "설치됨"
+        except Exception:
+            return "설치됨"
+
+    show("Python", sys.version_info >= (3, 8), sys.version.split()[0])
+    g = ver("git")
+    show("git", bool(g), g or "없음 → https://git-scm.com 설치")
+    if g:
+        name = git("config", "user.name", check=False).stdout.strip()
+        show("git 사용자 이름", bool(name), name or "없음 → git config --global user.name \"이름\"")
+        show("GitHub 저장소", bool(repo_slug()), repo_slug() or "origin이 GitHub가 아님")
+    for cmd, label, hint in [
+        ("claude", "Claude Code", "npm install -g @anthropic-ai/claude-code  (또는 공식 설치 프로그램)"),
+        ("agy", "Antigravity CLI (agy)", "PowerShell: irm https://antigravity.google/cli/install.ps1 | iex"),
+        ("codex", "Codex CLI", "npm install -g @openai/codex"),
+    ]:
+        v = ver(cmd)
+        show(label, bool(v), v or "없음 → " + hint)
+    v = ver("gh")
+    show("GitHub CLI (gh, 선택)", bool(v), v or "없으면 PR은 링크로 직접 만듦 → winget install GitHub.cli", need=False)
+    show("구글 시트 작업함 (선택)", bool(os.environ.get(SHEET_URL_ENV) and os.environ.get(SHEET_TOKEN_ENV)),
+         "연결됨" if os.environ.get(SHEET_URL_ENV) else "없음 → 9) 시트 연결 설정", need=False)
+    v = ver("node")
+    show("Node.js (선택)", bool(v), v or "없으면 JS 문법 검사를 건너뜀", need=False)
+    say()
+    say("  모두 ✅ 이면 준비 완료. 각 AI는 처음 한 번 터미널에서 claude / agy / codex 를 실행해 로그인해 두세요."
+        if ok else "  ❌ 항목을 설치한 뒤 다시 점검하세요.")
+
+
+def menu():
+    banner("AI 오케스트라 — olpark-traffic")
+    say("  1) 새 작업          Claude 코딩 → Gemini 디자인 → Codex 검수")
+    say("  2) 새 작업 (디자인만) Gemini 디자인 → Codex 검수")
+    say("  3) 새 작업 (코딩만)   Claude 코딩 → Codex 검수")
+    say("  4) 검수 의견 반영     지금 브랜치에서 Codex 의견을 고치고 다시 검수")
+    say("  5) 다시 검수만")
+    say("  6) 멈춘 곳부터 이어서")
+    say("  7) 환경 점검")
+    say("  8) 구글 시트 작업함 처리  팀원이 시트에 적은 '대기' 일을 차례로")
+    say("  9) 구글 시트 연결 설정    처음 한 번")
+    s = input("\n번호: ").strip()
+    if s == "1":
+        cmd_new(None, "full", False)
+    elif s == "2":
+        cmd_new(None, "design", False)
+    elif s == "3":
+        cmd_new(None, "code", False)
+    elif s == "4":
+        cmd_fix()
+    elif s == "5":
+        cmd_review()
+    elif s == "6":
+        cmd_resume()
+    elif s == "7":
+        cmd_doctor()
+    elif s == "8":
+        cmd_sheet()
+    elif s == "9":
+        cmd_sheet_setup()
+    else:
+        say("번호를 잘못 골랐어요.")
+
+
+def main(argv):
+    os.chdir(str(ROOT))
+    if not argv:
+        return menu()
+    cmd, rest = argv[0], argv[1:]
+    flags = {a for a in rest if a.startswith("--")}
+    args = [a for a in rest if not a.startswith("--")]
+    if cmd == "new":
+        mode = "design" if "--design-only" in flags else "code" if "--code-only" in flags else "full"
+        cmd_new(args[0] if args else None, mode, "--no-push" in flags)
+    elif cmd == "fix":
+        cmd_fix()
+    elif cmd == "review":
+        cmd_review()
+    elif cmd == "resume":
+        cmd_resume()
+    elif cmd == "doctor":
+        cmd_doctor()
+    elif cmd == "sheet":
+        cmd_sheet()
+    elif cmd == "sheet-setup":
+        cmd_sheet_setup()
+    else:
+        say(__doc__)
+
+
+if __name__ == "__main__":
+    try:
+        main(sys.argv[1:])
+    except Stop as e:
+        say()
+        say("■ 멈췄어요: %s" % e)
+        say("  (이어서 하려면 orchestra.bat → '멈춘 곳부터 이어서')")
+        sys.exit(1)
+    except KeyboardInterrupt:
+        say("\n■ 중단했어요. 이어서 하려면 orchestra.bat → '멈춘 곳부터 이어서'")
+        sys.exit(130)
