@@ -42,11 +42,16 @@ def lerp(a, b, t):
     return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
 
 
+RAW_SAMPLES = []
+
+
 def tmap(key, a, b):
     body = json.dumps({"startX": str(a[0]), "startY": str(a[1]), "endX": str(b[0]), "endY": str(b[1]),
                        "reqCoordType": "WGS84GEO", "resCoordType": "WGS84GEO",
                        "searchOption": "0", "trafficInfo": "Y"}).encode()
     d = get_json(TMAP, body, {"appKey": key, "Content-Type": "application/json", "Accept": "application/json"})
+    if len(RAW_SAMPLES) < 5:                       # 응답 모양 확인용(키는 들어 있지 않음)
+        RAW_SAMPLES.append(d)
     p = d["features"][0]["properties"]
     # 구간별 교통정보: [시작점, 끝점, 혼잡도, 속도] 형식. 점 개수로 가중 평균
     spd_w, cong_w, w = 0.0, 0.0, 0
@@ -63,8 +68,9 @@ def tmap(key, a, b):
     total_m, total_s = int(p["totalDistance"]), int(p["totalTime"])
     route_spd = total_m / max(total_s, 1) * 3.6
     cong = round(cong_w / w) if w else None
-    spd = spd_w / w if w and spd_w else route_spd
-    return total_m, spd, cong
+    if w and spd_w:
+        return total_m, spd_w / w, cong, "구간 교통정보"
+    return total_m, route_spd, cong, "경로 시간(신호 대기 포함)"
 
 
 def main():
@@ -83,23 +89,23 @@ def main():
         got = None
         for t0, t1 in ((0.1, 0.9), (0.25, 0.95), (0.0, 1.0)):     # 교차로 끝점에 붙지 않게 안쪽에서 시작
             try:
-                m, spd, cong = tmap(key, lerp(l["a"], l["b"], t0), lerp(l["a"], l["b"], t1))
+                m, spd, cong, src = tmap(key, lerp(l["a"], l["b"], t0), lerp(l["a"], l["b"], t1))
             except Exception as e:
                 print(f"  {l['road']} {l['from']}→{l['to']}: TMAP 실패 ({e})")
                 break
             if m <= 1.5 * ln * (t1 - t0) + 150:                 # 돌아가는 길이면 같은 구간이 아님
-                got = (spd, cong)
+                got = (spd, cong, src)
                 break
             time.sleep(0.3)
         time.sleep(0.3)
         if not got:
             continue
-        spd, cong = got
+        spd, cong, src = got
         tg = GRADE.get(cong) if cong else seoul_grade(spd)
         sg = r.get("idx") or seoul_grade(r["spd"])
         rows.append({"id": l["id"], "road": l["road"], "from": l["from"], "to": l["to"],
                      "seoulSpd": r["spd"], "seoulIdx": sg, "tmapSpd": round(spd, 1), "tmapIdx": tg,
-                     "gap": RANK.get(sg, 0) - RANK.get(tg, 0)})
+                     "gap": RANK.get(sg, 0) - RANK.get(tg, 0), "len": round(ln), "tmapSrc": src})
         print(f"  {l['road']:6} {l['from'][:10]:10}→{l['to'][:10]:10} 서울시 {r['spd']:>3}km/h {sg}  |  TMAP {spd:5.1f}km/h {tg}")
     if not rows:
         raise SystemExit("비교할 수 있는 구간이 없습니다.")
@@ -119,6 +125,15 @@ def main():
            "corr": round(corr, 2) if corr is not None else None,
            "seoulSlower": sum(1 for x in rows if x["gap"] > 0), "seoulFaster": sum(1 for x in rows if x["gap"] < 0),
            "worst": sorted(rows, key=lambda x: -abs(x["seoulSpd"] - x["tmapSpd"]))[:8]}
+    long_ = [x for x in rows if x["len"] >= 300]           # 짧은 구간은 끝 교차로 신호 대기에 크게 흔들림
+    if long_:
+        out["long300"] = {"n": len(long_),
+                          "sameGrade": round(sum(x["seoulIdx"] == x["tmapIdx"] for x in long_) / len(long_), 3),
+                          "within1": round(sum(abs(x["gap"]) <= 1 for x in long_) / len(long_), 3),
+                          "medAbsDiff": round(stt.median(abs(x["seoulSpd"] - x["tmapSpd"]) for x in long_), 1)}
+    out["tmapSrc"] = {k: sum(1 for x in rows if x["tmapSrc"] == k) for k in {x["tmapSrc"] for x in rows}}
+    (ROOT / "data" / "raw").mkdir(parents=True, exist_ok=True)
+    (ROOT / "data" / "raw" / "tmap_traffic_sample.json").write_text(json.dumps(RAW_SAMPLES, ensure_ascii=False)[:400000], encoding="utf-8")
     hist = []
     if OUT.exists():
         try:
@@ -138,6 +153,9 @@ def main():
     print(f"\n비교한 구간 {len(rows)}/{out['total']}개")
     print(f"  소통 등급이 같은 구간 {same}개({same / len(rows):.0%}), 한 단계 차이까지 {near / len(rows):.0%}")
     print(f"  속도 차이 중앙값 {out['medAbsDiff']}km/h" + (f", 상관계수 {out['corr']}" if corr is not None else ""))
+    if "long300" in out:
+        print(f"  300m 넘는 구간만: {out['long300']['n']}개, 등급 같음 {out['long300']['sameGrade']:.0%}, 한 단계까지 {out['long300']['within1']:.0%}")
+    print(f"  TMAP 속도 출처: {out['tmapSrc']}")
     print(f"저장 → {OUT}\nClaude에게 '도로 검증 끝났어'라고 알려주세요.")
 
 

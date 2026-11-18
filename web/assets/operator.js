@@ -5,13 +5,15 @@
   ]);
   const ref = kspoReference(exits);
   const exitProf = await loadJSON("exit_profile.json").catch(() => null);
-  // 실시간 도로 자료 검증 결과(서울시 도시데이터 vs TMAP 실시간 교통, scripts/10_verify_roads_tmap.py)
-  loadJSON("road_check.json").then((c) => {
+  // 실시간 도로 자료 검증: ① 서울시 원본(TOPIS)과 같은지 ② 다른 출처(TMAP 실시간 교통)와 비슷한지
+  Promise.all([loadJSON("road_source_check.json").catch(() => null), loadJSON("road_check.json").catch(() => null)]).then(([a, c]) => {
     const pct = (x) => Math.round(x * 100) + "%";
-    document.getElementById("roadCheck").innerHTML = `<b>도로 자료 검증</b> · ${c.checked} TMAP 실시간 교통과 비교한 ${c.n}개 구간:
-      소통 등급 같음 ${pct(c.sameGrade)}, 한 단계 차이까지 ${pct(c.within1)}, 속도 차이 중앙값 ${c.medAbsDiff}km/h${c.corr != null ? `, 상관계수 ${c.corr}` : ""}` +
-      (c.history && c.history.length > 1 ? ` (검증 ${c.history.length}회)` : "");
-  }).catch(() => {});
+    const parts = [];
+    if (a) parts.push(`① 서울시 원본(TOPIS)과 비교(${a.checked}, ${a.n}개 구간): 등급 같음 ${pct(a.sameGrade)}, 속도 차이 중앙값 ${a.medAbsDiff}km/h, 상관계수 ${a.corr}`);
+    if (c) parts.push(`② TMAP 실시간 교통과 비교(${c.checked}, ${c.n}개 구간): 등급 같음 ${pct(c.sameGrade)}, 한 단계 차이까지 ${pct(c.within1)}, 속도 차이 중앙값 ${c.medAbsDiff}km/h` +
+      (c.long300 ? ` · 300m 넘는 구간만 등급 같음 ${pct(c.long300.sameGrade)}` : "") + (c.history && c.history.length > 1 ? ` (검증 ${c.history.length}회)` : ""));
+    if (parts.length) document.getElementById("roadCheck").innerHTML = "<b>도로 자료 검증</b><br>" + parts.join("<br>");
+  });
   const GATE_ROAD = { "남2문": "위례성대로", "북2문": "강동대로" };   // 현장 확인 필요
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = events.filter((e) => e.date >= today && e.times.length);
