@@ -51,31 +51,26 @@ RAW_SAMPLES = []
 
 
 def tmap(key, a, b):
+    """TMAP 자동차 경로. 경로를 이루는 도로 조각마다 이름·거리·소요시간(실시간 교통 반영)이 온다.
+    구간별 혼잡도(traffic) 배열은 이 키로는 오지 않아서, 같은 이름 도로 조각의 거리÷시간으로 속도를 구한다."""
     body = json.dumps({"startX": str(a[0]), "startY": str(a[1]), "endX": str(b[0]), "endY": str(b[1]),
                        "reqCoordType": "WGS84GEO", "resCoordType": "WGS84GEO",
                        "searchOption": "0", "trafficInfo": "Y"}).encode()
     d = get_json(TMAP, body, {"appKey": key, "Content-Type": "application/json", "Accept": "application/json"})
     if len(RAW_SAMPLES) < 5:                       # 응답 모양 확인용(키는 들어 있지 않음)
         RAW_SAMPLES.append(d)
-    p = d["features"][0]["properties"]
-    # 구간별 교통정보: [시작점, 끝점, 혼잡도, 속도] 형식. 점 개수로 가중 평균
-    spd_w, cong_w, w = 0.0, 0.0, 0
-    for f in d["features"]:
-        if f["geometry"]["type"] != "LineString":
-            continue
-        for t in f["properties"].get("traffic") or []:
-            if len(t) >= 3 and t[2]:
-                n = max(1, int(t[1]) - int(t[0]))
-                cong_w += float(t[2]) * n
-                if len(t) >= 4 and t[3]:
-                    spd_w += float(t[3]) * n
-                w += n
-    total_m, total_s = int(p["totalDistance"]), int(p["totalTime"])
-    route_spd = total_m / max(total_s, 1) * 3.6
-    cong = round(cong_w / w) if w else None
-    if w and spd_w:
-        return total_m, spd_w / w, cong, "구간 교통정보"
-    return total_m, route_spd, cong, "경로 시간(신호 대기 포함)"
+    segs = [(f["properties"].get("name", ""), int(f["properties"].get("distance") or 0), int(f["properties"].get("time") or 0))
+            for f in d["features"] if f["geometry"]["type"] == "LineString"]
+    return int(d["features"][0]["properties"]["totalDistance"]), segs
+
+
+def road_speed(segs, road):
+    """경로 중 비교 구간과 같은 이름의 도로 조각만 모아 속도(km/h). 너무 짧으면 None."""
+    names = {x for x in road.replace(".", " ").split() if x}
+    use = [(m, t) for n, m, t in segs if n and (n == road or n in names) and m > 0 and t > 0]
+    dist = sum(m for m, _ in use)
+    secs = sum(t for _, t in use)
+    return (dist / secs * 3.6, dist) if secs else (None, dist)
 
 
 EVENTS = ROOT / "web" / "data" / "events.json"
@@ -106,6 +101,29 @@ def auto_reason():
     return None
 
 
+def corridors(links_list, min_len=600):
+    """같은 도로에서 앞 구간의 끝 지점 = 다음 구간의 시작 지점으로 이어지는 구간들을 묶은 긴 도로(600m 이상).
+    짧은 구간은 끝 교차로 신호 대기에 크게 흔들려서, 긴 도로의 '이동시간'으로 비교해야 공정하다."""
+    by_from = {}
+    for l in links_list:
+        by_from.setdefault((l["road"], l["from"]), []).append(l)
+    out = []
+    for l in links_list:
+        if any(x["road"] == l["road"] and x["to"] == l["from"] and x["from"] != l["to"] for x in links_list):
+            continue                                    # 중간 구간이면 시작점이 아님
+        c, nodes = [l], {l["from"], l["to"]}
+        while True:                                     # 이미 지난 지점으로 되돌아가는 구간은 잇지 않음
+            nx = [x for x in by_from.get((c[-1]["road"], c[-1]["to"]), []) if x["to"] not in nodes]
+            if not nx:
+                break
+            c.append(nx[0])
+            nodes.add(nx[0]["to"])
+        total = sum(float(x["len"]) for x in c)
+        if total >= min_len:
+            out.append(c)
+    return out
+
+
 def main():
     reason = "직접 실행"
     if "--auto" in sys.argv:
@@ -127,28 +145,55 @@ def main():
             continue
         ln = float(l["len"])
         got = None
-        for t0, t1 in ((0.1, 0.9), (0.25, 0.95), (0.0, 1.0)):     # 교차로 끝점에 붙지 않게 안쪽에서 시작
+        for t0, t1 in ((0.0, 1.0), (0.1, 0.9)):
             try:
-                m, spd, cong, src = tmap(key, lerp(l["a"], l["b"], t0), lerp(l["a"], l["b"], t1))
+                _, segs = tmap(key, lerp(l["a"], l["b"], t0), lerp(l["a"], l["b"], t1))
             except Exception as e:
                 print(f"  {l['road']} {l['from']}→{l['to']}: TMAP 실패 ({e})")
                 break
-            if m <= 1.5 * ln * (t1 - t0) + 150:                 # 돌아가는 길이면 같은 구간이 아님
-                got = (spd, cong, src)
+            spd, dist = road_speed(segs, l["road"])
+            if spd and dist >= max(80, 0.4 * ln * (t1 - t0)):   # 같은 도로를 충분히 달린 경우만
+                got = (spd, None, f"같은 도로 {dist}m")
                 break
             time.sleep(0.3)
         time.sleep(0.3)
         if not got:
             continue
         spd, cong, src = got
-        tg = GRADE.get(cong) if cong else seoul_grade(spd)
+        tg = seoul_grade(spd)
         sg = r.get("idx") or seoul_grade(r["spd"])
         rows.append({"id": l["id"], "road": l["road"], "from": l["from"], "to": l["to"],
                      "seoulSpd": r["spd"], "seoulIdx": sg, "tmapSpd": round(spd, 1), "tmapIdx": tg,
-                     "gap": RANK.get(sg, 0) - RANK.get(tg, 0), "len": round(ln), "tmapSrc": src})
+                     "gap": RANK.get(sg, 0) - RANK.get(tg, 0), "len": round(ln), "tmapSrc": "같은 도로 조각"})
         print(f"  {l['road']:6} {l['from'][:10]:10}→{l['to'][:10]:10} 서울시 {r['spd']:>3}km/h {sg}  |  TMAP {spd:5.1f}km/h {tg}")
-    if not rows:
+    # 긴 도로 이동시간 비교: 서울시 = 구간마다 길이÷속도를 더한 시간, TMAP = 같은 길을 달리는 경로 시간
+    spd_by_id = {str(r["id"]): r.get("spd") for r in live.get("links", [])}
+    cor_rows = []
+    print("\n[긴 도로 이동시간 비교]")
+    for c in corridors(list(links.values())):
+        if any(not spd_by_id.get(x["id"]) for x in c):
+            continue
+        total = sum(float(x["len"]) for x in c)
+        seoul_min = sum(float(x["len"]) / 1000 / spd_by_id[x["id"]] * 60 for x in c)
+        try:
+            tm, segs = tmap(key, c[0]["a"], c[-1]["b"])
+            body_t = sum(t for _, _, t in segs)
+        except Exception as e:
+            print(f"  {c[0]['road']}: TMAP 실패 ({e})")
+            continue
+        time.sleep(0.4)
+        if tm > 1.3 * total + 100:
+            print(f"  {c[0]['road']} {c[0]['from']}→{c[-1]['to']}: TMAP이 다른 길로 돌아가서 뺌")
+            continue
+        tmap_min = body_t / 60
+        diff = (tmap_min - seoul_min) / seoul_min if seoul_min else 0
+        cor_rows.append({"road": c[0]["road"], "from": c[0]["from"], "to": c[-1]["to"], "links": len(c), "len": round(total),
+                         "seoulMin": round(seoul_min, 1), "tmapMin": round(tmap_min, 1), "diff": round(diff, 2)})
+        print(f"  {c[0]['road']:5} {c[0]['from'][:9]}→{c[-1]['to'][:9]} {round(total)}m  서울시 {seoul_min:4.1f}분  TMAP {tmap_min:4.1f}분  ({diff:+.0%})")
+    if not rows and not cor_rows:
         raise SystemExit("비교할 수 있는 구간이 없습니다.")
+    if not rows:
+        rows = [{"id": "", "road": "", "from": "", "to": "", "seoulSpd": 0, "seoulIdx": "", "tmapSpd": 0, "tmapIdx": "", "gap": 0, "len": 0, "tmapSrc": ""}]
     same = sum(1 for x in rows if x["seoulIdx"] == x["tmapIdx"])
     near = sum(1 for x in rows if abs(x["gap"]) <= 1)
     diffs = [abs(x["seoulSpd"] - x["tmapSpd"]) for x in rows]
@@ -171,6 +216,10 @@ def main():
                           "sameGrade": round(sum(x["seoulIdx"] == x["tmapIdx"] for x in long_) / len(long_), 3),
                           "within1": round(sum(abs(x["gap"]) <= 1 for x in long_) / len(long_), 3),
                           "medAbsDiff": round(stt.median(abs(x["seoulSpd"] - x["tmapSpd"]) for x in long_), 1)}
+    if cor_rows:
+        ad = [abs(x["diff"]) for x in cor_rows]
+        out["corridors"] = {"n": len(cor_rows), "medAbsDiff": round(stt.median(ad), 2),
+                            "within30": round(sum(a <= 0.3 for a in ad) / len(ad), 2), "rows": cor_rows}
     out["tmapSrc"] = {k: sum(1 for x in rows if x["tmapSrc"] == k) for k in {x["tmapSrc"] for x in rows}}
     (ROOT / "data" / "raw").mkdir(parents=True, exist_ok=True)
     (ROOT / "data" / "raw" / "tmap_traffic_sample.json").write_text(json.dumps(RAW_SAMPLES, ensure_ascii=False)[:400000], encoding="utf-8")
@@ -181,7 +230,8 @@ def main():
             hist = old.get("history", [])
         except ValueError:
             pass
-    hist = (hist + [{k: out.get(k) for k in ("checked", "reason", "n", "sameGrade", "within1", "medAbsDiff", "corr")}])[-40:]
+    hist = (hist + [{**{k: out.get(k) for k in ("checked", "reason", "n", "sameGrade", "within1", "medAbsDiff", "corr")},
+                     "corridorDiff": out.get("corridors", {}).get("medAbsDiff")}])[-40:]
     out["history"] = hist
     OUT.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
     proc = ROOT / "data" / "processed"
@@ -195,7 +245,8 @@ def main():
     print(f"  속도 차이 중앙값 {out['medAbsDiff']}km/h" + (f", 상관계수 {out['corr']}" if corr is not None else ""))
     if "long300" in out:
         print(f"  300m 넘는 구간만: {out['long300']['n']}개, 등급 같음 {out['long300']['sameGrade']:.0%}, 한 단계까지 {out['long300']['within1']:.0%}")
-    print(f"  TMAP 속도 출처: {out['tmapSrc']}")
+    if "corridors" in out:
+        print(f"  긴 도로 {out['corridors']['n']}개: 이동시간 차이 중앙값 {out['corridors']['medAbsDiff']:.0%}, 30% 안쪽 {out['corridors']['within30']:.0%}")
     print(f"저장 → {OUT}\nClaude에게 '도로 검증 끝났어'라고 알려주세요.")
 
 

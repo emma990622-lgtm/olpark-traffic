@@ -10,8 +10,9 @@
     const pct = (x) => Math.round(x * 100) + "%";
     const parts = [];
     if (a) parts.push(`① 서울시 원본(TOPIS)과 비교(${a.checked}, ${a.n}개 구간): 등급 같음 ${pct(a.sameGrade)}, 속도 차이 중앙값 ${a.medAbsDiff}km/h, 상관계수 ${a.corr}`);
-    if (c) parts.push(`② TMAP 실시간 교통과 비교(${c.checked}, ${c.n}개 구간): 등급 같음 ${pct(c.sameGrade)}, 한 단계 차이까지 ${pct(c.within1)}, 속도 차이 중앙값 ${c.medAbsDiff}km/h` +
-      (c.long300 ? ` · 300m 넘는 구간만 등급 같음 ${pct(c.long300.sameGrade)}` : "") + (c.history && c.history.length > 1 ? ` (검증 ${c.history.length}회)` : ""));
+    if (c && c.corridors) parts.push(`② 긴 도로 이동시간을 TMAP과 비교(${c.checked}, ${c.corridors.n}개 도로, 600m 이상): 차이 중앙값 ${pct(c.corridors.medAbsDiff)}, 30% 안쪽 ${pct(c.corridors.within30)}`);
+    if (c) parts.push(`③ 짧은 구간 하나씩 TMAP과 비교(${c.checked}, ${c.n}개 구간): 등급 같음 ${pct(c.sameGrade)}, 한 단계 차이까지 ${pct(c.within1)}, 속도 차이 중앙값 ${c.medAbsDiff}km/h` +
+      (c.long300 ? ` · 300m 넘는 구간만 등급 같음 ${pct(c.long300.sameGrade)}` : "") + (c.history && c.history.length > 1 ? ` (검증 ${c.history.length}회)` : "") + " · 짧은 구간은 끝 교차로 신호 대기에 크게 흔들려 참고용");
     if (parts.length) document.getElementById("roadCheck").innerHTML = "<b>도로 자료 검증</b><br>" + parts.join("<br>");
   });
   const GATE_ROAD = { "남2문": "위례성대로", "북2문": "강동대로" };   // 현장 확인 필요
