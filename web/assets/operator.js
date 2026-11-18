@@ -143,7 +143,8 @@
     if (parkProf) {
       const i = parkProf.relMin.findIndex((x) => x >= rel);
       if (i >= 0) {
-        park = `공원 주차 약 <b>${parkProf.parked[i].toLocaleString()}대</b> / ${parkProf.capacity.toLocaleString()}면 · 최근 15분 입차 ${parkProf.in15[i]}대 · 출차 ${parkProf.out15[i]}대
+        const rng = parkProf.parkedMin ? ` <span>(공연에 따라 ${parkProf.parkedMin[i].toLocaleString()}~${parkProf.parkedMax[i].toLocaleString()}대)</span>` : "";
+        park = `공원 주차 약 <b>${parkProf.parked[i].toLocaleString()}대</b> / ${parkProf.capacity.toLocaleString()}면${rng} · 최근 15분 입차 ${parkProf.in15[i]}대 · 출차 ${parkProf.out15[i]}대
           <span>(2024년 7월 KSPO DOME 공연 ${parkProf.shows.length}회 중앙값${tl.venue === "KSPO DOME" ? "" : ", 이날은 KSPO DOME 공연이 아니라 참고만"})</span><br>`;
       }
     }

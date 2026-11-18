@@ -44,9 +44,12 @@ def main():
     if not shows:
         raise SystemExit("2024년 7월 KSPO DOME 공연일이 없습니다.")
     med = lambda k: [int(np.median([s[k][i] for s in shows])) for i in range(len(REL))]
+    lo = lambda k: [int(min(s[k][i] for s in shows)) for i in range(len(REL))]
+    hi = lambda k: [int(max(s[k][i] for s in shows)) for i in range(len(REL))]
     out = {
         "venue": "KSPO DOME", "source": f"2024년 7월 공원 주차장 입출차 전체 기록, KSPO DOME 공연 {len(shows)}회 중앙값",
-        "relMin": REL.tolist(), "parked": med("parked"), "in15": med("in15"), "out15": med("out15"),
+        "relMin": REL.tolist(), "parked": med("parked"), "parkedMin": lo("parked"), "parkedMax": hi("parked"),
+        "peakByShow": [{"date": s["date"], "title": s["title"], "peak": max(s["parked"])} for s in shows], "in15": med("in15"), "out15": med("out15"),
         "capacity": 2120, "shows": [{k: s[k] for k in ("date", "start", "title")} for s in shows],
     }
     OUT.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
