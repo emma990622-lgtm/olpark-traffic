@@ -1,0 +1,85 @@
+# PR로 올리는 AI(클라우드 Codex 등)의 변경을 사람이 Merge하지 않아도 바로 main → 실제 사이트에 반영한다.
+# 조건: 이 저장소 안의 브랜치에서 온 PR(쓰기 권한이 있는 사람만 만들 수 있음), 초안(draft) 아님,
+#       점검(scripts/check_all.py) 통과, 인수인계 노트(docs/handoff/ 새 파일) 있음.
+# 바깥 사람이 fork로 보낸 PR은 자동으로 합치지 않는다(저장소가 공개라서).
+name: auto-merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check-and-merge:
+    if: github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 점검과 인수인계 노트 확인
+        id: check
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set +e
+          python scripts/check_all.py > result.txt 2>&1
+          code=$?
+          notes=$(git diff --name-only --diff-filter=A "$BASE" HEAD -- 'docs/handoff/*.md' | grep -v '_양식' | wc -l)
+          {
+            echo "### 자동 점검 결과"
+            echo '```'
+            cat result.txt
+            echo '```'
+            if [ "$notes" -eq 0 ]; then
+              echo "❌ 인수인계 노트가 없어요. \`docs/handoff/_양식.md\`를 복사해 \`docs/handoff/YYYY-MM-DD_HHMM_누가_요약.md\` 새 파일을 이 PR에 추가해 주세요."
+              code=1
+            else
+              echo "✅ 인수인계 노트 ${notes}개"
+            fi
+          } > comment.md
+          cat comment.md
+          echo "ok=$([ $code -eq 0 ] && echo yes || echo no)" >> "$GITHUB_OUTPUT"
+
+      - name: 통과 → main에 합치기 (실제 사이트 자동 반영)
+        if: steps.check.outputs.ok == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if gh pr merge "$PR" --merge --delete-branch; then
+            echo "" >> comment.md
+            echo "✅ 점검을 통과해서 main에 자동으로 합쳤어요. 1~2분 뒤 https://olpark-traffic.vercel.app 에 반영돼요." >> comment.md
+          else
+            echo "" >> comment.md
+            echo "⚠ 점검은 통과했지만 main과 겹치는 부분(충돌) 때문에 합치지 못했어요. main 최신을 이 브랜치에 받아 충돌을 정리한 뒤 다시 올려 주세요." >> comment.md
+            gh pr comment "$PR" --body-file comment.md
+            exit 1
+          fi
+          gh pr comment "$PR" --body-file comment.md
+
+      - name: 점검 실패 → 이유를 PR에 남기기
+        if: steps.check.outputs.ok != 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          echo "" >> comment.md
+          echo "고친 뒤 같은 브랜치에 다시 올리면(또는 PR 댓글에 \`@codex 위 점검 문제 고쳐 줘\`) 다시 점검해서 통과하면 자동으로 합쳐요." >> comment.md
+          gh pr comment "$PR" --body-file comment.md
+          exit 1

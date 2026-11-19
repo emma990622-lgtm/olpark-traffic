@@ -1,6 +1,6 @@
 # 디자인 규칙 및 JS↔CSS 계약서 (`docs/design.md`)
 
-모든 AI(Claude 코딩 · Gemini 디자인 · Codex 검수)가 화면을 고치거나 검수할 때 함께 보는 기준 문서다.
+어떤 AI든(Claude Code, Antigravity, Codex 등) 화면을 고치거나 확인할 때 함께 보는 기준 문서다.
 공통 원칙은 `AGENTS.md`, 프로젝트 배경과 데이터 함정은 `docs/context.md`를 먼저 따른다.
 
 ---
@@ -43,8 +43,8 @@
 
 ## 3. JS ↔ CSS 클래스 계약표 (인수인계 필수 대조표)
 
-- **Gemini(디자인)**: JS 파일은 오케스트라 실행 중 직접 수정할 수 없으므로, 아래 클래스 이름을 CSS에서 임의로 지우거나 이름을 바꾸지 않는다(바꿔야 하면 보고서의 `"Claude에게 넘길 일"`에 기록).
-- **Claude(코딩)**: JS에서 `innerHTML` 구조를 고칠 때 아래 클래스 체계를 유지하고, 새 클래스를 추가하면 `"Gemini에게 넘길 디자인 일"`과 이 표에 반영한다.
+- 클래스 이름을 바꾸거나 지울 때는 **JS와 CSS를 같은 작업에서 함께** 고친다(한쪽만 바꾸면 화면이 깨진다).
+- 새 클래스를 만들면 이 표에 한 줄 추가하고, 인수인계 노트(`docs/handoff/`)의 "건드리면 안 되는 것"에도 적는다.
 
 | 생성 위치 (파일 · 함수) | 클래스 이름 | 역할 및 조건 |
 |---|---|---|
@@ -68,7 +68,7 @@
 
 ## 4. 절대 지우면 안 되는 HTML `id` · `data-*` 목록
 
-`orchestra/orchestra.py`의 `id_guard` 및 자동 점검이 검사하는 필수 식별자다.
+`scripts/check_all.py`가 검사하는 필수 식별자다(없어지면 ❌, PR 자동 합치기도 멈춘다). 새로 꼭 필요한 `id`가 생기면 여기에 추가한다.
 
 - **`web/index.html`**:
   - `id`: `date`, `event`, `eventInfo`, `mode`, `carSection`, `reco`, `options`, `walkSrc`, `subwayNote`, `transitSection`, `stations`, `stationTip`, `map3d`, `legend3d`, `flat`, `map`, `legend`, `roadNote`
