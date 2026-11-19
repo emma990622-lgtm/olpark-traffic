@@ -27,6 +27,26 @@
 - 커밋·push·PR 만들기는 사람이 요청했을 때만 한다. Merge는 사람이 한다.
 - 아래 "AI 오케스트라 역할"의 파일 제한은 오케스트라 실행 중에만 적용된다. 팀 작업에서는 누구의 AI든 모든 파일을 고칠 수 있지만, 디자인은 `docs/design.md`와 `style.css`의 변수 규칙을, 기능은 기존 동작 유지를 지킨다.
 
+## AI별 역할 (팀 작업 방식)
+같은 AI라도 **누가 어떻게 부르느냐**에 따라 역할이 다르다.
+
+| 부르는 방식 | 역할 |
+|---|---|
+| 팀원이 ChatGPT Codex(클라우드 chatgpt.com/codex, Codex 앱·CLI)로 작업을 맡김 | **전반 담당**: 기능·디자인·데이터·문서 모두 맡는다. 코드를 고치고, 점검하고, PR을 만든다. "읽기만 하는 검수 담당"이 아니다. |
+| 주인이 Claude Code·Antigravity로 작업을 맡김 | 전반 담당 (위와 같음) |
+| PR에 `@codex review` 댓글, 또는 Codex 자동 리뷰 | 검수만: 아래 "Review guidelines"로 리뷰를 단다. 코드는 고치지 않는다. |
+| PR에 `@codex` + 할 일 (예: `@codex 리뷰 지적 고쳐 줘`) | 전반 담당: 그 PR 브랜치에 고친 커밋을 더한다. |
+| 오케스트라(`orchestra.bat`) 안의 Codex | 최종 검수만(읽기 전용) — 아래 "AI 오케스트라 역할" |
+
+전반 담당일 때 지킬 것
+1. 작업 전: 이 파일, `docs/context.md`, 맡은 Issue, (디자인이면) `docs/design.md`를 읽는다.
+2. 작업은 `main`에서 새로 딴 브랜치에서 한다. 한 작업 = 한 PR.
+3. 끝나기 전에 `python scripts/check_all.py`를 돌려 ❌가 없게 한다(JS·파이썬 문법, 데이터 JSON, JS가 찾는 id, 인증키 노출 점검).
+4. PR 설명은 `.github/pull_request_template.md`의 칸을 모두 채운다(요청 해석, 바꾼 것, 화면에서 확인할 곳, 결정과 이유, 넘길 일, 건드리면 안 되는 것). 다른 사람과 다른 AI는 이 작업 대화를 볼 수 없다.
+5. 오래 지킬 결정은 `docs/context.md` "결정 기록", 디자인 규칙은 `docs/design.md`에 한 줄 추가한다.
+6. 클라우드에서는 화면을 직접 띄워 보기 어렵다. 대신 PR의 Vercel 미리보기 주소를 "화면에서 확인할 곳"에 적어 사람이 보게 한다.
+7. 인증키가 필요한 스크립트(`scripts/03`, `05`~`08`, `10`, `12`)는 실행하지 않는다. 키는 저장소 주인 컴퓨터·GitHub Secrets·Vercel에만 있다. 결과가 필요하면 PR의 "넘길 일"에 "주인 컴퓨터에서 run_○○.bat 실행"으로 적는다.
+
 ## Review guidelines
 (GitHub의 Codex 자동 리뷰가 읽는 기준이다. 한국어로 리뷰한다.)
 - PR 설명의 인수인계 칸(요청 해석, 결정과 이유, 넘길 일, 건드리면 안 되는 것)이 비어 있으면 지적한다.
@@ -42,9 +62,10 @@
 |---|---|---|---|
 | Claude | 코딩 | `web/assets/*.js`, `api/`, `scripts/`, `web/data/`, HTML 구조(요소 추가, `id`, `data-*`), `docs/`(design.md 제외), README | `web/assets/style.css`, `docs/design.md`, 규칙 파일 |
 | Gemini (Antigravity) | 웹디자인 | `web/assets/*.css`, `web/*.html`(class, 감싸는 요소, 화면 문구), `web/assets/img/`, `web/assets/fonts/`, `docs/design.md` | JS·api·scripts·data, HTML의 `id`·`data-*` 속성 |
-| Codex | 최종 검수 | 없음 (읽기만) | 전부 |
+| Codex | 최종 검수 (오케스트라 안에서만) | 없음 (읽기만) | 전부 |
 
-- 위 역할 범위는 오케스트라 실행 중에 적용한다. 오케스트라 밖에서 사용자가 Claude에게 직접 요청하면 Claude가 디자인도 고칠 수 있다(`CLAUDE.md` 참고).
+- 위 역할 범위는 **오케스트라 실행 중에만** 적용한다. 팀원이 Codex로 작업을 맡기면 Codex는 위 "AI별 역할"대로 전반 담당이다.
+- 오케스트라 밖에서 사용자가 Claude에게 직접 요청하면 Claude가 디자인도 고칠 수 있다(`CLAUDE.md` 참고).
 - 오케스트라 실행 중에는 범위를 벗어난 변경을 지휘 스크립트(`orchestra/orchestra.py`)가 자동으로 되돌린다.
 - 오케스트라 실행 중에는 커밋·push·브랜치 변경을 스크립트가 한다. AI는 하지 않는다.
 - 다른 역할이 할 일은 직접 하지 말고 보고서의 "넘길 일"에 적는다.
