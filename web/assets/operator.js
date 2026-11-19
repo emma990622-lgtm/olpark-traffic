@@ -279,17 +279,27 @@
       : "이날은 KSPO DOME 공연이 없어요. 아래는 KSPO DOME 공연일 기준 참고값이에요.";
     $("gateTable").innerHTML = `<tr><th>출구</th><th>관객 차량 비중</th><th>절반 출차</th><th>90% 출차</th><th>연결 도로(현장 확인 필요)</th><th>요원 배치 참고 시간대</th></tr>` +
       g.map(([name, v], i) => {
-        const pctVal = Math.round(v.share * 100);
+        const pctVal = v.pct != null ? v.pct : Math.round(v.share * 100);
+        const range = v.p25 != null ? `<span class="muted small">보통 ${Math.round(v.p25 * 100)}~${Math.round(v.p75 * 100)}%</span>` : "";
+        const members = v.members ? `<br><span class="muted small">${v.members.map((m) => m.gate).join("·")} (일부 공연에서만 쓰임)</span>` : "";
+        const t50 = v.t50 != null ? `약 ${v.t50}분` : "—";
+        const t90 = v.t90 != null ? `약 ${v.t90}분` : "—";
+        const when = v.t90 == null ? "-" : (surge != null ? `${toHHMM(surge - 15)} ~ ${toHHMM(surge + v.t90)}` : `몰리기 15분 전 ~ ${v.t90}분 뒤`);
         return `<tr>
-          <td class="nowrap">${name}</td>
-          <td><div class="share-cell"><span class="share-bar"><i style="width:${pctVal}%"></i></span><b>${pctVal}%</b></div></td>
-          <td class="nowrap">약 ${v.t50}분</td>
-          <td class="nowrap">약 ${v.t90}분</td>
+          <td class="nowrap">${name}${members}</td>
+          <td><div class="share-cell"><span class="share-bar"><i style="width:${pctVal}%"></i></span><b>${pctVal}%</b></div>${range}</td>
+          <td class="nowrap">${t50}</td>
+          <td class="nowrap">${t90}</td>
           <td class="nowrap">${GATE_ROAD[name] || "-"}</td>
-          <td><b>${surge != null ? `${toHHMM(surge - 15)} ~ ${toHHMM(surge + v.t90)}` : `몰리기 15분 전 ~ ${v.t90}분 뒤`}</b>${i === 0 ? ` <span class="chip warn">가장 많음 · 우선 배치</span>` : ""}</td>
+          <td><b>${when}</b>${i === 0 ? ` <span class="chip warn">가장 많음 · 우선 배치</span>` : ""}</td>
         </tr>`;
       }).join("");
-    $("gateSrc").textContent = `2025년 입출차 기록(받은 만큼) 중 KSPO DOME 공연 ${Object.values(exitProf.gates)[0].shows}회, 2024년 7월 포함 전체 ${sm.shows}회 기준. 시간은 출차가 몰리기 시작한 때부터 잰 값이에요. 다운로드 완료 후 다시 계산해요.`;
+    const gm = exitProf.gateMeta || {};
+    const gShows = gm.shows || Object.values(exitProf.gates)[0].shows;
+    $("gateSrc").textContent = `2025년 입출차 기록(약 88% 받은 시점) 중 출구 기록이 있는 KSPO DOME 공연 ${gShows}회 기준. ` +
+      `비중은 공연마다 출구별 비중(합 100%)을 구해 평균한 값이고, 그 출구가 안 쓰인 공연은 0%로 넣어 합이 100%가 돼요. ` +
+      `절반 넘는 공연에서 쓰인 출구만 따로 보이고 나머지는 '그 밖의 출구'로 묶었어요. "보통"은 공연 4개 중 가운데 2개가 들어가는 범위예요. ` +
+      `시간은 출차가 몰리기 시작한 때부터 잰 값이에요(2024년 7월 포함 전체 ${sm.shows}회). 다운로드 완료 후 다시 계산해요.`;
   }
 
   function drawBrief(d, list, lv, seats, big, peakAt, showMin) {
@@ -309,7 +319,7 @@
         <tr><th>대응 수준</th><td><b>${lv.sym} ${lv.label}</b> (공원 공연 좌석 합 약 ${seats.toLocaleString()}석)</td></tr>
         <tr><th>출차 최대 예상</th><td>${big ? `<b>${peakAt} 무렵</b>, 15분에 ${ref.peakMin}~${ref.peakMax}대 (2024년 7월 KSPO DOME 공연 ${ref.n}회 기준 참고값)` : "참고 기록 없음"}</td></tr>
         <tr><th>주차장 만차</th><td>${cgSum ? `KSPO DOME 저녁 공연일 ${cgSum.kspoEveningDays}일 중 ${cgSum.kspoDaysWithFull}일 일부 구역 만차 기록. 첫 만차 보통 공연 ${cgSum.hoursBefore.med}시간 전${big ? `(${toHHMM(toMin(big.times[0]) - cgSum.hoursBefore.med * 60)} 무렵)` : ""}, 자주 차는 구역 ${Object.keys(cgSum.zoneFullDays).slice(0, 3).join("·")} → 그 전에 입구 안내 요원 배치 및 인근·환승 분산 주차 안내` : "-"}</td></tr>
-        <tr><th>집중 관리 출구</th><td>${exitProf ? Object.entries(exitProf.gates).map(([n, v]) => `<b>${n}</b> ${Math.round(v.share * 100)}%`).join(" · ") + ` (관객 차량 비중, 2025 기록)` : "2025 입출차 데이터 반영 후 제시"}</td></tr>
+        <tr><th>집중 관리 출구</th><td>${exitProf ? Object.entries(exitProf.gates).map(([n, v]) => `<b>${n}</b> ${v.pct != null ? v.pct : Math.round(v.share * 100)}%`).join(" · ") + ` (관객 차량 비중 합 100%, 2025 기록 공연 ${(exitProf.gateMeta || {}).shows || "-"}회 평균)` : "2025 입출차 데이터 반영 후 제시"}</td></tr>
         <tr><th>출차 소요</th><td>${exitProf ? `몰리기 시작해서 절반 약 <b>${exitProf.summary.t50.med}분</b>, 90% 약 <b>${exitProf.summary.t90.med}분</b> (KSPO DOME 공연 ${exitProf.summary.shows}회)` : "-"}</td></tr>
         <tr><th>영향 도로</th><td>${roadsTxt}</td></tr>
         <tr><th>관객 분산 안내</th><td>공원 주차장 혼잡 시 천호역 공영주차장(1,431면) + 5호선 올림픽공원역 환승 분산 주차 안내. 공원 차량 출입 22시까지(심야 행사 시 조정)</td></tr>

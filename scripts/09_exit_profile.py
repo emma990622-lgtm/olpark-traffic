@@ -15,7 +15,11 @@
   3) 그때부터 관객 차의 50%, 90%가 빠져나가기까지 걸린 분을 잰다
   2025 자료는 아직 일부만 받아서(날마다 일부 기록) 대수는 쓰지 않고 비율과 시간만 쓴다.
 
+  출구별 비중: 공연마다 출구별 비중(합 100%)을 구한 뒤 공연들의 평균. 그 출구가 안 쓰인 공연은 0%로 넣는다.
+  절반 이상 공연에서 쓰인 출구만 따로 보이고, 나머지는 '그 밖의 출구'로 묶는다 → 합이 항상 100%.
+
   실행: python scripts\\09_exit_profile.py
+        python scripts\\09_exit_profile.py --from-json   (원본 없이 web/data/exit_profile.json의 공연별 결과로 출구 집계만 다시)
 """
 import json
 import re
@@ -94,16 +98,74 @@ def analyze(x, day, start):
     g = a[a.gate.notna() & (a.m >= surge)]
     if len(g) >= 100:
         for name, gg in g.groupby("gate"):
-            if len(gg) < 15:
-                continue
-            res["gates"][name] = {"share": round(len(gg) / len(g), 3),
-                                  "t50": round(float(np.percentile(gg.m - surge, 50))),
-                                  "t90": round(float(np.percentile(gg.m - surge, 90)))}
+            v = {"n": int(len(gg)), "share": round(len(gg) / len(g), 4)}   # 작은 출구도 비중에는 넣는다(합 100%)
+            if len(gg) >= 15:                                             # 시간은 15대 이상일 때만
+                v["t50"] = round(float(np.percentile(gg.m - surge, 50)))
+                v["t90"] = round(float(np.percentile(gg.m - surge, 90)))
+            res["gates"][name] = v
     return res
 
 
 def q(v, p):
     return round(float(np.percentile(v, p)))
+
+
+OTHER = "그 밖의 출구"
+
+
+def round_pct(shares):
+    """비중(0~1)들을 정수 %로 반올림하되 합이 정확히 100이 되게(나머지가 큰 것부터 1씩 배분)."""
+    raw = {k: v * 100 for k, v in shares.items()}
+    base = {k: int(np.floor(v)) for k, v in raw.items()}
+    left = 100 - sum(base.values())
+    for k in sorted(raw, key=lambda k: -(raw[k] - base[k]))[:max(0, left)]:
+        base[k] += 1
+    return base
+
+
+def aggregate_gates(shows, main_ratio=0.5):
+    """공연별 출구 비중 → 출구별 평균 비중(합 100%). 자주 쓰인 출구만 따로, 나머지는 '그 밖의 출구'."""
+    G = [r for r in shows if r.get("gates")]
+    if not G:
+        return {}, {}
+    n = len(G)
+    seen = {}
+    for r in G:
+        for k in r["gates"]:
+            seen[k] = seen.get(k, 0) + 1
+    main = [k for k, c in seen.items() if c >= main_ratio * n]
+    rest = sorted((k for k in seen if k not in main), key=lambda k: -seen[k])
+    per = {k: [] for k in main + [OTHER]}
+    for r in G:
+        sh = {k: v["share"] for k, v in r["gates"].items()}
+        left = max(0.0, 1 - sum(sh.values()))   # 예전 결과처럼 작은 출구가 빠져 있으면 남은 몫도 '그 밖의 출구'로
+        tot = sum(sh.values()) + left
+        for k in main:
+            per[k].append(sh.get(k, 0.0) / tot)
+        per[OTHER].append((sum(v for k, v in sh.items() if k not in main) + left) / tot)
+    mean = {k: float(np.mean(v)) for k, v in per.items()}
+    if mean[OTHER] < 0.005:
+        mean.pop(OTHER)
+    pct = round_pct(mean)
+    out = {}
+    for k in sorted(mean, key=lambda k: (k == OTHER, -mean[k])):
+        if k == OTHER:
+            t = [v for r in G for kk, v in r["gates"].items() if kk not in main and "t50" in v]
+            shows_k = sum(1 for r in G if any(kk not in main for kk in r["gates"]))
+        else:
+            t = [r["gates"][k] for r in G if k in r["gates"] and "t50" in r["gates"][k]]
+            shows_k = seen[k]
+        out[k] = {"shows": shows_k, "share": round(mean[k], 3), "pct": pct[k],
+                  "p25": round(float(np.percentile(per[k], 25)), 3), "p75": round(float(np.percentile(per[k], 75)), 3),
+                  "t50": q([x["t50"] for x in t], 50) if len(t) >= 3 else None,
+                  "t90": q([x["t90"] for x in t], 50) if len(t) >= 3 else None}
+        if k == OTHER:
+            out[k]["members"] = [{"gate": g, "shows": seen[g]} for g in rest]
+    meta = {"shows": n,
+            "method": f"공연마다 출구별 비중(합 100%)을 구해 공연 평균. 안 쓰인 공연은 0%. 전체 공연의 "
+                      f"{int(main_ratio * 100)}% 이상에서 쓰인 출구만 따로 보이고 나머지는 '{OTHER}'로 묶음",
+            "range": "p25~p75 = 공연 4개 중 가운데 2개가 들어가는 범위"}
+    return out, meta
 
 
 def main():
@@ -136,17 +198,11 @@ def main():
     for src, g in S.groupby("src"):
         summary["bySource"][src] = {"shows": int(len(g)), "surgeMin": q(g.surgeMin, 50), "t50": q(g.t50, 50), "t90": q(g.t90, 50)}
     # 출구별 (2025만 출구 정보가 있음)
-    gates = {}
-    for r in shows:
-        for g, v in r["gates"].items():
-            gates.setdefault(g, []).append(v)
-    gate_sum = {g: {"shows": len(v), "share": round(float(np.median([x["share"] for x in v])), 3),
-                    "t50": q([x["t50"] for x in v], 50), "t90": q([x["t90"] for x in v], 50)}
-                for g, v in gates.items() if len(v) >= 3}
+    gate_sum, gate_meta = aggregate_gates(shows)
     out = {
         "venue": "KSPO DOME", "built": pd.Timestamp.now().strftime("%Y-%m-%d"),
         "method": "시작 3시간 전~20분 뒤 입차, 2시간 넘게 머문 차를 관객 차로 보고, 출차가 몰리기 시작한 때부터 50%·90%가 빠지기까지 걸린 시간",
-        "summary": summary, "gates": dict(sorted(gate_sum.items(), key=lambda kv: -kv[1]["share"])),
+        "summary": summary, "gates": gate_sum, "gateMeta": gate_meta,
         "list": sorted(shows, key=lambda r: r["date"]),
     }
     OUT.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -155,5 +211,16 @@ def main():
     print(f"저장 → {OUT}")
 
 
+def regate_from_json():
+    """원본 없이, 이미 저장된 공연별 결과(list)로 출구 집계만 다시 한다."""
+    d = json.loads(OUT.read_text(encoding="utf-8"))
+    d["gates"], d["gateMeta"] = aggregate_gates(d["list"])
+    d["gateMeta"]["rebuilt"] = pd.Timestamp.now().strftime("%Y-%m-%d") + " (--from-json)"
+    OUT.write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding="utf-8")
+    print("출구별:", json.dumps(d["gates"], ensure_ascii=False))
+    print("합계:", sum(v["pct"] for v in d["gates"].values()), "%")
+
+
 if __name__ == "__main__":
-    main()
+    import sys
+    regate_from_json() if "--from-json" in sys.argv else main()
