@@ -109,7 +109,9 @@ def probe(keys):
     print(f"확인 끝 → {out}\nClaude에게 '확인 끝났어'라고 알려주세요.")
 
 
-SIZES = [5000, 2000, 1000]   # 한 번에 받을 줄 수(큰 것부터 시도, 서버가 버거워하면 줄임)
+SIZES = [5000, 2000, 1000, 200, 50, 10]   # 한 번에 받을 줄 수(큰 것부터 시도, 서버가 버거워하면 줄임)
+SKIP_AFTER = 3        # 가장 작은 크기(10줄)로도 같은 자리에서 이만큼 연속 실패하면, 바로 다음 자리를 시험해 본다
+SKIP_LIMIT = 2000     # 건너뛴 줄이 이보다 많아지면 멈추고 사람에게 알린다(데이터를 함부로 버리지 않게)
 
 
 def fetch(name, key):
@@ -128,9 +130,17 @@ def fetch(name, key):
         offset = 0
         if out.exists():
             out.unlink()
+    gap_file = out.with_name(out.name.replace(".jsonl", ".gaps.txt"))
+    skipped = 0
+    if gap_file.exists():
+        for line in gap_file.read_text(encoding="utf-8").splitlines():
+            if line and line[0].isdigit():
+                a, b = line.split(",")[:2]
+                skipped += int(b) - int(a)
     total = None
     size_i = 0
     fails_504 = 0
+    stuck = 0          # 가장 작은 크기로 같은 자리에서 연속 실패한 횟수
     print(f"\n===== {label}: {offset:,}줄째부터 이어받기 =====")
     with open(out, "a", encoding="utf-8") as f:
         while total is None or offset < total:
@@ -148,6 +158,31 @@ def fetch(name, key):
                     size_i += 1
                     print(f"  서버가 느려서 한 번에 {SIZES[size_i]}줄로 줄입니다")
                     continue
+                if e.code in (502, 503, 504):
+                    stuck += 1
+                    if stuck >= SKIP_AFTER:
+                        # 이 10줄만 문제인지, 서버 전체가 멈췄는지 바로 다음 10줄로 시험
+                        try:
+                            parse(call(url, key, page + 1, size))
+                            ok_next = True
+                        except Exception:
+                            ok_next = False
+                        if ok_next:
+                            if skipped + size > SKIP_LIMIT:
+                                raise SystemExit(f"건너뛴 줄이 {SKIP_LIMIT:,}줄을 넘었어요. Claude에게 알려 주세요.")
+                            if not gap_file.exists():
+                                gap_file.write_text("# 서버 오류(502 등)로 받지 못하고 건너뛴 줄 (시작,끝,오류,시각)\n", encoding="utf-8")
+                            with open(gap_file, "a", encoding="utf-8") as g:
+                                g.write(f"{offset},{offset + size},{e.code},{time.strftime('%Y-%m-%d %H:%M')}\n")
+                            skipped += size
+                            print(f"  {offset + 1:,}~{offset + size:,}번째 줄만 서버가 계속 오류를 내요 → 이 {size}줄은 건너뛰고 기록해요 "
+                                  f"(지금까지 건너뜀 {skipped:,}줄, {gap_file.name})")
+                            offset += size
+                            off_file.write_text(str(offset))
+                            stuck = 0
+                            fails_504 = 0
+                            continue
+                        print("  다음 자리도 오류예요 → 서버 전체 문제라서 기다려요")
                 fails_504 += 1
                 wait = min(600, 30 * fails_504)
                 print(f"  {e} → {wait}초 쉬고 재시도")
@@ -163,6 +198,7 @@ def fetch(name, key):
                 time.sleep(30)
                 continue
             fails_504 = 0
+            stuck = 0
             total = t or total
             if not rows:
                 break
@@ -181,6 +217,8 @@ def fetch(name, key):
             time.sleep(PAUSE)
     off_file.unlink(missing_ok=True)
     print(f"완료 → {out}")
+    if skipped:
+        print(f"  서버 오류로 건너뛴 줄: {skipped:,}줄 (위치: {gap_file.name}). 분석할 때 이 숫자를 함께 밝혀요.")
 
 
 def check_linked(key):
