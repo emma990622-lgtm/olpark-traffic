@@ -50,12 +50,14 @@ def lerp(a, b, t):
 RAW_SAMPLES = []
 
 
-def tmap(key, a, b):
+def tmap(key, a, b, via=None):
     """TMAP 자동차 경로. 경로를 이루는 도로 조각마다 이름·거리·소요시간(실시간 교통 반영)이 온다.
-    구간별 혼잡도(traffic) 배열은 이 키로는 오지 않아서, 같은 이름 도로 조각의 거리÷시간으로 속도를 구한다."""
-    body = json.dumps({"startX": str(a[0]), "startY": str(a[1]), "endX": str(b[0]), "endY": str(b[1]),
-                       "reqCoordType": "WGS84GEO", "resCoordType": "WGS84GEO",
-                       "searchOption": "0", "trafficInfo": "Y"}).encode()
+    같은 이름 도로 조각의 거리÷시간으로 속도를 구한다. via: 거쳐 갈 점 목록(최대 5개)."""
+    q = {"startX": str(a[0]), "startY": str(a[1]), "endX": str(b[0]), "endY": str(b[1]),
+         "reqCoordType": "WGS84GEO", "resCoordType": "WGS84GEO", "searchOption": "0", "trafficInfo": "Y"}
+    if via:
+        q["passList"] = "_".join(f"{p[0]},{p[1]}" for p in via[:5])
+    body = json.dumps(q).encode()
     d = get_json(TMAP, body, {"appKey": key, "Content-Type": "application/json", "Accept": "application/json"})
     if len(RAW_SAMPLES) < 5:                       # 응답 모양 확인용(키는 들어 있지 않음)
         RAW_SAMPLES.append(d)
@@ -175,21 +177,39 @@ def main():
             continue
         total = sum(float(x["len"]) for x in c)
         seoul_min = sum(float(x["len"]) / 1000 / spd_by_id[x["id"]] * 60 for x in c)
-        try:
-            tm, segs = tmap(key, c[0]["a"], c[-1]["b"])
-            body_t = sum(t for _, _, t in segs)
-        except Exception as e:
-            print(f"  {c[0]['road']}: TMAP 실패 ({e})")
+        label = f"{c[0]['road']} {c[0]['from']}→{c[-1]['to']}"
+        # 출발·도착점을 교차로 한가운데가 아니라 첫·끝 구간 안쪽에 두고(옆 도로·반대 차로에 붙는 것 방지),
+        # 각 구간의 가운데를 거쳐 가게 해서(방향 고정) TMAP이 같은 길을 달리게 한다.
+        start, end = lerp(c[0]["a"], c[0]["b"], 0.15), lerp(c[-1]["a"], c[-1]["b"], 0.85)
+        mids = [lerp(x["a"], x["b"], 0.5) for x in c]
+        if len(mids) > 5:
+            mids = [mids[round(i * (len(mids) - 1) / 4)] for i in range(5)]
+        best = None
+        for via in (mids, None):
+            try:
+                _, segs = tmap(key, start, end, via)
+            except Exception as e:
+                print(f"  {label}: TMAP 실패{' (거쳐 가기)' if via else ''} ({e})")
+                time.sleep(0.4)
+                continue
+            time.sleep(0.4)
+            spd, dist = road_speed(segs, c[0]["road"])
+            if spd and (best is None or dist > best[1]):
+                best = (spd, dist)
+            if spd and dist >= 0.6 * total * 0.7:       # 비교 길이(양 끝 15%를 뺀 70%)의 60% 이상을 같은 도로로 달림
+                break
+        if not best or best[1] < 0.6 * total * 0.7:
+            got = best[1] if best else 0
+            print(f"  {label}: TMAP 경로가 이 도로를 {got}m만 지나서 뺌 (필요 {round(0.42 * total)}m)")
             continue
-        time.sleep(0.4)
-        if tm > 1.3 * total + 100:
-            print(f"  {c[0]['road']} {c[0]['from']}→{c[-1]['to']}: TMAP이 다른 길로 돌아가서 뺌")
-            continue
-        tmap_min = body_t / 60
+        # TMAP 시간 = 같은 도로 조각의 평균 속도로 이 도로 전체 길이를 달리는 시간 (서울시와 같은 길이 기준)
+        tmap_min = total / 1000 / best[0] * 60
         diff = (tmap_min - seoul_min) / seoul_min if seoul_min else 0
         cor_rows.append({"road": c[0]["road"], "from": c[0]["from"], "to": c[-1]["to"], "links": len(c), "len": round(total),
-                         "seoulMin": round(seoul_min, 1), "tmapMin": round(tmap_min, 1), "diff": round(diff, 2)})
-        print(f"  {c[0]['road']:5} {c[0]['from'][:9]}→{c[-1]['to'][:9]} {round(total)}m  서울시 {seoul_min:4.1f}분  TMAP {tmap_min:4.1f}분  ({diff:+.0%})")
+                         "seoulMin": round(seoul_min, 1), "tmapMin": round(tmap_min, 1), "diff": round(diff, 2),
+                         "tmapRoadM": best[1]})
+        print(f"  {c[0]['road']:5} {c[0]['from'][:9]}→{c[-1]['to'][:9]} {round(total)}m  서울시 {seoul_min:4.1f}분  "
+              f"TMAP {tmap_min:4.1f}분  ({diff:+.0%}, 같은 도로 {best[1]}m)")
     if not rows and not cor_rows:
         raise SystemExit("비교할 수 있는 구간이 없습니다.")
     if not rows:
