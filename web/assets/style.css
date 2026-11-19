@@ -11,7 +11,7 @@
   /* 기본 표면 및 텍스트 (WCAG AA 4.5:1 이상 명도 대비 준수) */
   --ink: #161d2b;
   --ink-2: #475467;
-  --ink-3: #667085;
+  --ink-3: #525e71;
   --line: #e2e8f0;
   --line-strong: #cbd5e1;
   --bg: #f2f5f9;
@@ -45,11 +45,11 @@
   --none-ink: #475467;
   --none-bg: #f1f5f9;
 
-  /* 수도권 지하철 노선 포인트 컬러 */
-  --subway-2: #00a84d;
-  --subway-5: #8936e0;
-  --subway-8: #e6186c;
-  --subway-9: #a17800;
+  /* 수도권 지하철 노선 포인트 컬러 (흰색 텍스트와 명도 대비 5.5:1 이상 보정) */
+  --subway-2: #007a37;
+  --subway-5: #6d28d9;
+  --subway-8: #be125c;
+  --subway-9: #7c5800;
 
   /* 형태·간격·그림자·터치 규격 */
   --radius: 16px;
@@ -172,7 +172,7 @@ header.top nav a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 38px;
+  min-height: var(--tap-min);
   padding: 6px 12px;
   font-size: 13px;
   font-weight: 600;

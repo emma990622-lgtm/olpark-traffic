@@ -196,7 +196,7 @@
         <div class="live-lot-box">
           <div class="live-lot-head">
             <span class="live-badge">지금 공원 주차 추정 (${String(live.summary["수집시각"]).slice(11, 16)} 기준)</span>
-            <span class="chip ${occCls}">${occLabel} · 약 ${occPct}%</span>
+            <span class="chip ${occCls}">${occLabel} · 보정 점유 약 ${occPct}%</span>
           </div>
           <div class="live-lot-nums">
             빈자리 약 <span class="free-num">${freeEst.toLocaleString()}면</span>
@@ -240,7 +240,7 @@
           <div class="metric-card">
             <div class="mk">출차 50% 소요</div>
             <div class="mv">${isBig && ep ? `약 ${ep.t50.med}분` : "준비 중"}</div>
-            <div class="ms">${isBig && ep ? `90%는 약 ${ep.t90.med}분` : "2025 데이터 예정"}</div>
+            <div class="ms">${isBig && ep ? `90% 약 ${ep.t90.med}분 · 과거 ${ep.shows}회` : "2025 데이터 예정"}</div>
           </div>
         </div>
         ${parkLiveBox}

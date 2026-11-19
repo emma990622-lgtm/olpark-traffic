@@ -397,12 +397,13 @@
     });
     const score = (arr) => arr.reduce((s, x) => s + (x === "정체" ? 2 : x === "서행" ? 1 : 0), 0) / arr.length;
     const color = (sc) => sc == null ? "#eef0f3" : sc < 0.4 ? "var(--good)" : sc < 1.0 ? "var(--warn)" : "var(--bad)";
+    const gradeLabel = (sc) => sc == null ? "수집 없음" : sc < 0.4 ? "대부분 원활" : sc < 1.0 ? "서행 섞임" : "정체 많음";
     const rows = [...byRoad.entries()].map(([k, m]) => ({ k, cells: times.map((t) => (m.has(t) ? score(m.get(t)) : null)) }))
       .sort((a, b) => Math.max(...b.cells.map((c) => c ?? 0)) - Math.max(...a.cells.map((c) => c ?? 0)));
     const mark = (t) => st != null && [st, st + showMin, st + ref.lagMed].some((m) => Math.abs(hm(t + ":00") - m) < 3);
     let h = `<table class="heat"><tr><th></th>${times.map((t, i) => `<td class="tick">${i % 6 === 0 ? t.slice(11) : ""}</td>`).join("")}</tr>`;
     rows.forEach((r) => {
-      h += `<tr><th>${r.k}</th>${r.cells.map((c, i) => `<td title="${r.k} ${times[i].slice(11)}" style="background:${color(c)};${mark(times[i]) ? "outline:2px solid var(--ink)" : ""}"></td>`).join("")}</tr>`;
+      h += `<tr><th>${r.k}</th>${r.cells.map((c, i) => `<td title="${r.k} ${times[i].slice(11)} · ${gradeLabel(c)}" aria-label="${r.k} ${times[i].slice(11)} ${gradeLabel(c)}" style="background:${color(c)};${mark(times[i]) ? "outline:2px solid var(--ink)" : ""}"></td>`).join("")}</tr>`;
     });
     h += `</table><div class="legend"><span><i style="background:var(--good)"></i>● 대부분 원활</span><span><i style="background:var(--warn)"></i>▲ 서행 섞임</span><span><i style="background:var(--bad)"></i>■ 정체 많음</span>${st != null ? "<span>▣ 검은 테두리: 공연 시작·예상 종료·출차 최대 예상</span>" : ""}</div>`;
     $("heat").innerHTML = h;

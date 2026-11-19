@@ -3,6 +3,10 @@
 KSPO DOME·올림픽공원 공연 후 도로 혼잡 데이터 프로젝트
 (한국체육산업개발 2026 공공데이터 활용 경진대회 출품용)
 
+## 같이 작업하기
+- 팀 작업 순서: [`docs/팀_작업법.md`](docs/팀_작업법.md) (각자 AI로 고치고 PR로 인수인계)
+- 모든 AI 공통 규칙: [`AGENTS.md`](AGENTS.md), 프로젝트 배경: [`docs/context.md`](docs/context.md)
+
 ## 폴더
 - `data/raw/` 원본 자료 (입출차, 행사 일정, 도로 58구간 목록)
 - `data/processed/` 정리된 표 (일별 요약, 공연일 표)

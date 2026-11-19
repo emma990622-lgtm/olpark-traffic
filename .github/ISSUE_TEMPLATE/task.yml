@@ -1,0 +1,52 @@
+name: 작업 요청
+description: 고치거나 새로 만들 것을 적어요. 카톡에서 정한 할 일도 여기에 한 줄 남겨요.
+title: "[화면] 한 줄 제목"
+labels: []
+body:
+  - type: dropdown
+    id: screen
+    attributes:
+      label: 어느 화면인가요?
+      options:
+        - 관객 화면 (index.html, 휴대폰)
+        - 운영자·기관 화면 (operator.html, PC)
+        - 두 화면 모두
+        - 데이터·분석 (scripts, web/data)
+        - 기타 (문서, 설정)
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 종류
+      options:
+        - 디자인 (색·글씨·배치·문구)
+        - 기능 (동작, 계산, 데이터 연결)
+        - 둘 다
+        - 버그 (고장)
+    validations:
+      required: true
+  - type: textarea
+    id: now
+    attributes:
+      label: 지금 어떤가요?
+      description: 지금 화면이나 동작이 어떤지. 캡처를 붙여 넣어도 돼요.
+    validations:
+      required: true
+  - type: textarea
+    id: want
+    attributes:
+      label: 어떻게 바뀌면 좋을까요?
+      description: "'예쁘게' 대신 구체적으로. 예: 만차인 주차장은 빨간색과 '만차' 글자로 표시"
+    validations:
+      required: true
+  - type: textarea
+    id: check
+    attributes:
+      label: 다 됐는지 어떻게 확인하나요? (선택)
+      description: 예) 휴대폰 폭(360px)에서 주차장 목록을 열었을 때 만차 표시가 보인다
+  - type: input
+    id: who
+    attributes:
+      label: 누가 맡나요? (선택)
+      description: 맡을 사람이 정해졌으면 오른쪽 Assignees에도 지정해 주세요. 같은 화면을 둘이 동시에 고치지 않기 위해서예요.
