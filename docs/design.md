@@ -62,6 +62,7 @@
 | 운영자 (`operator.js` · `showTime`) | `.timectl`, `.trow`, `.tlabel`, `.phase` | 3D 지도 시간대 슬라이더 컨트롤러 및 단계 배지 |
 | 운영자 (`operator.js` · `drawHeat`) | `.heat`, `.tick`, `.table-scroll` | 5분 단위 도로별 속도 히트맵 (첫 열 도로명 `position: sticky`) |
 | 운영자 (`operator.js` · `drawGates`) | `.share-cell`, `.share-bar`, `.nowrap` | 출구별 차량 비중 미니 바 및 출구명 줄바꿈 방지 |
+| 운영자 (`live_exit.js`) | `.le-head`, `.le-pick`, `.le-status`, `.le-chart`, `.le-field`, `.le-err` (+ 기존 `.kpis`/`.kpi`, `.chip.good`/`.warn`/`.bad`, `button.ghost` 재사용) | 공연 당일 실시간 출차 감지 카드. 상태는 기호+글자(`○ 감시 중`, `▲ 확인 중`, `▼ 출차 시작 감지`)로 함께 표시 |
 | 운영자 (`operator.js` · `drawBrief`) | `.brief-header-bar`, `.brief`, `.print-me`, `.no-print` | 유관기관 공유용 A4 한 장 인쇄 양식 |
 
 ---
@@ -74,7 +75,7 @@
   - `id`: `date`, `event`, `eventInfo`, `mode`, `carSection`, `reco`, `options`, `walkSrc`, `subwayNote`, `transitSection`, `stations`, `stationTip`, `map3d`, `legend3d`, `flat`, `map`, `legend`, `roadNote`
   - `data-*`: `#mode` 내부 버튼의 `data-v="car"`, `data-v="transit"` / `#options` 내부 환승 탭 버튼의 `data-tmode="go"`, `data-tmode="out"`
 - **`web/operator.html`**:
-  - `id`: `date`, `showMin`, `events`, `kpis`, `chart`, `chartNote`, `map3d`, `tPlay`, `tSlider`, `tNow`, `tLabel`, `tInfo`, `legend3d`, `flat`, `map`, `legend`, `roadNote`, `roadCheck`, `roadDayNote`, `roadChart`, `roadChartLegend`, `heat`, `slowTop`, `gateNote`, `gateTable`, `gateSrc`, `brief`
+  - `id`: `date`, `showMin`, `events`, `kpis`, `chart`, `chartNote`, `map3d`, `tPlay`, `tSlider`, `tNow`, `tLabel`, `tInfo`, `legend3d`, `flat`, `map`, `legend`, `roadNote`, `roadCheck`, `roadDayNote`, `roadChart`, `roadChartLegend`, `heat`, `slowTop`, `gateNote`, `gateTable`, `gateSrc`, `brief`, `liveExit`, `leReplay`, `leStatus`, `leKpis`, `leChart`, `leMark`, `leCsv`, `leMarks`, `leRec`, `leErr`, `leSrc`
 
 ---
 

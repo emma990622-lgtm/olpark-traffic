@@ -1542,3 +1542,58 @@ details#flat[open] {
     border-radius: 0;
   }
 }
+
+/* ==========================================================================
+   운영자: 공연 당일 실시간 출차 감지 (live_exit.js)
+   ========================================================================== */
+.le-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.le-pick select {
+  min-height: var(--tap-min);
+  min-width: 220px;
+}
+
+.le-status {
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink);
+  line-height: 1.6;
+}
+
+.le-chart {
+  margin-top: 12px;
+}
+
+.le-chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.le-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.le-err {
+  color: var(--bad-ink);
+  margin-top: 4px;
+}
+
+.le-err:empty {
+  display: none;
+}
+
