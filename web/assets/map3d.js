@@ -1,7 +1,7 @@
 // 3D 지도: 브이월드 건물(층수 높이) + 실제 모양 차도(속도 색) + TMAP 걷는 길 + 주차장·역·공연장
 // MapLibre GL(무료 오픈소스) + OpenFreeMap 바탕지도(키 없음)
 const MAP3D_STYLE = "https://tiles.openfreemap.org/styles/liberty";
-const IDX_HEX = { "원활": "#1f9d55", "서행": "#d98a00", "정체": "#d63b3b" };
+const IDX_HEX = { "원활": "#16a34a", "서행": "#d97706", "정체": "#dc2626" };
 
 function roadsGeoJSON(links, live, shapes = {}) {
   // 실시간 응답에 실제 도로 모양(xy)이 있으면 그걸, 없으면 시작~끝 직선
@@ -29,9 +29,10 @@ async function initMap3D(el, { links, places, live, venues }) {
     g.features.forEach((f) => { shapes[f.properties.id] = f.geometry.coordinates; });
   } catch (_) { /* 도로 모양 파일이 없으면 시작~끝 직선 */ }
   const dome = places.dome;
+  const initZoom = (el && el.clientWidth && el.clientWidth < 520) ? 14.72 : 14.98;
   const map = new maplibregl.Map({
     container: el, style: MAP3D_STYLE,
-    center: [dome.lng - 0.002, dome.lat - 0.001], zoom: 15.2, pitch: 58, bearing: -20,
+    center: [dome.lng - 0.0015, dome.lat - 0.0008], zoom: initZoom, pitch: 56, bearing: -18,
     antialias: true, attributionControl: { compact: true },
   });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
@@ -145,18 +146,18 @@ async function initMap3D(el, { links, places, live, venues }) {
     setVenue(pl) {
       drawMarkers(pl);
       map.getSource("walk").setData(walkFor(pl.dome.name || "KSPO DOME"));
-      map.easeTo({ center: [pl.dome.lng - 0.002, pl.dome.lat - 0.001], duration: 800 });
+      map.easeTo({ center: [pl.dome.lng - 0.0015, pl.dome.lat - 0.0008], duration: 800 });
     },
   };
 }
 
 function legend3DHTML(buildingSrc) {
   return `<div class="legend">
-    <span><i style="background:${IDX_HEX["원활"]}"></i>원활</span>
-    <span><i style="background:${IDX_HEX["서행"]}"></i>서행</span>
-    <span><i style="background:${IDX_HEX["정체"]}"></i>정체</span>
-    <span><i style="background:#a5acb8"></i>수집값 없음</span>
-    <span><i style="background:repeating-linear-gradient(90deg,#2459d6 0 5px,transparent 5px 9px)"></i>주차장→고른 공연장 걷는 길</span>
-    <span><i style="background:repeating-linear-gradient(90deg,#7b4fd6 0 5px,transparent 5px 9px)"></i>역→고른 공연장 걷는 길</span>
+    <span><i style="background:${IDX_HEX["원활"]}"></i>● 원활</span>
+    <span><i style="background:${IDX_HEX["서행"]}"></i>▲ 서행</span>
+    <span><i style="background:${IDX_HEX["정체"]}"></i>■ 정체</span>
+    <span><i style="background:#94a3b8"></i>— 수집값 없음</span>
+    <span><i style="background:repeating-linear-gradient(90deg,#1d4ed8 0 5px,transparent 5px 9px)"></i>주차장→공연장 도보</span>
+    <span><i style="background:repeating-linear-gradient(90deg,#7c3aed 0 5px,transparent 5px 9px)"></i>역→공연장 도보</span>
     <span>건물: ${buildingSrc}</span></div>`;
 }

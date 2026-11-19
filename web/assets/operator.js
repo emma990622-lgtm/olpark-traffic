@@ -6,40 +6,60 @@
   const ref = kspoReference(exits);
   const exitProf = await loadJSON("exit_profile.json").catch(() => null);
   const cgSum = await loadJSON("congestion_summary.json").catch(() => null);   // 주차장 혼잡도 기록(구역별 만차)
-  // 실시간 도로 자료 검증: ① 서울시 원본(TOPIS)과 같은지 ② 다른 출처(TMAP 실시간 교통)와 비슷한지
+
+  // 실시간 도로 자료 검증: 서울시 원본(TOPIS) 및 다른 출처(TMAP 실시간 교통)와 교차 비교
   Promise.all([loadJSON("road_source_check.json").catch(() => null), loadJSON("road_check.json").catch(() => null)]).then(([a, c]) => {
     const pct = (x) => Math.round(x * 100) + "%";
     const parts = [];
-    if (a) parts.push(`① 서울시 원본(TOPIS)과 비교(${a.checked}, ${a.n}개 구간): 등급 같음 ${pct(a.sameGrade)}, 속도 차이 중앙값 ${a.medAbsDiff}km/h, 상관계수 ${a.corr}`);
-    if (c && c.corridors) parts.push(`② 긴 도로 이동시간을 TMAP과 비교(${c.checked}, ${c.corridors.n}개 도로, 600m 이상): 차이 중앙값 ${pct(c.corridors.medAbsDiff)}, 30% 안쪽 ${pct(c.corridors.within30)}`);
-    if (c) parts.push(`③ 짧은 구간 하나씩 TMAP과 비교(${c.checked}, ${c.n}개 구간): 등급 같음 ${pct(c.sameGrade)}, 한 단계 차이까지 ${pct(c.within1)}, 속도 차이 중앙값 ${c.medAbsDiff}km/h` +
-      (c.long300 ? ` · 300m 넘는 구간만 등급 같음 ${pct(c.long300.sameGrade)}` : "") + (c.history && c.history.length > 1 ? ` (검증 ${c.history.length}회)` : "") + " · 짧은 구간은 끝 교차로 신호 대기에 크게 흔들려 참고용");
-    if (parts.length) document.getElementById("roadCheck").innerHTML = "<b>도로 자료 검증</b><br>" + parts.join("<br>");
+    if (a) {
+      parts.push(`서울시 원본(TOPIS)과 비교(${a.checked}, ${a.n}개 구간): 등급 일치 <b>${pct(a.sameGrade)}</b>, 속도 차이 중앙값 ${a.medAbsDiff}km/h, 상관계수 <b>${a.corr}</b>`);
+    }
+    if (c && c.corridors) {
+      parts.push(`긴 도로 이동시간을 TMAP과 비교(${c.checked}, ${c.corridors.n}개 도로, 600m 이상): 차이 중앙값 <b>${pct(c.corridors.medAbsDiff)}</b>, 30% 이내 ${pct(c.corridors.within30)}`);
+    }
+    if (c) {
+      parts.push(`짧은 구간별 TMAP 비교(${c.checked}, ${c.n}개 구간): 등급 일치 ${pct(c.sameGrade)}, 한 단계 차이까지 ${pct(c.within1)}, 속도 차이 중앙값 ${c.medAbsDiff}km/h` +
+        (c.long300 ? ` · 300m 초과 구간만 등급 일치 <b>${pct(c.long300.sameGrade)}</b>` : "") +
+        (c.history && c.history.length > 1 ? ` (누적 검증 ${c.history.length}회)` : "") +
+        " · 짧은 구간은 교차로 신호 대기 영향이 커 참고용");
+    }
+    if (parts.length) {
+      document.getElementById("roadCheck").innerHTML = `
+        <div class="verify-box">
+          <div class="verify-title">✔ 실시간 도로 자료 교차검증 결과</div>
+          <ol class="verify-list">${parts.map((p) => `<li>${p}</li>`).join("")}</ol>
+        </div>`;
+    }
   });
+
   const GATE_ROAD = { "남2문": "위례성대로", "북2문": "강동대로" };   // 현장 확인 필요
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = events.filter((e) => e.date >= today && e.times.length);
   const byDate = groupByDate(upcoming);
   const $ = (id) => document.getElementById(id);
   let live = null;
+  const LIVE_SLIDER_HINT = "슬라이더를 움직이거나 ▶ 버튼을 누르면 공연 2시간 전부터 종료 2시간 후까지 시간대별 변화를 볼 수 있어요.";
 
   [...byDate.keys()].forEach((d) => {
     const list = byDate.get(d);
     const seats = list.reduce((s, e) => s + (e.seats || 0), 0);
+    const lv = levelOf(seats);
     const o = document.createElement("option");
     o.value = d;
-    o.textContent = `${d} (${DOW[new Date(d + "T00:00:00").getDay()]}) · ${levelOf(seats).label} · ${list.map((e) => e.venue).join(", ")}`;
+    o.textContent = `${d} (${DOW[new Date(d + "T00:00:00").getDay()]}) · 혼잡 ${lv.label} · ${list.map((e) => e.venue).join(", ")}`;
     $("date").appendChild(o);
   });
   const firstBig = upcoming.find((e) => e.venue === "KSPO DOME");
   if (firstBig) $("date").value = firstBig.date;
   [120, 150, 180, 210].forEach((m) => {
-    const o = document.createElement("option"); o.value = m; o.textContent = m + "분" + (m === DEFAULT_SHOW_MIN ? " (기본)" : "");
+    const o = document.createElement("option");
+    o.value = m;
+    o.textContent = m + "분" + (m === DEFAULT_SHOW_MIN ? " (기본)" : "");
     $("showMin").appendChild(o);
   });
   $("showMin").value = DEFAULT_SHOW_MIN;
 
-  // 2024-07 비교 기준: 공원 큰 공연(KSPO·핸드볼·올림픽홀)이 없는 평일의 평균
+  // 2024-07 비교 기준: 공원 큰 공연(KSPO·핸드볼·올림픽홀)이 없는 같은 시간대 평일 평균
   const ev24 = events.filter((e) => e.date.startsWith("2024-07"));
   const bigDates = new Set(ev24.filter((e) => ["KSPO DOME", "핸드볼경기장", "올림픽홀"].includes(e.venue)).map((e) => e.date));
   const quietWeekdays = Object.keys(exits.days).filter((d) => {
@@ -59,17 +79,33 @@
     const lastStart = Math.max(...list.flatMap((e) => e.times.map(toMin)));
     const lastEnd = lastStart + showMin;
 
-    $("events").innerHTML = `<tr><th>공연장</th><th>공연</th><th>시작</th><th>예상 종료</th><th>좌석(참고)</th></tr>` +
-      list.map((e) => `<tr><td>${e.venue}</td><td>${e.title}</td><td>${e.times.join(", ")}</td>
-        <td>${e.times.map((t) => toHHMM(toMin(t) + showMin)).join(", ")}</td>
-        <td>${e.seats ? e.seats.toLocaleString() : "-"}</td></tr>`).join("");
+    $("events").innerHTML = `<tr><th>공연장</th><th>공연명</th><th>시작 시각</th><th>예상 종료</th><th>좌석 규모(참고)</th></tr>` +
+      list.map((e) => `<tr>
+        <td class="nowrap"><span class="chip ${e.venue === "KSPO DOME" ? "accent" : ""}">${e.venue}</span></td>
+        <td><b>${e.title}</b></td>
+        <td class="nowrap">${e.times.join(", ")}</td>
+        <td class="nowrap">${e.times.map((t) => toHHMM(toMin(t) + showMin)).join(", ")}</td>
+        <td class="nowrap">${e.seats ? e.seats.toLocaleString() + "석" : "-"}</td>
+      </tr>`).join("");
 
     const peakAt = big ? toHHMM(toMin(big.times[0]) + ref.lagMed) : "-";
     $("kpis").innerHTML = `
-      <div class="kpi"><div class="v"><span class="chip ${lv.cls}" style="font-size:18px">${lv.label}</span></div><div class="l">대응 수준 (좌석 합 ${seats.toLocaleString()}석 기준)</div></div>
-      <div class="kpi"><div class="v">${peakAt}</div><div class="l">출차 최대 예상 시각 (2024-07 KSPO DOME ${ref.n}회: 시작 후 ${durText(ref.lagMin)}~${durText(ref.lagMax)}, 중앙값 기준)</div></div>
-      <div class="kpi"><div class="v">${big ? ref.peakMin + "~" + ref.peakMax : "-"}</div><div class="l">15분 최대 출차 참고 범위(대)</div></div>
-      <div class="kpi"><div class="v">${toHHMM(lastEnd)}</div><div class="l">마지막 공연 예상 종료</div></div>`;
+      <div class="kpi is-${lv.cls}">
+        <div class="v"><span class="chip ${lv.cls}" style="font-size:16px;padding:5px 12px">${lv.sym} ${lv.label}</span></div>
+        <div class="l">대응 수준 (좌석 합 약 ${seats.toLocaleString()}석 기준)</div>
+      </div>
+      <div class="kpi">
+        <div class="v">${peakAt}</div>
+        <div class="l">출차 최대 예상 시각 (2024-07 KSPO DOME ${ref.n}회: 시작 후 ${durText(ref.lagMin)}~${durText(ref.lagMax)}, 중앙값 기준)</div>
+      </div>
+      <div class="kpi">
+        <div class="v">${big ? ref.peakMin + "~" + ref.peakMax + "대" : "-"}</div>
+        <div class="l">15분 최대 출차 참고 범위</div>
+      </div>
+      <div class="kpi">
+        <div class="v">${toHHMM(lastEnd)}</div>
+        <div class="l">마지막 공연 예상 종료 (${showMin}분 가정)</div>
+      </div>`;
 
     drawChart(big);
     drawBrief(d, list, lv, seats, big, peakAt, showMin);
@@ -79,12 +115,12 @@
   }
 
   // ---------- 3D 지도 시간 슬라이더: 공연 2시간 전 ~ 공연 끝나고 2시간 ----------
-  // 도로 색: 그날 수집한 실측 → 없으면 가장 최근 KSPO DOME 공연일 수집을 같은 시점(공연 시작 기준)으로 맞춰 참고 → 그것도 없으면 회색
-  // 공원 주차: 2024년 7월 KSPO DOME 공연 7회 중앙값(park_profile.json)
   const parkProf = await loadJSON("park_profile.json").catch(() => null);
   loadParkNight();
   const roadCache = {};
   const tl = { mode: "live", d: null, st: null, end: null, day: null, ref: null, refSt: null, timer: null };
+  $("tInfo").textContent = LIVE_SLIDER_HINT;
+
   async function roadsByTime(folder) {
     if (roadCache[folder]) return roadCache[folder];
     const { roads, summary } = await loadCollectedFolder(folder);
@@ -97,11 +133,13 @@
     });
     return (roadCache[folder] = m);
   }
+
   const nearest = (m, t, tol = 12) => {
     let best = null, bd = 1e9;
     for (const k of m.keys()) { const dd = Math.abs(k - t); if (dd < bd) { bd = dd; best = k; } }
     return best != null && bd <= tol ? m.get(best) : null;
   };
+
   async function setupTimeline(d, list, showMin) {
     const big = list.find((e) => e.venue === "KSPO DOME") || list.find((e) => e.venue === "핸드볼경기장") || list[0];
     const st = toMin(big.times[0]);
@@ -129,6 +167,7 @@
     } catch (_) { /* 수집 기록을 못 불러와도 주차 예측은 보여 줌 */ }
     if (tl.mode === "time") showTime(+sl.value);
   }
+
   function phaseOf(t) {
     if (t < tl.st - 30) return "입장 시작";
     if (t < tl.st) return "입장 몰림";
@@ -136,6 +175,7 @@
     if (t < tl.end + 60) return "퇴장 몰림";
     return "퇴장 마무리";
   }
+
   function showTime(t) {
     tl.mode = "time"; $("tNow").classList.remove("on");
     const rel = t - tl.st;
@@ -163,10 +203,12 @@
     }
     $("tInfo").innerHTML = park + src;
   }
+
   $("tSlider").addEventListener("input", (e) => { stopPlay(); showTime(+e.target.value); });
   $("tNow").addEventListener("click", () => {
     stopPlay(); tl.mode = "live"; $("tNow").classList.add("on");
-    $("tLabel").textContent = "지금 실시간"; $("tInfo").textContent = live ? liveNote(live) : "";
+    $("tLabel").textContent = "지금 실시간";
+    $("tInfo").textContent = LIVE_SLIDER_HINT;
     if (m3 && live) m3.update(live);
     drawRoadMap($("map"), links, places, live ? live.roads : null);
   });
@@ -184,7 +226,7 @@
     }, 700);
   });
 
-  // 출차 곡선: 시작 시각이 가장 비슷한 2024-07 KSPO 공연일 vs 공연 없는 평일 평균
+  // 출차 곡선: 시작 시각이 가장 비슷한 2024-07 KSPO 공연일 vs 같은 시간대 평일 평균
   function drawChart(big) {
     const svg = $("chart");
     const waves = exits.kspoWaves;
@@ -194,27 +236,34 @@
       refDay = Object.keys(waves).sort((a, b) => Math.abs(toMin(waves[a].start) - s) - Math.abs(toMin(waves[b].start) - s))[0];
     }
     const series = refDay ? exits.days[refDay].exits : null;
-    const W = 560, H = 260, L = 40, R = 12, T = 14, B = 30;
-    const maxY = Math.max(...baseline, ...(series || [0])) * 1.1;
+    const W = 560, H = 260, L = 40, R = 12, T = 16, B = 30;
+    const maxY = Math.max(...baseline, ...(series || [0])) * 1.12;
     const X = (i) => L + (i / (nSlots - 1)) * (W - L - R);
     const Y = (v) => H - B - (v / maxY) * (H - T - B);
     const path = (arr) => arr.map((v, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1)).join("");
+    const area = (arr) => `${path(arr)} L${X(arr.length - 1).toFixed(1)} ${(H - B).toFixed(1)} L${X(0).toFixed(1)} ${(H - B).toFixed(1)} Z`;
     let g = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-size="11">`;
-    for (let v = 0; v <= maxY; v += 100) g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end" fill="var(--ink-2)">${v}</text>`;
-    for (let i = 0; i < nSlots; i += 8) g += `<text x="${X(i)}" y="${H - 10}" text-anchor="middle" fill="var(--ink-2)">${toHHMM(slotStart + i * 15)}</text>`;
-    g += `<path d="${path(baseline)}" fill="none" stroke="var(--none)" stroke-width="2"/>`;
+    for (let v = 0; v <= maxY; v += 100) {
+      g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/>
+            <text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end" fill="var(--ink-2)">${v}</text>`;
+    }
+    for (let i = 0; i < nSlots; i += 8) {
+      g += `<text x="${X(i)}" y="${H - 10}" text-anchor="middle" fill="var(--ink-2)">${toHHMM(slotStart + i * 15)}</text>`;
+    }
+    g += `<path d="${path(baseline)}" fill="none" stroke="var(--none)" stroke-width="2" stroke-dasharray="4 3"/>`;
     if (series) {
-      g += `<path d="${path(series)}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>`;
+      g += `<path d="${area(series)}" fill="rgba(29, 78, 216, 0.08)"/>`;
+      g += `<path d="${path(series)}" fill="none" stroke="var(--accent)" stroke-width="2.6"/>`;
       const si = (toMin(waves[refDay].start) - slotStart) / 15;
       g += `<line x1="${X(si)}" x2="${X(si)}" y1="${T}" y2="${H - B}" stroke="var(--accent)" stroke-dasharray="4 4"/>
-            <text x="${X(si) + 4}" y="${T + 10}" fill="var(--accent)">공연 시작</text>`;
+            <text x="${X(si) + 5}" y="${T + 11}" fill="var(--accent)" font-weight="700">공연 시작</text>`;
     }
     g += `</svg>`;
     svg.outerHTML = g.replace("<svg ", '<svg id="chart" style="width:100%;height:auto" ');
     $("chartNote").innerHTML = series
-      ? `<span style="color:var(--accent)">━</span> ${refDay} ${waves[refDay].title} (시작 ${waves[refDay].start}, 15분 최대 ${waves[refDay].peak15}대, ${waves[refDay].peakTime})
-         &nbsp; <span style="color:var(--none)">━</span> 공원 큰 공연이 없는 평일 평균(${quietWeekdays.length}일).
-         2024년 자료는 출구 구분이 없고 공원 방문 차량이 섞여 있어 참고용이에요.`
+      ? `<span style="color:var(--accent);font-weight:700">━</span> <b>${refDay} ${waves[refDay].title}</b> (시작 ${waves[refDay].start}, 15분 최대 ${waves[refDay].peak15}대, ${waves[refDay].peakTime})
+         &nbsp;·&nbsp; <span style="color:var(--none);font-weight:700">┅</span> 같은 시간대 큰 공연 없는 평일 평균(${quietWeekdays.length}일).
+         <br>2024년 자료는 출구 구분이 없고 일반 방문 차량이 섞여 있어 참고용이에요.`
       : "KSPO DOME 공연이 없는 날이라 참고 곡선이 없어요. 다른 공연장 곡선은 2025 데이터로 추가해요.";
   }
 
@@ -226,18 +275,25 @@
     const surge = st != null ? st + sm.surgeMin.med : null;
     const g = Object.entries(exitProf.gates);
     $("gateNote").innerHTML = big
-      ? `${big.times[0]} 공연이면 <b>${toHHMM(surge)} 무렵</b>부터 출차가 몰리고, 공원 주차장 차의 절반은 약 ${sm.t50.med}분, 90%는 약 ${sm.t90.med}분 뒤(${toHHMM(surge + sm.t90.med)})에 빠져나가요.`
+      ? `${big.times[0]} 공연이면 <b>${toHHMM(surge)} 무렵</b>부터 출차가 집중되고, 공원 주차장 차의 절반은 약 <b>${sm.t50.med}분</b>, 90%는 약 <b>${sm.t90.med}분</b> 뒤(${toHHMM(surge + sm.t90.med)})에 빠져나가요.`
       : "이날은 KSPO DOME 공연이 없어요. 아래는 KSPO DOME 공연일 기준 참고값이에요.";
-    $("gateTable").innerHTML = `<tr><th>출구</th><th>관객 차 비중</th><th>절반이 빠지는 데</th><th>90%가 빠지는 데</th><th>연결 도로(현장 확인 필요)</th><th>요원 배치 제안</th></tr>` +
-      g.map(([name, v], i) => `<tr><td>${name}</td><td>${Math.round(v.share * 100)}%</td><td>약 ${v.t50}분</td><td>약 ${v.t90}분</td>
-        <td>${GATE_ROAD[name] || "-"}</td>
-        <td>${surge != null ? `${toHHMM(surge - 15)}~${toHHMM(surge + v.t90)}` : `몰리기 15분 전~${v.t90}분 뒤`}${i === 0 ? " · 가장 많음, 먼저 배치" : ""}</td></tr>`).join("");
-    $("gateSrc").textContent = `2025년 입출차 기록(받은 만큼) 중 KSPO DOME 공연 ${Object.values(exitProf.gates)[0].shows}회, 2024년 7월 포함 전체 ${sm.shows}회 기준. 시간은 출차가 몰리기 시작한 때부터 잰 값이에요. 다운로드가 끝나면 다시 계산해요.`;
+    $("gateTable").innerHTML = `<tr><th>출구</th><th>관객 차량 비중</th><th>절반 출차</th><th>90% 출차</th><th>연결 도로(현장 확인 필요)</th><th>요원 배치 참고 시간대</th></tr>` +
+      g.map(([name, v], i) => {
+        const pctVal = Math.round(v.share * 100);
+        return `<tr>
+          <td class="nowrap">${name}</td>
+          <td><div class="share-cell"><span class="share-bar"><i style="width:${pctVal}%"></i></span><b>${pctVal}%</b></div></td>
+          <td class="nowrap">약 ${v.t50}분</td>
+          <td class="nowrap">약 ${v.t90}분</td>
+          <td class="nowrap">${GATE_ROAD[name] || "-"}</td>
+          <td><b>${surge != null ? `${toHHMM(surge - 15)} ~ ${toHHMM(surge + v.t90)}` : `몰리기 15분 전 ~ ${v.t90}분 뒤`}</b>${i === 0 ? ` <span class="chip warn">가장 많음 · 우선 배치</span>` : ""}</td>
+        </tr>`;
+      }).join("");
+    $("gateSrc").textContent = `2025년 입출차 기록(받은 만큼) 중 KSPO DOME 공연 ${Object.values(exitProf.gates)[0].shows}회, 2024년 7월 포함 전체 ${sm.shows}회 기준. 시간은 출차가 몰리기 시작한 때부터 잰 값이에요. 다운로드 완료 후 다시 계산해요.`;
   }
 
   function drawBrief(d, list, lv, seats, big, peakAt, showMin) {
-    // 영향 도로: 수집값이 있으면 지금 느린 순, 없으면 공원 접근 도로 목록
-    let roadsTxt = "위례성대로, 강동대로, 양재대로, 올림픽로 (공연일 실측 후 속도가 많이 떨어지는 순서로 바뀜)";
+    let roadsTxt = "위례성대로, 강동대로, 양재대로, 올림픽로 (공연일 실측 후 속도가 많이 떨어지는 순서로 표시)";
     if (live && live.roads && Object.keys(live.roads).length) {
       const slow = links.map((l) => ({ l, r: live.roads[l.id] })).filter((x) => x.r)
         .sort((a, b) => a.r.spd - b.r.spd).slice(0, 5)
@@ -249,25 +305,23 @@
       <h3>올림픽공원 공연 혼잡 대응 요약 · ${d}(${DOW[dt.getDay()]})</h3>
       <div class="muted small">작성 ${new Date().toLocaleString("ko-KR")} · 올팍 공연 혼잡 대응 웹앱</div>
       <table>
-        <tr><th>공연</th><td>${list.map((e) => `${e.venue} ${e.times.join("·")} ${e.title}`).join("<br>")}</td></tr>
-        <tr><th>대응 수준</th><td>${lv.label} (공원 공연 좌석 합 약 ${seats.toLocaleString()}석)</td></tr>
-        <tr><th>출차 최대 예상</th><td>${big ? `${peakAt} 무렵, 15분에 ${ref.peakMin}~${ref.peakMax}대 (2024년 7월 KSPO DOME 공연 ${ref.n}회 기준 참고값)` : "참고 기록 없음"}</td></tr>
-        <tr><th>주차장 만차</th><td>${cgSum ? `KSPO DOME 저녁 공연일 ${cgSum.kspoEveningDays}일 중 ${cgSum.kspoDaysWithFull}일 일부 구역 만차 기록. 첫 만차 보통 공연 ${cgSum.hoursBefore.med}시간 전${big ? `(${toHHMM(toMin(big.times[0]) - cgSum.hoursBefore.med * 60)} 무렵)` : ""}, 자주 차는 구역 ${Object.keys(cgSum.zoneFullDays).slice(0, 3).join("·")} → 그 전에 입구 요원 배치, 근처·환승 주차 안내` : "-"}</td></tr>
-        <tr><th>집중 관리 출구</th><td>${exitProf ? Object.entries(exitProf.gates).map(([n, v]) => `${n} ${Math.round(v.share * 100)}%`).join(" · ") + ` (관객 차 비중, 2025 기록)` : "2025 입출차 데이터 반영 후 제시"}</td></tr>
-        <tr><th>출차 소요</th><td>${exitProf ? `몰리기 시작해서 절반 약 ${exitProf.summary.t50.med}분, 90% 약 ${exitProf.summary.t90.med}분 (KSPO DOME 공연 ${exitProf.summary.shows}회)` : "-"}</td></tr>
+        <tr><th>당일 공연</th><td>${list.map((e) => `<b>${e.venue}</b> ${e.times.join("·")} — ${e.title}`).join("<br>")}</td></tr>
+        <tr><th>대응 수준</th><td><b>${lv.sym} ${lv.label}</b> (공원 공연 좌석 합 약 ${seats.toLocaleString()}석)</td></tr>
+        <tr><th>출차 최대 예상</th><td>${big ? `<b>${peakAt} 무렵</b>, 15분에 ${ref.peakMin}~${ref.peakMax}대 (2024년 7월 KSPO DOME 공연 ${ref.n}회 기준 참고값)` : "참고 기록 없음"}</td></tr>
+        <tr><th>주차장 만차</th><td>${cgSum ? `KSPO DOME 저녁 공연일 ${cgSum.kspoEveningDays}일 중 ${cgSum.kspoDaysWithFull}일 일부 구역 만차 기록. 첫 만차 보통 공연 ${cgSum.hoursBefore.med}시간 전${big ? `(${toHHMM(toMin(big.times[0]) - cgSum.hoursBefore.med * 60)} 무렵)` : ""}, 자주 차는 구역 ${Object.keys(cgSum.zoneFullDays).slice(0, 3).join("·")} → 그 전에 입구 안내 요원 배치 및 인근·환승 분산 주차 안내` : "-"}</td></tr>
+        <tr><th>집중 관리 출구</th><td>${exitProf ? Object.entries(exitProf.gates).map(([n, v]) => `<b>${n}</b> ${Math.round(v.share * 100)}%`).join(" · ") + ` (관객 차량 비중, 2025 기록)` : "2025 입출차 데이터 반영 후 제시"}</td></tr>
+        <tr><th>출차 소요</th><td>${exitProf ? `몰리기 시작해서 절반 약 <b>${exitProf.summary.t50.med}분</b>, 90% 약 <b>${exitProf.summary.t90.med}분</b> (KSPO DOME 공연 ${exitProf.summary.shows}회)` : "-"}</td></tr>
         <tr><th>영향 도로</th><td>${roadsTxt}</td></tr>
-        <tr><th>관객 안내</th><td>공원 주차장 혼잡 시 천호역 공영주차장(1,431면) + 5호선 올림픽공원역 환승 안내. 공원 차량 출입 22시까지(심야 행사 시 조정)</td></tr>
-        <tr><th>기관별 확인 요청</th><td>한국체육산업개발: 출구별 요원 배치 · 송파구청: 주변 공영주차장 안내 · 관할 경찰서: 출차 집중 시간대 교차로 관리 · 서울시: 도로전광판 안내</td></tr>
+        <tr><th>관객 분산 안내</th><td>공원 주차장 혼잡 시 천호역 공영주차장(1,431면) + 5호선 올림픽공원역 환승 분산 주차 안내. 공원 차량 출입 22시까지(심야 행사 시 조정)</td></tr>
+        <tr><th>기관별 협조 참고</th><td><b>한국체육산업개발</b>: 출구별 요원 배치 · <b>송파구청</b>: 주변 공영주차장 안내 · <b>관할 경찰서</b>: 출차 집중 시간대 교차로 관리 · <b>서울시</b>: 도로전광판(VMS) 안내</td></tr>
       </table>
-      <div class="muted small">공연 길이 ${showMin}분 가정. 예측값은 참고용이며, 배치와 통제는 각 기관이 결정합니다.</div>`;
+      <div class="muted small">공연 길이 ${showMin}분 가정. 위 수치는 공공데이터 분석 기반 참고 근거이며, 실제 현장 배치와 교통 통제는 각 기관이 판단·결정합니다.</div>`;
   }
-
 
   // ---------- 공연 전후 도로 상황 ----------
   const hm = (ts) => { const t = ts.slice(11, 16); return toMin(t); };
   const median = (a) => { const b = a.slice().sort((x, y) => x - y); const n = b.length; return n ? (n % 2 ? b[(n - 1) / 2] : (b[n / 2 - 1] + b[n / 2]) / 2) : NaN; };
 
-  // 같은 날짜 폴더 여러 개(앞 수집 + 이어 받기)를 시간순으로 합침
   async function loadDayFolders(fs) {
     const parts = await Promise.all(fs.map(loadCollectedFolder));
     const by = (k) => (a, b) => (a[k] < b[k] ? -1 : a[k] > b[k] ? 1 : 0);
@@ -285,8 +339,8 @@
     const baseF = folders.filter((f) => f.includes("_baseline") && !f.startsWith(d)).at(-1);
     const [T, B] = await Promise.all([isExample ? loadCollectedFolder(target) : loadDayFolders(dayF), baseF ? loadCollectedFolder(baseF) : null]);
     note.innerHTML = isExample
-      ? `이 날짜는 공연 당일 자동 수집(공연 약 2시간 전부터 6시간) 뒤에 채워져요. 아래는 가장 최근 수집 <b>${target}</b>을 예시로 보여 줘요.`
-      : `수집 기록: <b>${target}</b>${B ? ` · 비교: 공연 없는 날 <b>${baseF}</b>` : " · 공연 없는 날 비교 기록은 11/20, 11/26 수집 후 표시"}`;
+      ? `이 날짜는 공연 당일 자동 수집(공연 약 2시간 전부터 약 6시간) 뒤에 채워져요. 아래는 가장 최근 수집 기록 <b>${target}</b> 예시예요.`
+      : `수집 기록: <b>${target}</b>${B ? ` · 같은 시간대 공연 없는 날 비교: <b>${baseF}</b>` : " · 공연 없는 날 비교 기록은 11/20, 11/26 수집 후 표시"}`;
 
     const starts = isExample ? [] : list.flatMap((e) => e.times.map(toMin));
     const st = starts.length ? Math.min(...starts) : null;
@@ -301,7 +355,7 @@
     if (!pts.length) { $("roadChart").outerHTML = '<svg id="roadChart"></svg>'; return; }
     const ts = [...pts, ...bpts].map((p) => p.t).concat(st != null ? [st, st + showMin, st + ref.lagMed] : []);
     const t0 = Math.floor(Math.min(...ts) / 30) * 30, t1 = Math.ceil(Math.max(...ts) / 30) * 30;
-    const W = 1000, H = 280, L = 44, R = 44, Tp = 16, Bt = 30;
+    const W = 1000, H = 280, L = 44, R = 44, Tp = 18, Bt = 30;
     const vmax = Math.ceil(Math.max(...pts.map((p) => p.v), ...bpts.map((p) => p.v), 40) / 10) * 10;
     const cmax = 58;
     const X = (t) => L + ((t - t0) / Math.max(30, t1 - t0)) * (W - L - R);
@@ -310,22 +364,25 @@
     const line = (arr) => arr.map((p, i) => (i ? "L" : "M") + X(p.t).toFixed(1) + " " + Y(p.v).toFixed(1)).join("");
     let g = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-size="11">`;
     for (let v = 0; v <= vmax; v += 10) g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end" fill="var(--ink-2)">${v}</text>`;
-    for (let c = 0; c <= cmax; c += 20) g += `<text x="${W - R + 6}" y="${Yc(c) + 4}" fill="var(--bad)" opacity="0.7">${c}</text>`;
+    for (let c = 0; c <= cmax; c += 20) g += `<text x="${W - R + 6}" y="${Yc(c) + 4}" fill="var(--bad)" opacity="0.8">${c}</text>`;
     for (let t = t0; t <= t1; t += 30) g += `<text x="${X(t)}" y="${H - 10}" text-anchor="middle" fill="var(--ink-2)">${toHHMM(t)}</text>`;
-    const bw = Math.max(2, (W - L - R) / Math.max(1, (t1 - t0) / 5) * 0.6);
-    pts.forEach((p) => { g += `<rect x="${X(p.t) - bw / 2}" y="${Yc(p.bad)}" width="${bw}" height="${H - Bt - Yc(p.bad)}" fill="var(--bad)" opacity="0.18"/>`; });
+    const bw = Math.max(3, Math.min(18, (W - L - R) / Math.max(1, (t1 - t0) / 5) * 0.6));
+    pts.forEach((p) => { g += `<rect x="${X(p.t) - bw / 2}" y="${Yc(p.bad)}" width="${bw}" height="${H - Bt - Yc(p.bad)}" rx="2" fill="var(--bad)" opacity="0.18"/>`; });
     if (bpts.length) g += `<path d="${line(bpts)}" fill="none" stroke="var(--none)" stroke-width="2" stroke-dasharray="5 4"/>`;
-    g += `<path d="${line(pts)}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>`;
+    g += `<path d="${line(pts)}" fill="none" stroke="var(--accent)" stroke-width="2.6"/>`;
+    if (pts.length <= 4) {
+      pts.forEach((p) => { g += `<circle cx="${X(p.t).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="3.5" fill="var(--accent)"/>`; });
+    }
     if (st != null) {
       [[st, "공연 시작"], [st + showMin, "예상 종료"], [st + ref.lagMed, "출차 최대 예상"]].forEach(([t, lab], i) => {
         g += `<line x1="${X(t)}" x2="${X(t)}" y1="${Tp}" y2="${H - Bt}" stroke="${i === 2 ? "var(--bad)" : "var(--ink-2)"}" stroke-dasharray="4 4"/>
-              <text x="${X(t) + 4}" y="${Tp + 10 + i * 13}" fill="${i === 2 ? "var(--bad)" : "var(--ink-2)"}">${lab} ${toHHMM(t)}</text>`;
+              <text x="${X(t) + 4}" y="${Tp + 10 + i * 13}" fill="${i === 2 ? "var(--bad)" : "var(--ink-2)"}" font-weight="600">${lab} ${toHHMM(t)}</text>`;
       });
     }
-    g += `<text x="${L}" y="${Tp - 4}" fill="var(--ink-2)">km/h</text><text x="${W - R + 6}" y="${Tp - 4}" fill="var(--bad)" opacity="0.7">구간 수</text></svg>`;
-    $("roadChart").outerHTML = g.replace("<svg ", '<svg id="roadChart" style="width:100%;height:auto;margin-top:8px" ');
+    g += `<text x="${L}" y="${Tp - 5}" fill="var(--ink-2)">km/h</text><text x="${W - R + 6}" y="${Tp - 5}" fill="var(--bad)" opacity="0.85">구간 수</text></svg>`;
+    $("roadChart").outerHTML = g.replace("<svg ", '<svg id="roadChart" style="width:100%;height:auto;margin-top:10px" ');
     $("roadChartLegend").innerHTML = `<span><i style="background:var(--accent)"></i>올림픽공원 주변 평균 속도</span>
-      ${bpts.length ? '<span><i style="background:var(--none)"></i>공연 없는 날 평균 속도</span>' : ""}
+      ${bpts.length ? '<span><i style="background:var(--none)"></i>같은 시간대 공연 없는 날 평균 속도</span>' : ""}
       <span><i style="background:var(--bad);opacity:.35;height:10px"></i>서행+정체 구간 수(58구간 중, 오른쪽 축)</span>`;
   }
 
@@ -347,7 +404,7 @@
     rows.forEach((r) => {
       h += `<tr><th>${r.k}</th>${r.cells.map((c, i) => `<td title="${r.k} ${times[i].slice(11)}" style="background:${color(c)};${mark(times[i]) ? "outline:2px solid var(--ink)" : ""}"></td>`).join("")}</tr>`;
     });
-    h += `</table><div class="legend"><span><i style="background:var(--good)"></i>대부분 원활</span><span><i style="background:var(--warn)"></i>서행 섞임</span><span><i style="background:var(--bad)"></i>정체 많음</span>${st != null ? "<span>검은 테두리: 공연 시작·예상 종료·출차 최대 예상</span>" : ""}</div>`;
+    h += `</table><div class="legend"><span><i style="background:var(--good)"></i>● 대부분 원활</span><span><i style="background:var(--warn)"></i>▲ 서행 섞임</span><span><i style="background:var(--bad)"></i>■ 정체 많음</span>${st != null ? "<span>▣ 검은 테두리: 공연 시작·예상 종료·출차 최대 예상</span>" : ""}</div>`;
     $("heat").innerHTML = h;
   }
 
@@ -361,8 +418,22 @@
       const base = median(before); const worst = after.reduce((a, b) => (b.v < a.v ? b : a));
       return { name: `${r["도로명"]} ${r["시작지점"]}→${r["끝지점"]}`, base, worst: worst.v, at: toHHMM(worst.t), drop: base ? (base - worst.v) / base : 0 };
     }).filter(Boolean).sort((a, b) => b.drop - a.drop).slice(0, 5);
-    $("slowTop").innerHTML = `<tr><th>구간</th><th>${st != null ? "공연 전 보통 속도" : "보통 속도(중앙값)"}</th><th>가장 느렸을 때</th><th>떨어진 정도</th></tr>` +
-      res.map((x) => `<tr><td>${x.name}</td><td>${x.base.toFixed(0)}km/h</td><td>${x.worst.toFixed(0)}km/h (${x.at})</td><td>${Math.round(x.drop * 100)}%</td></tr>`).join("");
+
+    if (!res.length) {
+      $("slowTop").innerHTML = `<tr><td class="muted">비교할 구간 기록이 아직 충분하지 않아요.</td></tr>`;
+      return;
+    }
+    $("slowTop").innerHTML = `<tr><th>도로 구간</th><th>${st != null ? "공연 전 보통 속도" : "보통 속도(중앙값)"}</th><th>가장 느렸을 때</th><th>속도 감소율</th></tr>` +
+      res.map((x) => {
+        const dropPct = Math.round(x.drop * 100);
+        const cls = dropPct >= 35 ? "bad" : dropPct >= 15 ? "warn" : "";
+        return `<tr>
+          <td><b>${x.name}</b></td>
+          <td class="nowrap">${x.base.toFixed(0)}km/h</td>
+          <td class="nowrap">${x.worst.toFixed(0)}km/h <span class="muted small">(${x.at})</span></td>
+          <td class="nowrap">${dropPct > 0 ? `<span class="chip ${cls}">−${dropPct}%</span>` : `0%`}</td>
+        </tr>`;
+      }).join("");
   }
 
   $("date").addEventListener("change", render);

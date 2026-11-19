@@ -216,9 +216,17 @@ function openAt(hours, minOfDay) {
 
 // ---------- 공연 규모 → 대응 수준 (예측 모델 연결 전 규칙) ----------
 function levelOf(totalSeats) {
-  if (totalSeats >= 10000) return { key: "focus", label: "집중", cls: "bad" };
-  if (totalSeats >= 3000) return { key: "caution", label: "주의", cls: "warn" };
-  return { key: "normal", label: "평소", cls: "" };
+  if (totalSeats >= 10000) return { key: "focus", label: "집중", cls: "bad", sym: "●" };
+  if (totalSeats >= 3000) return { key: "caution", label: "주의", cls: "warn", sym: "▲" };
+  return { key: "normal", label: "평소", cls: "good", sym: "○" };
+}
+
+// 호선 문자열("5·9호선", "8호선" 등) → 노선 색 배지 HTML
+function lineBadgesHTML(lineStr) {
+  if (!lineStr) return "";
+  const nums = String(lineStr).match(/\d+/g);
+  if (!nums || !nums.length) return `<span class="line-badge">${lineStr}</span>`;
+  return nums.map((n) => `<span class="line-badge l${n}">${n}호선</span>`).join(" ");
 }
 
 // ---------- 2024년 7월 참고값 ----------
@@ -370,10 +378,10 @@ function drawRoadMap(svg, links, places, roads) {
 
 function legendHTML() {
   return `<div class="legend">
-    <span><i style="background:var(--good)"></i>원활</span>
-    <span><i style="background:var(--warn)"></i>서행</span>
-    <span><i style="background:var(--bad)"></i>정체</span>
-    <span><i style="background:var(--none)"></i>수집값 없음</span>
+    <span><i style="background:var(--good)"></i>● 원활</span>
+    <span><i style="background:var(--warn)"></i>▲ 서행</span>
+    <span><i style="background:var(--bad)"></i>■ 정체</span>
+    <span><i style="background:var(--none)"></i>— 수집값 없음</span>
     <span>● 보라: 지하철역 · 회색: 주차장</span></div>`;
 }
 

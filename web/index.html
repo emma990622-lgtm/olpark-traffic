@@ -4,13 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>올팍 공연 주차·귀가 안내</title>
+<link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=2">
 </head>
 <body>
 <header class="top">
-  <h1>올팍 공연 주차·귀가 안내</h1>
-  <nav><a class="on" href="index.html">관객</a><a href="operator.html">운영자·기관</a></nav>
+  <div class="top-inner">
+    <div class="brand-wrap">
+      <span class="brand-kicker">올림픽공원 공연 교통·주차 분산 안내</span>
+      <h1>올팍 공연 주차·귀가 안내</h1>
+    </div>
+    <nav aria-label="화면 전환">
+      <a class="on" href="index.html">관객 안내</a>
+      <a href="operator.html">운영자·기관</a>
+    </nav>
+  </div>
 </header>
 
 <main>
@@ -20,14 +29,14 @@
       <div><label class="field" for="date">날짜</label><select id="date"></select></div>
       <div><label class="field" for="event">공연</label><select id="event"></select></div>
     </div>
-    <div id="eventInfo" style="margin-top:12px"></div>
+    <div id="eventInfo"></div>
   </section>
 
   <section class="card">
     <h2><span class="step">2</span>어떻게 오세요?</h2>
-    <div class="toggle" id="mode">
-      <button data-v="car" class="on">차로 와요</button>
-      <button data-v="transit">대중교통으로 와요</button>
+    <div class="toggle" id="mode" role="tablist" aria-label="이동 수단 선택">
+      <button type="button" data-v="car" class="on">🚗 차로 와요</button>
+      <button type="button" data-v="transit">🚇 대중교통으로 와요</button>
     </div>
   </section>
 
@@ -35,7 +44,7 @@
     <h2><span class="step">3</span>어디에 주차할까요?</h2>
     <div id="reco"></div>
     <div class="options" id="options"></div>
-    <p class="muted small" style="margin-top:12px">
+    <p class="footnote">
       도보 시간 기준: <span id="walkSrc"></span>. <span id="subwayNote"></span>.
       요금은 공연 시작 1시간 전 도착, 종료 30분 뒤 출차로 계산했어요.
     </p>
@@ -43,19 +52,22 @@
 
   <section class="card" id="transitSection" hidden>
     <h2><span class="step">3</span>가까운 역</h2>
-    <table class="list" id="stations"></table>
-    <p class="muted small" id="stationTip"></p>
+    <div class="table-scroll">
+      <table class="list" id="stations"></table>
+    </div>
+    <div class="notice info" id="stationTip" style="margin-top:12px"></div>
   </section>
 
   <section class="card">
     <h2>지금 주변 도로와 걷는 길</h2>
+    <p class="sec-sub">도로 색은 실시간 소통 상태이고, 점선은 고른 공연장까지 걸어가는 길이에요. 선을 누르면 자세한 정보가 나와요.</p>
     <div id="map3d" class="map3d"></div>
     <div id="legend3d"></div>
-    <details id="flat"><summary class="muted small">평면 지도로 보기</summary>
+    <details id="flat"><summary class="muted small">평면 지도로 보기 (데이터 절약·기본 지도)</summary>
       <div class="map-wrap"><svg class="map" id="map"></svg></div>
       <div id="legend"></div>
     </details>
-    <p class="muted small" id="roadNote">불러오는 중…</p>
+    <p class="live-foot" id="roadNote">불러오는 중…</p>
   </section>
 </main>
 

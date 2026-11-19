@@ -4,81 +4,108 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>올팍 공연 혼잡 대응 · 운영자·기관</title>
+<link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=2">
 </head>
-<body>
+<body class="is-operator">
 <header class="top">
-  <h1>올팍 공연 혼잡 대응</h1>
-  <nav><a href="index.html">관객</a><a class="on" href="operator.html">운영자·기관</a></nav>
+  <div class="top-inner">
+    <div class="brand-wrap">
+      <span class="brand-kicker">올림픽공원 현장 대응 · 유관기관 공유 대시보드</span>
+      <h1>올팍 공연 혼잡 대응</h1>
+    </div>
+    <nav aria-label="화면 전환">
+      <a href="index.html">관객 안내</a>
+      <a class="on" href="operator.html">운영자·기관</a>
+    </nav>
+  </div>
 </header>
 
 <main class="wide">
   <section class="card no-print">
-    <div class="row">
-      <div style="flex:0 1 260px"><label class="field" for="date">날짜</label><select id="date"></select></div>
-      <div style="flex:0 1 160px"><label class="field" for="showMin">공연 길이(분)</label>
-        <select id="showMin"></select></div>
-      <div class="muted small" style="align-self:end">예측 모델이 연결되기 전에는 공연 규모 규칙과 2024년 7월 실제 기록을 참고값으로 보여 줘요.</div>
+    <div class="filter-bar">
+      <div class="filter-date">
+        <label class="field" for="date">점검 날짜</label>
+        <select id="date"></select>
+      </div>
+      <div class="filter-dur">
+        <label class="field" for="showMin">공연 길이 가정(분)</label>
+        <select id="showMin"></select>
+      </div>
+      <div class="filter-note muted small">
+        예측 모델이 연결되기 전에는 공연 규모 규칙과 2024년 7월·2025년 실제 입출차 기록을 참고 근거로 보여 줘요.
+      </div>
     </div>
   </section>
 
   <section class="card">
-    <h2>그날의 공연</h2>
-    <table class="list" id="events"></table>
-    <div class="kpis" id="kpis" style="margin-top:14px"></div>
+    <h2>그날의 공연과 핵심 지표</h2>
+    <div class="table-scroll">
+      <table class="list" id="events"></table>
+    </div>
+    <div class="kpis" id="kpis" style="margin-top:16px"></div>
   </section>
 
   <div class="grid2">
     <section class="card">
       <h2>공연 후 출차 곡선 (참고: 2024년 7월 실제)</h2>
+      <p class="sec-sub">시작 시각이 비슷한 KSPO DOME 공연일과 같은 시간대 평일 평균 출차 흐름 비교</p>
       <svg id="chart" style="width:100%;height:auto"></svg>
-      <p class="muted small" id="chartNote"></p>
+      <p class="footnote" id="chartNote"></p>
     </section>
+
     <section class="card">
       <h2>주변 도로 (3D) · 시간대별로 보기</h2>
       <div id="map3d" class="map3d"></div>
       <div class="timectl">
         <div class="trow">
-          <button id="tPlay" title="재생">▶</button>
+          <button type="button" id="tPlay" title="시간대 재생">▶</button>
           <input type="range" id="tSlider" min="0" max="1" step="5" value="0" aria-label="시각">
-          <button id="tNow" class="on" title="지금 실시간">지금</button>
+          <button type="button" id="tNow" class="on" title="지금 실시간">지금</button>
         </div>
         <div id="tLabel" class="tlabel">지금 실시간</div>
         <div id="tInfo" class="muted small"></div>
       </div>
       <div id="legend3d"></div>
       <details id="flat"><summary class="muted small">평면 지도로 보기</summary>
-        <svg class="map" id="map"></svg>
+        <div class="map-wrap"><svg class="map" id="map"></svg></div>
         <div id="legend"></div>
       </details>
-      <p class="muted small" id="roadNote">불러오는 중…</p>
+      <p class="live-foot" id="roadNote">불러오는 중…</p>
     </section>
   </div>
 
   <section class="card">
     <h2>공연 전후 도로 상황 (5분 단위 실측)</h2>
-    <div id="roadCheck" class="muted small" style="margin-bottom:8px"></div>
+    <div id="roadCheck"></div>
     <div class="muted small" id="roadDayNote">불러오는 중…</div>
-    <svg id="roadChart" style="width:100%;height:auto;margin-top:8px"></svg>
+    <svg id="roadChart" style="width:100%;height:auto;margin-top:10px"></svg>
     <div class="legend" id="roadChartLegend"></div>
-    <h3 style="font-size:14px;margin:18px 0 6px">도로별 속도 변화</h3>
-    <div id="heat" style="overflow-x:auto"></div>
-    <h3 style="font-size:14px;margin:18px 0 6px">가장 많이 느려진 구간</h3>
-    <table class="list" id="slowTop"></table>
+    <h3 class="subhead">도로별 속도 변화 (5분 간격 히트맵)</h3>
+    <div id="heat" class="table-scroll"></div>
+    <h3 class="subhead">가장 많이 느려진 구간 (상위 5곳)</h3>
+    <div class="table-scroll">
+      <table class="list" id="slowTop"></table>
+    </div>
   </section>
 
   <section class="card">
-    <h2>출구별 대응</h2>
-    <div id="gateNote" class="muted small" style="margin-bottom:8px"></div>
-    <table class="list" id="gateTable"></table>
-    <p class="muted small" id="gateSrc"></p>
+    <h2>출구별 대응 참고</h2>
+    <div id="gateNote" class="muted small" style="margin-bottom:10px"></div>
+    <div class="table-scroll">
+      <table class="list" id="gateTable"></table>
+    </div>
+    <p class="footnote" id="gateSrc"></p>
   </section>
 
   <section class="card print-me">
-    <div class="no-print" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <h2 style="margin:0">기관 공유용 한 장 요약</h2>
-      <button class="primary" onclick="window.print()">인쇄 / PDF로 저장</button>
+    <div class="no-print brief-header-bar">
+      <div>
+        <h2 style="margin:0">기관 공유용 한 장 요약</h2>
+        <div class="muted small" style="margin-top:2px">인쇄하거나 PDF로 저장하면 아래 요약표만 A4 한 장 양식으로 출력됩니다.</div>
+      </div>
+      <button type="button" class="primary" onclick="window.print()">🖨 인쇄 / PDF로 저장</button>
     </div>
     <div class="brief" id="brief"></div>
   </section>
