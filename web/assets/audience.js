@@ -309,13 +309,13 @@
         const tt = transferTotal(t, st);
         const steps = tt ? `
           <div class="route-steps">
-            <span class="step-pill">🚶 역까지 ${tt.walk1}분</span>
+            <span class="step-pill">역까지 ${tt.walk1}분</span>
             <span class="step-arrow">→</span>
-            <span class="step-pill is-subway">🚇 지하철 ${tt.ride}분 (대기 ${tt.wait}분${tt.transfer ? `·환승 ${tt.transfer}분` : ""})</span>
+            <span class="step-pill is-subway">지하철 ${tt.ride}분 (대기 ${tt.wait}분${tt.transfer ? `·환승 ${tt.transfer}분` : ""})</span>
             <span class="step-arrow">→</span>
-            <span class="step-pill">🚶 공연장 ${tt.walk2}분</span>
-            <span class="step-pill">💳 ${won(parkingFee(t, stay))}</span>
-          </div>` : `<div class="route-steps"><span class="step-pill">💳 예상 요금 ${won(parkingFee(t, stay))}</span></div>`;
+            <span class="step-pill">공연장 ${tt.walk2}분</span>
+            <span class="step-pill">요금 ${won(parkingFee(t, stay))}</span>
+          </div>` : `<div class="route-steps"><span class="step-pill">예상 요금 ${won(parkingFee(t, stay))}</span></div>`;
 
         const driveCmp = (() => {
           const dv = driveOn(t.name, ev, toHHMM(startMin));
@@ -328,7 +328,7 @@
               ? `도착만 보면 차로 공원까지 가는 게 약 ${gap}분 빨라요. 귀가 출차 비교는 <b>‘공연장에서 나올 때’</b> 탭을 확인해 보세요.`
               : `여기서 주차하고 지하철을 타는 쪽이 도착도 빨라요.`;
           })() : "";
-          return `<div class="tlot-compare">🚗 여기서 차로 공원 주차장까지 계속 가면 <b>약 ${dv.min}분</b> + 도보 ${parkWalk}분 = 총 ${totalDrive}분 <span>(${dv.src})</span>${gapTxt ? `<br>${gapTxt}` : ""}</div>`;
+          return `<div class="tlot-compare">여기서 차로 공원 주차장까지 계속 가면 <b>약 ${dv.min}분</b> + 도보 ${parkWalk}분 = 총 ${totalDrive}분 <span>(${dv.src})</span>${gapTxt ? `<br>${gapTxt}` : ""}</div>`;
         })();
 
         return `<div class="tlot${t.notRecommended ? " skip" : ""}">
@@ -344,7 +344,7 @@
               <span class="muted small">· 시작 30분 전 도착 기준 <b>${toHHMM(startMin - 30 - tt.total)}</b>까지 주차 권장</span></div>` : ""}
           ${steps}
           ${driveCmp}
-          ${t.notRecommended ? `<div class="warnline">⚠ 비추천: ${t.notRecommended}</div>` : ""}
+          ${t.notRecommended ? `<div class="warnline">비추천: ${t.notRecommended}</div>` : ""}
         </div>`;
       }).join("")}
       </div>`;
@@ -378,18 +378,18 @@
           <span class="muted small">· ${toHHMM(endMin)} 종료 시 <b>${toHHMM(endMin + a.total)}</b> 무렵 출발</span>
         </div>
         <div class="route-steps">
-          <span class="step-pill">🚶 역까지 ${a.walk2}분</span>
+          <span class="step-pill">역까지 ${a.walk2}분</span>
           <span class="step-arrow">→</span>
-          <span class="step-pill is-crowd">👥 개찰·승강장 줄 ${a.crowd}분</span>
+          <span class="step-pill is-crowd">개찰·승강장 줄 ${a.crowd}분</span>
           <span class="step-arrow">→</span>
-          <span class="step-pill is-subway">🚇 지하철 ${a.ride}분 (대기 ${a.wait}분${a.transfer ? `·환승 ${a.transfer}분` : ""})</span>
+          <span class="step-pill is-subway">지하철 ${a.ride}분 (대기 ${a.wait}분${a.transfer ? `·환승 ${a.transfer}분` : ""})</span>
           <span class="step-arrow">→</span>
-          <span class="step-pill">🚶 주차장 ${a.walk1}분 · 출차 ${a.lotExit}분</span>
+          <span class="step-pill">주차장 ${a.walk1}분 · 출차 ${a.lotExit}분</span>
         </div>
         <div class="tlot-compare">
-          ${a.riders > 1000 ? `👥 공연 종료 직후 ${st.name}으로 약 <b>${a.riders.toLocaleString()}명</b>이 몰리는 것을 반영했어요.` : `✅ ${st.name}은 공연 날에도 승차 인원이 거의 늘지 않아 개찰 대기가 짧아요.`}
+          ${a.riders > 1000 ? `공연 종료 직후 ${st.name}으로 약 <b>${a.riders.toLocaleString()}명</b>이 몰리는 것을 반영했어요.` : `${st.name}은 공연 날에도 승차 인원이 거의 늘지 않아 개찰 대기가 짧아요.`}
         </div>
-        ${t.notRecommended ? `<div class="warnline">⚠ 비추천: ${t.notRecommended}</div>` : ""}
+        ${t.notRecommended ? `<div class="warnline">비추천: ${t.notRecommended}</div>` : ""}
       </div>`;
     }).join("");
     return `<p class="muted small" style="margin:0 0 8px">공연 종료 직후 역으로 관객이 몰리는 상황을 반영했어요. ${CROWD.source} 기준 KSPO DOME 공연 날 올림픽공원역 승차가 같은 요일 평소 대비 약 ${CROWD.riders.med.toLocaleString()}명 늘어요(9호선 71%, 5호선 29%). 공연 좌석 수에 비례해 계산했어요.</p>
@@ -407,7 +407,7 @@
         <td><b>약 ${s.walkMin}분</b>${s.walkSrc === "TMAP 보행자 경로" ? "" : ` <span class="muted small">(추정)</span>`}</td>
       </tr>`).join("");
     const near = sorted[0];
-    $("stationTip").innerHTML = `💡 <b>${places.dome.name}</b>은 <b>${near.name}(${near.line})</b>에서 가장 가까워요.` +
+    $("stationTip").innerHTML = `<b>${places.dome.name}</b>은 <b>${near.name}(${near.line})</b>에서 가장 가까워요.` +
       (near.key === "olympic5" ? " 5호선은 강동역에서 하남검단산행과 갈라지니 꼭 <b>마천행</b> 열차를 확인하세요." : "");
   }
 

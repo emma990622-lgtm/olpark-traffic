@@ -26,7 +26,7 @@
     if (parts.length) {
       document.getElementById("roadCheck").innerHTML = `
         <div class="verify-box">
-          <div class="verify-title">✔ 실시간 도로 자료 교차검증 결과</div>
+          <div class="verify-title">실시간 도로 자료 교차검증 결과</div>
           <ol class="verify-list">${parts.map((p) => `<li>${p}</li>`).join("")}</ol>
         </div>`;
     }

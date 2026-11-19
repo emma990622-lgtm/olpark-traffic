@@ -96,6 +96,13 @@ for f in js_files + sorted((ROOT / "scripts").glob("*.py")) + sorted((ROOT / "we
         if m.group(2) not in ALLOWED:
             problems.append(f"인증키처럼 보이는 값이 코드에 있음: {rel(f)} ({m.group(1)}=…) → 환경변수로 읽게 바꾸세요")
 
+# 6) 진행 중 작업 표지판(docs/wip/) 미삭제 알림
+wip_dir = ROOT / "docs" / "wip"
+if wip_dir.exists():
+    active_wips = sorted(f.name for f in wip_dir.glob("*.md") if f.name.lower() != "readme.md")
+    if active_wips:
+        warnings.append(f"docs/wip/에 진행 중 표지판이 남아 있음: {', '.join(active_wips)} (내 작업이 끝났다면 커밋 전에 삭제)")
+
 print("=== 기본 점검 ===")
 for w in warnings:
     print("⚠ " + w)
