@@ -10,3 +10,4 @@
 - JS를 고친 뒤에는 `node --check 파일`로 문법을 확인한다.
 - 오케스트라 밖에서 사용자가 직접 Claude를 쓸 때는 사용자가 요청하면 커밋해도 된다.
 - 오케스트라 밖에서 사용자가 Claude에게 직접 요청할 때는 디자인(`web/assets/style.css`, HTML의 class·감싸는 요소·화면 문구)도 고쳐도 된다. 이때 정한 색·간격·컴포넌트 규칙은 `docs/design.md`에 짧게 적어서 Gemini가 다음 작업에서 같은 규칙을 따르게 한다.
+- 팀 작업 방식(GitHub 브랜치 → PR 인수인계)은 `AGENTS.md`의 "팀 작업 방식"과 `docs/팀_작업법.md`를 따른다. 작업을 마치면 PR 설명을 `.github/pull_request_template.md` 양식으로 쓴다.
