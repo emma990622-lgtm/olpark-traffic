@@ -31,7 +31,11 @@
     ? `<span class="chip good">● 의미 있는 관계</span> <b>관객 평균 나이가 10살 많으면 공원 주차장 관객 차가 약 ${pct(C.age10.pct)}</b>
        (95% 범위 ${pct(C.age10.pctLo)}~${pct(C.age10.pctHi)}), <b>여성 비율이 10%p 높으면 약 ${pct(C.female.pct)}</b>
        (${pct(C.female.pctLo)}~${pct(C.female.pctHi)}) 달라졌어요. 금요일 저녁 공연은 주말보다 약 ${pct(C.fri.pct)}였어요.`
-    : `<span class="chip">○ 아직 뚜렷하지 않음</span> 지금 자료로는 관객 연령·성별과 자가용 이용의 관계가 뚜렷하게 나오지 않았어요. 아래 표는 참고만 하세요.`;
+    : `<span class="chip">○ 아직 뚜렷하지 않음</span> 지금 자료로는 관객 연령·성별과 자가용 이용의 관계가 예측에 쓸 만큼 뚜렷하지 않아요.
+       ${["age10", "female"].map((k) => `${C[k].label} 관객 차 ${Math.sign(C[k].pctLo) === Math.sign(C[k].pctHi)
+         ? `약 ${pct(C[k].pct)}(95% 범위 ${pct(C[k].pctLo)}~${pct(C[k].pctHi)}, p값 ${C[k].p.toFixed(2)})`
+         : `변화가 뚜렷하지 않음(${pct(C[k].pct)}, 95% 범위 ${pct(C[k].pctLo)}~${pct(C[k].pctHi)})`}`).join(" · ")}.
+       ${M.improve != null ? `한 공연씩 빼고 맞혀 보면 평균값만 쓸 때보다 오차가 ${Math.round(M.improve * 100)}% 줄어드는 데 그쳐요. ` : ""}아래 계산은 참고만 하세요.`;
 
   $("acCoef").innerHTML = `<tr><th>조건</th><th>관객 차 변화</th><th>95% 범위</th><th>p값</th><th>판단</th></tr>` +
     ["age10", "female", "fri"].map((k) => `<tr><td>${C[k].label}</td><td class="nowrap"><b>${pct(C[k].pct)}</b></td>

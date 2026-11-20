@@ -5,6 +5,8 @@ KSPO DOME 공연일, 공연 시작 시각을 기준으로 공원 주차장에 �
 입력: data/raw/parking_inout_202407.csv (2024년 7월 전체, 빠짐없는 기록)
       data/raw/kcisa_inout_2025.jsonl   (2025년, 못 받은 번호 덩어리가 없을 때만 대수에 씀. 받은 비율로 보정 → inout_common.py)
                                         65,535줄로 잘린 8·9월, 공연 시간대(시작 6시간 전~6시간 뒤)를 90% 넘게 못 받은 10~12월 공연은 뺀다
+                                        2024년 7월 자료·2,120면과 같은 구역이 되도록 동2문·남2문·북2문으로 들어온 차만 센다
+                                        (2025 자료에는 서2문·남3문·남4문·서1문 기록도 있음, 들어온 차의 약 16%)
       data/processed/event_days.csv
 출력: web/data/park_profile.json
 2024년 7월과 2025년 공연을 모두 넣어 공연별 곡선의 중앙값을 낸다. 2025 자료가 모자라면 2024년 7월만 쓴다.
@@ -50,7 +52,9 @@ def main():
         if not ok:
             skipped.append(day)
             continue
-        parked, ins, outs = curves(win.assign(w=w), s)
+        win = win.assign(w=w)
+        win = win[(win.src == "2024") | win.igate.isin(ic.MAIN_GATES)]      # 같은 구역(동2·남2·북2문)만
+        parked, ins, outs = curves(win, s)
         shows.append({"date": day, "start": start, "title": title, "src": day[:4],
                       "parked": parked, "in15": ins, "out15": outs})
     if not shows:
@@ -60,7 +64,7 @@ def main():
     hi = lambda k: [int(round(np.percentile([s[k][i] for s in shows], 90))) for i in range(len(REL))]
     n24 = sum(1 for s in shows if s["src"] == "2024")
     n25 = len(shows) - n24
-    src = f"공원 주차장 입출차 기록, KSPO DOME 공연 {len(shows)}회 중앙값 (2024년 7월 {n24}회"
+    src = f"공원 주차장(동2문·남2문·북2문 구역) 입출차 기록, KSPO DOME 공연 {len(shows)}회 중앙값 (2024년 7월 {n24}회"
     src += f" + 2025년 {n25}회. {ic.note_2025(cov)})" if n25 else ")"
     out = {
         "venue": "KSPO DOME", "source": src, "built": pd.Timestamp.now().strftime("%Y-%m-%d"),
@@ -70,7 +74,8 @@ def main():
         "rangeNote": "공연별 10~90% 범위" if len(shows) >= 10 else "공연별 최소~최대",
         "peakByShow": [{"date": s["date"], "title": s["title"], "peak": int(round(max(s["parked"])))} for s in shows],
         "in15": med("in15"), "out15": med("out15"),
-        "capacity": 2120, "shows": [{k: s[k] for k in ("date", "start", "title")} for s in shows],
+        "capacity": 2120, "capacityNote": "동2문·남2문·북2문 구역 면수", "overCapacity": sum(1 for s in shows if max(s["parked"]) > 2120),
+        "shows": [{k: s[k] for k in ("date", "start", "title")} for s in shows],
     }
     if len(shows) < 10:          # 공연이 적으면 범위는 최소~최대
         out["parkedMin"] = [int(round(min(s["parked"][i] for s in shows))) for i in range(len(REL))]

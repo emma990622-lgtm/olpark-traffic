@@ -200,8 +200,12 @@
       const i = parkProf.relMin.findIndex((x) => x >= rel);
       if (i >= 0) {
         const rng = parkProf.parkedMin ? ` <span>(공연에 따라 ${parkProf.parkedMin[i].toLocaleString()}~${parkProf.parkedMax[i].toLocaleString()}대${parkProf.rangeNote ? ", " + parkProf.rangeNote : ""})</span>` : "";
-        park += `${realPark != null ? "참고: 과거 " : ""}공원 주차 약 <b>${parkProf.parked[i].toLocaleString()}대</b> / ${parkProf.capacity.toLocaleString()}면${rng} · 최근 15분 입차 ${parkProf.in15[i]}대 · 출차 ${parkProf.out15[i]}대
-          <span>(KSPO DOME 공연 ${ppLabel} 중앙값${tl.venue === "KSPO DOME" ? "" : ", 이날은 KSPO DOME 공연이 아니라 참고만"})</span><br>`;
+        const cap = parkProf.capacity;
+        const over = parkProf.overCapacity && ((parkProf.parkedMax || parkProf.parked)[i] > cap || parkProf.parked[i] > cap)
+          ? `<br><span>※ 기록상 면수(${cap.toLocaleString()}면${parkProf.capacityNote ? ", " + parkProf.capacityNote : ""})보다 많은 공연이 ${parkProf.overCapacity}회 있어요. 공연날 통로·임시 주차나 출차 기록 누락이 섞였을 수 있어 참고값이에요(원인 확인 전).</span>`
+          : "";
+        park += `${realPark != null ? "참고: 과거 " : ""}공원 주차 약 <b>${parkProf.parked[i].toLocaleString()}대</b> / ${cap.toLocaleString()}면${rng} · 최근 15분 입차 ${parkProf.in15[i]}대 · 출차 ${parkProf.out15[i]}대
+          <span>(KSPO DOME 공연 ${ppLabel} 중앙값${tl.venue === "KSPO DOME" ? "" : ", 이날은 KSPO DOME 공연이 아니라 참고만"})</span>${over}<br>`;
       }
     }
     $("tInfo").innerHTML = park + src;

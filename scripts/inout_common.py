@@ -33,7 +33,8 @@ RAW = ROOT / "data" / "raw"
 EVENTS = ROOT / "data" / "processed" / "event_days.csv"
 PAT = re.compile(r"입구:([^,]*), 입차시간:([^,]*), 출구:([^,]*), 출차시간:(.*)$")
 TOTAL_2025 = 2411225                       # API_CPM_008 전체 줄 수(문화공공데이터광장 totalCount)
-COLS = ["in_time", "out_time", "gate", "src", "w", "ord"]
+COLS = ["in_time", "out_time", "gate", "igate", "src", "w", "ord"]
+MAIN_GATES = ("동2문", "남2문", "북2문")          # 2024년 7월 자료·2,120면 기준 구역(공공데이터포털 실시간 주차현황 설명)
 CAP_SPAN = 70000                           # 번호 폭이 이보다 작은 달 = 65,535줄로 잘린 달
 _ORD = {"N": None, "T": None}              # 시간순 덩어리 기록의 (번호, 입차 시각) — load_2025가 채운다
 
@@ -47,6 +48,7 @@ def load_2024():
     o["in_time"] = pd.to_datetime(o.in_time, errors="coerce")
     o["out_time"] = pd.to_datetime(o.out_time, errors="coerce")
     o["gate"] = None
+    o["igate"] = None
     o["src"] = "2024"
     o["w"] = 1.0
     o["ord"] = False
@@ -99,7 +101,7 @@ def block_coverage(nums, months, min_run=200, with_blocks=False):
 
 
 def load_2025(min_ratio=0.2):
-    """2025 입출차. 돌려주는 값: (표[in_time, out_time, gate, src, w, ord], 달별 요약)
+    """2025 입출차. 돌려주는 값: (표[in_time, out_time, gate(출구), igate(입구), src, w, ord], 달별 요약)
     w  = 대수 가중치(1 ÷ 받은 비율). NaN = 대수에 못 씀(받은 비율 min_ratio 미만, 65,535줄로 잘려 일부만 남은 달,
          시간순 덩어리 — 시간순 덩어리는 공연마다 show_weights로 채운다)
     ord = 시간순 덩어리(10~12월) 기록인가"""
@@ -132,6 +134,7 @@ def load_2025(min_ratio=0.2):
     df["in_time"] = pd.to_datetime(df.in_time, errors="coerce")
     df["out_time"] = pd.to_datetime(df.out_time, errors="coerce")
     df["gate"] = df.out_gate.str.extract(r"^(\S+?문)")[0]
+    df["igate"] = df.in_gate.str.extract(r"^(\S+?문)")[0]
     df["src"] = "2025"
     df["blk"] = blk
     df["ratio"] = ratio
