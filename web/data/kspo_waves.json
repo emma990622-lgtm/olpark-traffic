@@ -2,7 +2,8 @@
  "built": "2026-11-20",
  "label": "2024년 7월 7회 + 2025년 59회",
  "method": "공연 시작 60~360분 뒤 출차를 15분(정각 기준) 단위로 세어 가장 많은 구간",
- "source": "공원 주차장 입출차 기록 KSPO DOME 공연 2024년 7월 7회 + 2025년 59회 (2025 자료 77% 받음(겹친 줄 뺀 값), 받은 비율로 보정. 8·9월은 원본이 한 달 65,535줄로 잘려 대수에서 뺌. 10·11·12월은 공연 시간대 기록을 90% 넘게 받은 공연만(11·12월은 원본이 잘려 앞쪽 며칠만 있음))",
+ "scope": "공원 주차장 전체 출차(관객 차 + 평소 방문 차), 동2문·남2문·북2문 구역",
+ "source": "공원 주차장(동2문·남2문·북2문 구역) 입출차 기록 KSPO DOME 공연 2024년 7월 7회 + 2025년 59회 (2025 자료 77% 받음(겹친 줄 뺀 값), 받은 비율로 보정. 8·9월은 원본이 한 달 65,535줄로 잘려 대수에서 뺌. 10·11·12월은 공연 시간대 기록을 90% 넘게 받은 공연만(11·12월은 원본이 잘려 앞쪽 며칠만 있음))",
  "summary": {
   "n": 66,
   "bySource": {
@@ -39,9 +40,9 @@
   "lagMed": 195,
   "lagLo": 135,
   "lagHi": 240,
-  "peakLo": 265,
-  "peakMed": 355,
-  "peakHi": 424,
+  "peakLo": 253,
+  "peakMed": 336,
+  "peakHi": 411,
   "rangeNote": "공연별 10~90% 범위"
  },
  "list": [
@@ -113,18 +114,18 @@
    "start": "13:00",
    "title": "로드 투 킹덤 : ACE OF ACE 콘서트",
    "src": "2025",
-   "peakTime": "16:00",
-   "peak15": 113,
-   "lagMin": 180
+   "peakTime": "15:00",
+   "peak15": 77,
+   "lagMin": 120
   },
   {
    "date": "2025-01-10",
    "start": "19:30",
    "title": "나훈아 ‘2024 고마웠습니다-라스트 콘서트(LAST CONCERT)’",
    "src": "2025",
-   "peakTime": "22:30",
-   "peak15": 360,
-   "lagMin": 180
+   "peakTime": "22:45",
+   "peak15": 353,
+   "lagMin": 195
   },
   {
    "date": "2025-01-18",
@@ -132,7 +133,7 @@
    "title": "2025 DAVICHI CONCERT 〈A Stitch in Time〉",
    "src": "2025",
    "peakTime": "21:30",
-   "peak15": 466,
+   "peak15": 452,
    "lagMin": 210
   },
   {
@@ -141,7 +142,7 @@
    "title": "2025 DAVICHI CONCERT 〈A Stitch in Time〉",
    "src": "2025",
    "peakTime": "20:30",
-   "peak15": 470,
+   "peak15": 459,
    "lagMin": 210
   },
   {
@@ -150,7 +151,7 @@
    "title": "2025 BABYMONSTER 1st WORLD TOUR 〈HELLO MONSTERS〉 IN SEOUL",
    "src": "2025",
    "peakTime": "20:15",
-   "peak15": 337,
+   "peak15": 328,
    "lagMin": 135
   },
   {
@@ -159,7 +160,7 @@
    "title": "2025 BABYMONSTER 1st WORLD TOUR 〈HELLO MONSTERS〉 IN SEOUL",
    "src": "2025",
    "peakTime": "19:15",
-   "peak15": 381,
+   "peak15": 371,
    "lagMin": 135
   },
   {
@@ -168,7 +169,7 @@
    "title": "THE BOYZ FAN-CON 〈THE B LAND〉",
    "src": "2025",
    "peakTime": "18:00",
-   "peak15": 247,
+   "peak15": 220,
    "lagMin": 60
   },
   {
@@ -177,7 +178,7 @@
    "title": "THE BOYZ FAN-CON 〈THE B LAND〉",
    "src": "2025",
    "peakTime": "20:00",
-   "peak15": 271,
+   "peak15": 260,
    "lagMin": 240
   },
   {
@@ -186,7 +187,7 @@
    "title": "2025 황영웅 앨범 발매 쇼케이스 PANORAMA : SHOWKING",
    "src": "2025",
    "peakTime": "21:00",
-   "peak15": 313,
+   "peak15": 309,
    "lagMin": 240
   },
   {
@@ -195,7 +196,7 @@
    "title": "2025 황영웅 앨범 발매 쇼케이스 PANORAMA : SHOWKING",
    "src": "2025",
    "peakTime": "20:45",
-   "peak15": 334,
+   "peak15": 327,
    "lagMin": 225
   },
   {
@@ -204,7 +205,7 @@
    "title": "2025 윤하 앵콜 콘서트 〈GROWTH THEORY : Final Edition〉",
    "src": "2025",
    "peakTime": "22:15",
-   "peak15": 322,
+   "peak15": 311,
    "lagMin": 135
   },
   {
@@ -213,7 +214,7 @@
    "title": "2025 윤하 앵콜 콘서트 〈GROWTH THEORY : Final Edition〉",
    "src": "2025",
    "peakTime": "21:45",
-   "peak15": 389,
+   "peak15": 375,
    "lagMin": 165
   },
   {
@@ -222,7 +223,7 @@
    "title": "2025 윤하 앵콜 콘서트 〈GROWTH THEORY : Final Edition〉",
    "src": "2025",
    "peakTime": "20:45",
-   "peak15": 345,
+   "peak15": 335,
    "lagMin": 165
   },
   {
@@ -231,7 +232,7 @@
    "title": "2025 영탁 단독 콘서트 “TAK SHOW3” - 앙코르",
    "src": "2025",
    "peakTime": "18:30",
-   "peak15": 327,
+   "peak15": 296,
    "lagMin": 210
   },
   {
@@ -239,9 +240,9 @@
    "start": "15:00",
    "title": "2025 영탁 단독 콘서트 “TAK SHOW3” - 앙코르",
    "src": "2025",
-   "peakTime": "18:45",
-   "peak15": 312,
-   "lagMin": 225
+   "peakTime": "18:30",
+   "peak15": 294,
+   "lagMin": 210
   },
   {
    "date": "2025-03-01",
@@ -249,7 +250,7 @@
    "title": "j-hope Tour ‘HOPE ON THE STAGE’ in SEOUL",
    "src": "2025",
    "peakTime": "21:30",
-   "peak15": 358,
+   "peak15": 332,
    "lagMin": 210
   },
   {
@@ -258,7 +259,7 @@
    "title": "j-hope Tour ‘HOPE ON THE STAGE’ in SEOUL",
    "src": "2025",
    "peakTime": "19:45",
-   "peak15": 343,
+   "peak15": 335,
    "lagMin": 165
   },
   {
@@ -267,7 +268,7 @@
    "title": "TAEYEON CONCERT - The TENSE",
    "src": "2025",
    "peakTime": "22:45",
-   "peak15": 352,
+   "peak15": 345,
    "lagMin": 165
   },
   {
@@ -276,7 +277,7 @@
    "title": "TAEYEON CONCERT - The TENSE",
    "src": "2025",
    "peakTime": "20:45",
-   "peak15": 381,
+   "peak15": 345,
    "lagMin": 165
   },
   {
@@ -285,7 +286,7 @@
    "title": "TAEYEON CONCERT - The TENSE",
    "src": "2025",
    "peakTime": "19:45",
-   "peak15": 302,
+   "peak15": 283,
    "lagMin": 165
   },
   {
@@ -294,7 +295,7 @@
    "title": "2024-25 aespa LIVE TOUR－SYNK：PARALLEL LINE－ENCORE",
    "src": "2025",
    "peakTime": "21:30",
-   "peak15": 403,
+   "peak15": 386,
    "lagMin": 210
   },
   {
@@ -303,7 +304,7 @@
    "title": "2024-25 aespa LIVE TOUR－SYNK：PARALLEL LINE－ENCORE",
    "src": "2025",
    "peakTime": "20:30",
-   "peak15": 394,
+   "peak15": 381,
    "lagMin": 210
   },
   {
@@ -311,9 +312,9 @@
    "start": "17:00",
    "title": "2025 ATEEZ WORLD TOUR [TOWARDS THE LIGHT : WILL TO POWER] FINALE IN SEOUL",
    "src": "2025",
-   "peakTime": "18:00",
-   "peak15": 271,
-   "lagMin": 60
+   "peakTime": "20:00",
+   "peak15": 241,
+   "lagMin": 180
   },
   {
    "date": "2025-03-23",
@@ -321,7 +322,7 @@
    "title": "2025 ATEEZ WORLD TOUR [TOWARDS THE LIGHT : WILL TO POWER] FINALE IN SEOUL",
    "src": "2025",
    "peakTime": "20:15",
-   "peak15": 332,
+   "peak15": 312,
    "lagMin": 195
   },
   {
@@ -330,7 +331,7 @@
    "title": "2025 IVE THE 3RD FAN CONCERT 〈IVE SCOUT〉",
    "src": "2025",
    "peakTime": "21:45",
-   "peak15": 401,
+   "peak15": 392,
    "lagMin": 225
   },
   {
@@ -339,7 +340,7 @@
    "title": "2025 IVE THE 3RD FAN CONCERT 〈IVE SCOUT〉",
    "src": "2025",
    "peakTime": "20:15",
-   "peak15": 415,
+   "peak15": 395,
    "lagMin": 195
   },
   {
@@ -348,7 +349,7 @@
    "title": "2025 2NE1 CONCERT ［WELCOME BACK］ ENCORE IN SEOUL",
    "src": "2025",
    "peakTime": "20:45",
-   "peak15": 356,
+   "peak15": 344,
    "lagMin": 165
   },
   {
@@ -357,7 +358,7 @@
    "title": "2025 2NE1 CONCERT ［WELCOME BACK］ ENCORE IN SEOUL",
    "src": "2025",
    "peakTime": "19:45",
-   "peak15": 365,
+   "peak15": 357,
    "lagMin": 165
   },
   {
@@ -366,7 +367,7 @@
    "title": "2025 ZEROBASEONE FAN-CON［BLUE MANSION］",
    "src": "2025",
    "peakTime": "22:30",
-   "peak15": 283,
+   "peak15": 275,
    "lagMin": 180
   },
   {
@@ -375,7 +376,7 @@
    "title": "2025 ZEROBASEONE FAN-CON［BLUE MANSION］",
    "src": "2025",
    "peakTime": "21:15",
-   "peak15": 404,
+   "peak15": 383,
    "lagMin": 195
   },
   {
@@ -384,7 +385,7 @@
    "title": "2025 ZEROBASEONE FAN-CON［BLUE MANSION］",
    "src": "2025",
    "peakTime": "20:45",
-   "peak15": 362,
+   "peak15": 342,
    "lagMin": 225
   },
   {
@@ -393,7 +394,7 @@
    "title": "2024-25 TAEMIN WORLD TOUR [Ephemeral Gaze] Finale",
    "src": "2025",
    "peakTime": "19:45",
-   "peak15": 316,
+   "peak15": 292,
    "lagMin": 165
   },
   {
@@ -402,7 +403,7 @@
    "title": "2024-25 TAEMIN WORLD TOUR [Ephemeral Gaze] Finale",
    "src": "2025",
    "peakTime": "17:00",
-   "peak15": 354,
+   "peak15": 292,
    "lagMin": 60
   },
   {
@@ -411,7 +412,7 @@
    "title": "YUURI ARENA LIVE 2025 at SEOUL",
    "src": "2025",
    "peakTime": "20:00",
-   "peak15": 445,
+   "peak15": 422,
    "lagMin": 120
   },
   {
@@ -420,7 +421,7 @@
    "title": "YUURI ARENA LIVE 2025 at SEOUL",
    "src": "2025",
    "peakTime": "19:15",
-   "peak15": 462,
+   "peak15": 417,
    "lagMin": 135
   },
   {
@@ -429,7 +430,7 @@
    "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL",
    "src": "2025",
    "peakTime": "23:00",
-   "peak15": 442,
+   "peak15": 435,
    "lagMin": 240
   },
   {
@@ -438,7 +439,7 @@
    "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL",
    "src": "2025",
    "peakTime": "22:00",
-   "peak15": 405,
+   "peak15": 399,
    "lagMin": 240
   },
   {
@@ -447,7 +448,7 @@
    "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL",
    "src": "2025",
    "peakTime": "20:45",
-   "peak15": 408,
+   "peak15": 383,
    "lagMin": 225
   },
   {
@@ -456,7 +457,7 @@
    "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL",
    "src": "2025",
    "peakTime": "23:30",
-   "peak15": 365,
+   "peak15": 363,
    "lagMin": 270
   },
   {
@@ -465,7 +466,7 @@
    "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL",
    "src": "2025",
    "peakTime": "21:45",
-   "peak15": 406,
+   "peak15": 393,
    "lagMin": 225
   },
   {
@@ -474,7 +475,7 @@
    "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL",
    "src": "2025",
    "peakTime": "21:30",
-   "peak15": 431,
+   "peak15": 414,
    "lagMin": 270
   },
   {
@@ -483,7 +484,7 @@
    "title": "2025 BAEKHYUN WORLD TOUR 〈Reverie〉 in SEOUL",
    "src": "2025",
    "peakTime": "21:00",
-   "peak15": 372,
+   "peak15": 330,
    "lagMin": 180
   },
   {
@@ -492,7 +493,7 @@
    "title": "2025 BAEKHYUN WORLD TOUR 〈Reverie〉 in SEOUL",
    "src": "2025",
    "peakTime": "19:15",
-   "peak15": 334,
+   "peak15": 295,
    "lagMin": 195
   },
   {
@@ -501,7 +502,7 @@
    "title": "2025 RIIZE CONCERT TOUR [RIIZING LOUD] IN SEOUL",
    "src": "2025",
    "peakTime": "23:15",
-   "peak15": 272,
+   "peak15": 268,
    "lagMin": 195
   },
   {
@@ -510,7 +511,7 @@
    "title": "2025 RIIZE CONCERT TOUR [RIIZING LOUD] IN SEOUL",
    "src": "2025",
    "peakTime": "21:15",
-   "peak15": 365,
+   "peak15": 347,
    "lagMin": 195
   },
   {
@@ -519,7 +520,7 @@
    "title": "2025 RIIZE CONCERT TOUR [RIIZING LOUD] IN SEOUL",
    "src": "2025",
    "peakTime": "19:00",
-   "peak15": 294,
+   "peak15": 276,
    "lagMin": 180
   },
   {
@@ -528,7 +529,7 @@
    "title": "HIGHLIGHT LIVE 2025 [RIDE OR DIE]",
    "src": "2025",
    "peakTime": "22:45",
-   "peak15": 265,
+   "peak15": 257,
    "lagMin": 195
   },
   {
@@ -537,7 +538,7 @@
    "title": "HIGHLIGHT LIVE 2025 [RIDE OR DIE]",
    "src": "2025",
    "peakTime": "21:30",
-   "peak15": 321,
+   "peak15": 306,
    "lagMin": 210
   },
   {
@@ -546,7 +547,7 @@
    "title": "HIGHLIGHT LIVE 2025 [RIDE OR DIE]",
    "src": "2025",
    "peakTime": "20:45",
-   "peak15": 619,
+   "peak15": 590,
    "lagMin": 225
   },
   {
@@ -555,7 +556,7 @@
    "title": "2025 MONSTA X CONNECT X",
    "src": "2025",
    "peakTime": "23:30",
-   "peak15": 417,
+   "peak15": 408,
    "lagMin": 210
   },
   {
@@ -573,7 +574,7 @@
    "title": "2025 MONSTA X CONNECT X",
    "src": "2025",
    "peakTime": "19:30",
-   "peak15": 296,
+   "peak15": 274,
    "lagMin": 210
   },
   {
@@ -581,9 +582,9 @@
    "start": "19:00",
    "title": "BOYNEXTDOOR TOUR ‘KNOCK ON Vol.1’ FINAL",
    "src": "2025",
-   "peakTime": "22:15",
-   "peak15": 368,
-   "lagMin": 195
+   "peakTime": "22:45",
+   "peak15": 363,
+   "lagMin": 225
   },
   {
    "date": "2025-07-26",
@@ -591,7 +592,7 @@
    "title": "BOYNEXTDOOR TOUR ‘KNOCK ON Vol.1’ FINAL",
    "src": "2025",
    "peakTime": "21:30",
-   "peak15": 417,
+   "peak15": 407,
    "lagMin": 210
   },
   {
@@ -600,7 +601,7 @@
    "title": "BOYNEXTDOOR TOUR ‘KNOCK ON Vol.1’ FINAL",
    "src": "2025",
    "peakTime": "20:30",
-   "peak15": 308,
+   "peak15": 294,
    "lagMin": 210
   },
   {
@@ -609,7 +610,7 @@
    "title": "2025 ZEROBASEONE WORLD TOUR ［HERE ＆ NOW］ IN SEOUL",
    "src": "2025",
    "peakTime": "20:15",
-   "peak15": 349,
+   "peak15": 338,
    "lagMin": 195
   },
   {
@@ -618,7 +619,7 @@
    "title": "2025-26 TREASURE TOUR［PULSE ON］IN SEOUL",
    "src": "2025",
    "peakTime": "22:00",
-   "peak15": 236,
+   "peak15": 232,
    "lagMin": 180
   },
   {
@@ -627,7 +628,7 @@
    "title": "IVE WORLD TOUR [SHOW WHAT I AM]",
    "src": "2025",
    "peakTime": "21:30",
-   "peak15": 373,
+   "peak15": 361,
    "lagMin": 210
   },
   {
@@ -636,7 +637,7 @@
    "title": "2025 god CONCERT < ICONIC BOX > - 서울",
    "src": "2025",
    "peakTime": "21:30",
-   "peak15": 397,
+   "peak15": 395,
    "lagMin": 270
   }
  ]

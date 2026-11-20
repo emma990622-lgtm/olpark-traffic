@@ -1,95 +1,95 @@
 {
- "built": "2026-11-20 19:53",
- "meaningful": false,
+ "built": "2026-11-20 20:20",
+ "meaningful": true,
  "sources": {
   "population": "서울시 행정동 단위 생활인구(내국인), 서울 열린데이터광장 OA-14991 · 올림픽공원이 있는 행정동(코드 11710566) · KT 통신 자료 기반 추정",
   "populationPeriod": "2024-06 ~ 2025-12",
-  "cars": "입출차 원본에서 직접 셈. 2025 자료 77% 받음(겹친 줄 뺀 값), 받은 비율로 보정. 8·9월은 원본이 한 달 65,535줄로 잘려 대수에서 뺌. 10·11·12월은 공연 시간대 기록을 90% 넘게 받은 공연만(11·12월은 원본이 잘려 앞쪽 며칠만 있음)",
+  "cars": "입출차 원본에서 직접 셈(같은 기준에 걸리는 평소 방문 차는 뺌). 2025 자료 77% 받음(겹친 줄 뺀 값), 받은 비율로 보정. 8·9월은 원본이 한 달 65,535줄로 잘려 대수에서 뺌. 10·11·12월은 공연 시간대 기록을 90% 넘게 받은 공연만(11·12월은 원본이 잘려 앞쪽 며칠만 있음)",
   "events": "올림픽공원 공식 행사 일정"
  },
  "method": {
   "composition": "공연 날 공연 시간(시작부터 3시간대) 생활인구에서 평소 같은 요일(공원 큰 공연이 없는 날, 앞뒤 5주 안팎) 중앙값을 뺀 '늘어난 사람'을 성별·연령대로 나눔",
-  "cars": "시작 3시간 전~20분 뒤에 들어와 2시간 넘게 머문 공원 주차장 차(관객 차로 봄)",
+  "cars": "시작 3시간 전~20분 뒤에 들어와 2시간 넘게 머문 공원 주차장 차에서, 큰 공연 없는 같은 요일 유형 날에도 같은 기준에 걸리는 차(평소 방문 차)를 뺀 값",
   "model": "ln(관객 차) = b0 + b1·(평균 나이 ÷ 10) + b2·(여성 비율) + b3·(금요일이면 1)",
   "ci": "같은 가수 공연끼리 묶어 다시 뽑는 부트스트랩 3,000번, 95% 구간",
   "excluded": "토요일 공연(평소 토요일에도 공연이 있어 비교할 날이 거의 없음), 늘어난 사람이 3,000명 미만인 날, 월~목 공연",
   "limits": "공연별 관객 수를 몰라 '관객 1명이 차로 올 확률'은 직접 구하지 못했고, 같은 조건에서 관객 차가 몇 % 늘고 주는지로 해석함. 생활인구는 통신 자료로 추정한 값이라 같은 날 다른 공연장 관객도 섞일 수 있음. 주차장이 차면(2,120면) 더 오는 차는 세지 못함."
  },
  "model": {
-  "n": 39,
-  "artists": 29,
-  "r2": 0.197,
-  "looRmse": 0.479,
-  "nullRmse": 0.483,
-  "improve": 0.008,
-  "looMedianErrPct": 31,
+  "n": 38,
+  "artists": 28,
+  "r2": 0.47,
+  "looRmse": 0.467,
+  "nullRmse": 0.604,
+  "improve": 0.226,
+  "looMedianErrPct": 25,
   "b": [
-   5.85835,
-   0.19846,
-   0.07233,
-   -0.31041
+   6.83054,
+   0.23186,
+   -1.48687,
+   -0.45073
   ],
-  "s2": 0.19816,
+  "s2": 0.2046,
   "XtXi": [
    [
-    2.747543,
-    -0.299593,
-    -2.307645,
-    0.176288
+    2.996001,
+    -0.301742,
+    -2.593304,
+    0.18647
    ],
    [
-    -0.299593,
-    0.056884,
-    0.160839,
-    -0.010641
+    -0.301742,
+    0.056902,
+    0.16331,
+    -0.010729
    ],
    [
-    -2.307645,
-    0.160839,
-    2.338179,
-    -0.232904
+    -2.593304,
+    0.16331,
+    2.666609,
+    -0.244611
    ],
    [
-    0.176288,
-    -0.010641,
-    -0.232904,
-    0.144201
+    0.18647,
+    -0.010729,
+    -0.244611,
+    0.144619
    ]
   ],
-  "t80": 1.3062,
+  "t80": 1.307,
   "coef": {
    "age10": {
     "label": "관객 평균 나이 10살 많을 때",
-    "b": 0.1985,
-    "se": 0.1062,
-    "p": 0.07,
-    "bootLo": 0.0368,
-    "bootHi": 0.3472,
-    "pct": 22,
-    "pctLo": 4,
-    "pctHi": 42
+    "b": 0.2319,
+    "se": 0.1079,
+    "p": 0.0389,
+    "bootLo": 0.1019,
+    "bootHi": 0.4693,
+    "pct": 26,
+    "pctLo": 11,
+    "pctHi": 60
    },
    "female": {
     "label": "여성 비율 10%p 높을 때",
-    "b": 0.0723,
-    "se": 0.6807,
-    "p": 0.916,
-    "bootLo": -1.8879,
-    "bootHi": 2.0658,
-    "pct": 1,
-    "pctLo": -17,
-    "pctHi": 23
+    "b": -1.4869,
+    "se": 0.7386,
+    "p": 0.0521,
+    "bootLo": -3.183,
+    "bootHi": -0.0093,
+    "pct": -14,
+    "pctLo": -27,
+    "pctHi": 0
    },
    "fri": {
     "label": "금요일 공연(주말 대비)",
-    "b": -0.3104,
-    "se": 0.169,
-    "p": 0.0748,
-    "bootLo": -0.5832,
-    "bootHi": -0.0608,
-    "pct": -27,
-    "pctLo": -44,
-    "pctHi": -6
+    "b": -0.4507,
+    "se": 0.172,
+    "p": 0.013,
+    "bootLo": -0.7387,
+    "bootHi": -0.1197,
+    "pct": -36,
+    "pctLo": -52,
+    "pctHi": -11
    }
   }
  },
@@ -99,14 +99,14 @@
    "meanAge": 25,
    "female": 0.92,
    "sun": {
-    "pred": 615,
-    "lo": 336,
-    "hi": 1124
+    "pred": 421,
+    "lo": 228,
+    "hi": 778
    },
    "fri": {
-    "pred": 451,
-    "lo": 245,
-    "hi": 828
+    "pred": 268,
+    "lo": 145,
+    "hi": 498
    }
   },
   {
@@ -114,14 +114,14 @@
    "meanAge": 30,
    "female": 0.7,
    "sun": {
-    "pred": 668,
-    "lo": 368,
-    "hi": 1213
+    "pred": 655,
+    "lo": 357,
+    "hi": 1205
    },
    "fri": {
-    "pred": 490,
-    "lo": 262,
-    "hi": 916
+    "pred": 418,
+    "lo": 220,
+    "hi": 792
    }
   },
   {
@@ -129,14 +129,14 @@
    "meanAge": 38,
    "female": 0.75,
    "sun": {
-    "pred": 786,
-    "lo": 432,
-    "hi": 1431
+    "pred": 732,
+    "lo": 398,
+    "hi": 1348
    },
    "fri": {
-    "pred": 576,
-    "lo": 311,
-    "hi": 1069
+    "pred": 467,
+    "lo": 249,
+    "hi": 876
    }
   },
   {
@@ -144,14 +144,14 @@
    "meanAge": 55,
    "female": 0.8,
    "sun": {
-    "pred": 1105,
-    "lo": 556,
-    "hi": 2195
+    "pred": 1009,
+    "lo": 502,
+    "hi": 2026
    },
    "fri": {
-    "pred": 810,
-    "lo": 407,
-    "hi": 1612
+    "pred": 643,
+    "lo": 319,
+    "hi": 1294
    }
   }
  ],
@@ -189,9 +189,9 @@
     "40대": 0.088,
     "50대 이상": 0.558
    },
-   "pred": 686,
-   "lo": 360,
-   "hi": 1309
+   "pred": 622,
+   "lo": 322,
+   "hi": 1202
   },
   {
    "date": "2026-11-28",
@@ -216,9 +216,9 @@
     "40대": 0.088,
     "50대 이상": 0.558
    },
-   "pred": 936,
-   "lo": 500,
-   "hi": 1751
+   "pred": 976,
+   "lo": 515,
+   "hi": 1848
   },
   {
    "date": "2026-11-29",
@@ -243,9 +243,9 @@
     "40대": 0.088,
     "50대 이상": 0.558
    },
-   "pred": 936,
-   "lo": 500,
-   "hi": 1751
+   "pred": 976,
+   "lo": 515,
+   "hi": 1848
   },
   {
    "date": "2026-12-04",
@@ -281,9 +281,9 @@
     "40대": 0.083,
     "50대 이상": 0.085
    },
-   "pred": 690,
+   "pred": 698,
    "lo": 380,
-   "hi": 1254
+   "hi": 1284
   },
   {
    "date": "2026-12-18",
@@ -316,9 +316,9 @@
     "40대": 0.066,
     "50대 이상": 0.027
    },
-   "pred": 485,
-   "lo": 265,
-   "hi": 890
+   "pred": 290,
+   "lo": 157,
+   "hi": 538
   },
   {
    "date": "2026-12-31",
@@ -454,8 +454,8 @@
     "50대 이상": 0.011
    },
    "meanAge": 24.4,
-   "cars": 343,
-   "carsSrc": "raw"
+   "cars": 194,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2024-07-13",
@@ -467,8 +467,8 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 327,
-   "carsSrc": "raw"
+   "cars": 206,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2024-07-14",
@@ -489,8 +489,8 @@
     "50대 이상": 0.02
    },
    "meanAge": 24.3,
-   "cars": 422,
-   "carsSrc": "raw"
+   "cars": 276,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2024-07-20",
@@ -502,8 +502,8 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 1080,
-   "carsSrc": "raw"
+   "cars": 958,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2024-07-21",
@@ -524,8 +524,8 @@
     "50대 이상": 0.175
    },
    "meanAge": 34.8,
-   "cars": 1360,
-   "carsSrc": "raw"
+   "cars": 1258,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2024-07-27",
@@ -537,8 +537,8 @@
    "otherVenues": 0,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 204,
-   "carsSrc": "raw"
+   "cars": 116,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2024-07-28",
@@ -559,8 +559,8 @@
     "50대 이상": 0.045
    },
    "meanAge": 27.3,
-   "cars": 408,
-   "carsSrc": "raw"
+   "cars": 258,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2024-08-24",
@@ -1077,9 +1077,7 @@
     "40대": 0.208,
     "50대 이상": 0.291
    },
-   "meanAge": 37.7,
-   "cars": 155,
-   "carsSrc": "raw-weighted"
+   "meanAge": 37.7
   },
   {
    "date": "2025-01-10",
@@ -1100,8 +1098,8 @@
     "50대 이상": 0.842
    },
    "meanAge": 61.0,
-   "cars": 911,
-   "carsSrc": "raw-weighted"
+   "cars": 742,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-01-18",
@@ -1113,8 +1111,8 @@
    "otherVenues": 2,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 1075,
-   "carsSrc": "raw-weighted"
+   "cars": 1007,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-01-19",
@@ -1135,8 +1133,8 @@
     "50대 이상": 0.085
    },
    "meanAge": 31.7,
-   "cars": 1191,
-   "carsSrc": "raw-weighted"
+   "cars": 1100,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-01-25",
@@ -1148,8 +1146,8 @@
    "otherVenues": 2,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 755,
-   "carsSrc": "raw-weighted"
+   "cars": 691,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-01-26",
@@ -1170,8 +1168,8 @@
     "50대 이상": 0.083
    },
    "meanAge": 27.8,
-   "cars": 831,
-   "carsSrc": "raw-weighted"
+   "cars": 741,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-01-31",
@@ -1203,8 +1201,8 @@
    "otherVenues": 0,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 328,
-   "carsSrc": "raw-weighted"
+   "cars": 238,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-02-02",
@@ -1225,8 +1223,8 @@
     "50대 이상": 0.108
    },
    "meanAge": 28.9,
-   "cars": 364,
-   "carsSrc": "raw-weighted"
+   "cars": 171,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-02-08",
@@ -1238,8 +1236,8 @@
    "otherVenues": 2,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 823,
-   "carsSrc": "raw-weighted"
+   "cars": 732,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-02-09",
@@ -1260,8 +1258,8 @@
     "50대 이상": 0.437
    },
    "meanAge": 44.7,
-   "cars": 912,
-   "carsSrc": "raw-weighted"
+   "cars": 821,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-02-14",
@@ -1282,8 +1280,8 @@
     "50대 이상": 0.038
    },
    "meanAge": 27.2,
-   "cars": 544,
-   "carsSrc": "raw-weighted"
+   "cars": 410,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-02-15",
@@ -1295,8 +1293,8 @@
    "otherVenues": 2,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 690,
-   "carsSrc": "raw-weighted"
+   "cars": 646,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-02-16",
@@ -1317,8 +1315,8 @@
     "50대 이상": 0.164
    },
    "meanAge": 33.3,
-   "cars": 824,
-   "carsSrc": "raw-weighted"
+   "cars": 757,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-02-22",
@@ -1330,8 +1328,8 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 994,
-   "carsSrc": "raw-weighted"
+   "cars": 741,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-02-23",
@@ -1352,8 +1350,8 @@
     "50대 이상": 0.499
    },
    "meanAge": 47.4,
-   "cars": 966,
-   "carsSrc": "raw-weighted"
+   "cars": 713,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-02-28",
@@ -1385,8 +1383,8 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 501,
-   "carsSrc": "raw-weighted"
+   "cars": 433,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-03-02",
@@ -1407,8 +1405,8 @@
     "50대 이상": 0.121
    },
    "meanAge": 33.9,
-   "cars": 392,
-   "carsSrc": "raw-weighted"
+   "cars": 301,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-03-07",
@@ -1429,8 +1427,8 @@
     "50대 이상": 0.019
    },
    "meanAge": 28.4,
-   "cars": 499,
-   "carsSrc": "raw-weighted"
+   "cars": 365,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-03-08",
@@ -1442,8 +1440,8 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 650,
-   "carsSrc": "raw-weighted"
+   "cars": 584,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-03-09",
@@ -1464,8 +1462,8 @@
     "50대 이상": 0.105
    },
    "meanAge": 31.8,
-   "cars": 605,
-   "carsSrc": "raw-weighted"
+   "cars": 513,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-03-15",
@@ -1477,8 +1475,8 @@
    "otherVenues": 2,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 1019,
-   "carsSrc": "raw-weighted"
+   "cars": 951,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-03-16",
@@ -1499,8 +1497,8 @@
     "50대 이상": 0.131
    },
    "meanAge": 32.7,
-   "cars": 875,
-   "carsSrc": "raw-weighted"
+   "cars": 785,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-03-22",
@@ -1512,8 +1510,8 @@
    "otherVenues": 2,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 473,
-   "carsSrc": "raw-weighted"
+   "cars": 381,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-03-23",
@@ -1534,8 +1532,8 @@
     "50대 이상": 0.104
    },
    "meanAge": 30.5,
-   "cars": 456,
-   "carsSrc": "raw-weighted"
+   "cars": 364,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-04-05",
@@ -1547,8 +1545,8 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 725,
-   "carsSrc": "raw-weighted"
+   "cars": 657,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-04-06",
@@ -1569,8 +1567,8 @@
     "50대 이상": 0.072
    },
    "meanAge": 26.2,
-   "cars": 897,
-   "carsSrc": "raw-weighted"
+   "cars": 806,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-04-12",
@@ -1582,8 +1580,8 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 848,
-   "carsSrc": "raw-weighted"
+   "cars": 780,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-04-13",
@@ -1604,8 +1602,8 @@
     "50대 이상": 0.039
    },
    "meanAge": 29.5,
-   "cars": 898,
-   "carsSrc": "raw-weighted"
+   "cars": 807,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-04-18",
@@ -1626,8 +1624,8 @@
     "50대 이상": 0.047
    },
    "meanAge": 25.5,
-   "cars": 460,
-   "carsSrc": "raw-weighted"
+   "cars": 275,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-04-19",
@@ -1639,8 +1637,8 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 439,
-   "carsSrc": "raw-weighted"
+   "cars": 371,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-04-20",
@@ -1661,8 +1659,8 @@
     "50대 이상": 0.083
    },
    "meanAge": 28.4,
-   "cars": 743,
-   "carsSrc": "raw-weighted"
+   "cars": 652,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-04-26",
@@ -1674,8 +1672,8 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 825,
-   "carsSrc": "raw-weighted"
+   "cars": 733,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-04-27",
@@ -1696,8 +1694,8 @@
     "50대 이상": 0.085
    },
    "meanAge": 33.6,
-   "cars": 935,
-   "carsSrc": "raw-weighted"
+   "cars": 716,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-05-03",
@@ -1709,8 +1707,8 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 857,
-   "carsSrc": "raw-weighted"
+   "cars": 789,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-05-04",
@@ -1731,8 +1729,8 @@
     "50대 이상": 0.031
    },
    "meanAge": 27.0,
-   "cars": 959,
-   "carsSrc": "raw-weighted"
+   "cars": 868,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-05-09",
@@ -1753,8 +1751,8 @@
     "50대 이상": 0.009
    },
    "meanAge": 28.0,
-   "cars": 800,
-   "carsSrc": "raw-weighted"
+   "cars": 594,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-05-10",
@@ -1766,8 +1764,8 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 604,
-   "carsSrc": "raw-weighted"
+   "cars": 537,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-05-11",
@@ -1788,8 +1786,8 @@
     "50대 이상": 0.041
    },
    "meanAge": 29.2,
-   "cars": 644,
-   "carsSrc": "raw-weighted"
+   "cars": 553,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-05-16",
@@ -1810,8 +1808,8 @@
     "50대 이상": 0.006
    },
    "meanAge": 27.1,
-   "cars": 787,
-   "carsSrc": "raw-weighted"
+   "cars": 580,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-05-17",
@@ -1823,8 +1821,8 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 665,
-   "carsSrc": "raw-weighted"
+   "cars": 597,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-05-18",
@@ -1845,8 +1843,8 @@
     "50대 이상": 0.029
    },
    "meanAge": 29.0,
-   "cars": 860,
-   "carsSrc": "raw-weighted"
+   "cars": 769,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-06-07",
@@ -1858,8 +1856,8 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 674,
-   "carsSrc": "raw-weighted"
+   "cars": 606,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-06-08",
@@ -1880,8 +1878,8 @@
     "50대 이상": 0.059
    },
    "meanAge": 29.7,
-   "cars": 694,
-   "carsSrc": "raw-weighted"
+   "cars": 474,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-07-04",
@@ -1902,8 +1900,8 @@
     "50대 이상": 0.012
    },
    "meanAge": 26.3,
-   "cars": 321,
-   "carsSrc": "raw-weighted"
+   "cars": 201,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-07-05",
@@ -1915,8 +1913,8 @@
    "otherVenues": 0,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 426,
-   "carsSrc": "raw-weighted"
+   "cars": 358,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-07-06",
@@ -1937,8 +1935,8 @@
     "50대 이상": 0.024
    },
    "meanAge": 25.1,
-   "cars": 549,
-   "carsSrc": "raw-weighted"
+   "cars": 347,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-07-11",
@@ -1959,8 +1957,8 @@
     "50대 이상": 0.043
    },
    "meanAge": 30.7,
-   "cars": 516,
-   "carsSrc": "raw-weighted"
+   "cars": 322,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-07-12",
@@ -1972,8 +1970,8 @@
    "otherVenues": 0,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 593,
-   "carsSrc": "raw-weighted"
+   "cars": 527,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-07-13",
@@ -1994,8 +1992,8 @@
     "50대 이상": 0.035
    },
    "meanAge": 27.5,
-   "cars": 1252,
-   "carsSrc": "raw-weighted"
+   "cars": 1161,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-07-18",
@@ -2016,8 +2014,8 @@
     "50대 이상": 0.015
    },
    "meanAge": 29.9,
-   "cars": 341,
-   "carsSrc": "raw-weighted"
+   "cars": 218,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-07-19",
@@ -2029,8 +2027,8 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 342,
-   "carsSrc": "raw-weighted"
+   "cars": 278,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-07-20",
@@ -2043,8 +2041,8 @@
    "excess": 1885,
    "ok": false,
    "why": "늘어난 사람이 3,000명 미만",
-   "cars": 504,
-   "carsSrc": "raw-weighted"
+   "cars": 304,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-07-25",
@@ -2065,8 +2063,8 @@
     "50대 이상": 0.028
    },
    "meanAge": 22.3,
-   "cars": 427,
-   "carsSrc": "raw-weighted"
+   "cars": 234,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-07-26",
@@ -2078,8 +2076,8 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 381,
-   "carsSrc": "raw-weighted"
+   "cars": 313,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-07-27",
@@ -2100,8 +2098,8 @@
     "50대 이상": 0.009
    },
    "meanAge": 16.8,
-   "cars": 438,
-   "carsSrc": "raw-weighted"
+   "cars": 348,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-08-02",
@@ -2394,8 +2392,8 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 321,
-   "carsSrc": "raw-weighted"
+   "cars": 258,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-10-05",
@@ -2416,8 +2414,8 @@
     "50대 이상": 0.017
    },
    "meanAge": 22.8,
-   "cars": 452,
-   "carsSrc": "raw-weighted"
+   "cars": 368,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-10-10",
@@ -2438,8 +2436,8 @@
     "50대 이상": 0.02
    },
    "meanAge": 24.0,
-   "cars": 340,
-   "carsSrc": "raw-weighted"
+   "cars": 141,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-10-11",
@@ -2553,8 +2551,8 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 715,
-   "carsSrc": "raw-weighted"
+   "cars": 647,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-11-02",
@@ -2850,8 +2848,8 @@
     "50대 이상": 0.122
    },
    "meanAge": 38.4,
-   "cars": 1272,
-   "carsSrc": "raw-weighted"
+   "cars": 1220,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-12-13",
