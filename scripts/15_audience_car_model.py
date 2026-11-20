@@ -7,8 +7,9 @@
                                           (olpark-collector 저장소 data/seoul-pop 갈래의 GitHub Actions로 받음, 인증키 필요 없음)
   data/processed/event_days.csv            공연 일정
   관객 차 대수 (둘 중 하나)
-    - data/raw/kcisa_inout_2025.jsonl + parking_inout_202407.csv 가 있으면 직접 센다(2025는 받은 비율로 보정, inout_common.py)
-    - 없으면 web/data/exit_profile.json 의 공연별 관객 차 대수(cars)를 쓴다(2025는 받은 만큼, 보정 없음)
+    - data/raw/kcisa_inout_2025.jsonl + parking_inout_202407.csv 가 있으면 직접 센다(2025는 받은 비율로 보정, inout_common.py.
+      65,535줄로 잘린 8·9월, 관객 차 입차 시간대를 90% 넘게 못 받은 10~12월 공연은 뺀다)
+    - 없으면 전에 원본으로 센 값(web/data/audience_car.json)을, 그것도 없으면 exit_profile.json의 cars(보정 없음)를 쓴다
 출력
   web/data/audience_car.json
 
@@ -182,19 +183,34 @@ def cars_by_show():
     raw = ic.RAW / "kcisa_inout_2025.jsonl"
     if raw.exists() and (ic.RAW / "parking_inout_202407.csv").exists():
         d, cov, got = ic.load_all()
-        if got >= 0.8 * ic.TOTAL_2025:                     # 거의 다 받은 원본이 있으면 직접 센다
+        if ic.enough_2025(cov):                            # 못 받은 번호 덩어리가 없으면 원본에서 직접 센다
             d["day"] = d.in_time.dt.strftime("%Y-%m-%d")
             by = dict(tuple(d.groupby("day")))
-            out = {}
+            out, skipped = {}, []
             for day, start, _ in ic.kspo_shows("2024-07"):
-                if day in by:
-                    w, n = ic.audience_cars(by[day], day, start)
-                    if n >= 100 and w == w:
-                        out[day] = (round(w), "raw-weighted" if day >= "2025" else "raw")
-            return out, f"입출차 원본에서 직접 셈(2025 자료 {got / ic.TOTAL_2025:.0%} 받음, 달별 받은 비율로 보정)"
+                if day not in by:
+                    continue
+                s = pd.Timestamp(f"{day} {start}")
+                wt, ok, _ = ic.show_weights(by[day], s, before=180, after=20)   # 관객 차 입차 시간대
+                if not ok:
+                    skipped.append(day)
+                    continue
+                w, n = ic.audience_cars(by[day].assign(w=wt), day, start)
+                if n >= 100 and w == w:
+                    out[day] = (round(w), "raw-weighted" if day >= "2025" else "raw")
+            if skipped:
+                print(f"※ 관객 차를 못 센 2025 공연 {len(skipped)}회(잘린 달·빈 시간대): {', '.join(skipped)}")
+            return out, f"입출차 원본에서 직접 셈. {ic.note_2025(cov)}"
+    # 원본이 없는 곳(클라우드 등): 전에 원본으로 센 값이 있으면 그대로 쓴다
+    if OUT.exists():
+        prev = json.loads(OUT.read_text(encoding="utf-8"))
+        old = {r["date"]: (r["cars"], r["carsSrc"]) for r in prev.get("shows", [])
+               if r.get("cars") and r.get("carsSrc") in ("raw", "raw-weighted")}
+        if old:
+            return old, prev["sources"]["cars"]
     ex = json.loads(EXIT.read_text(encoding="utf-8"))
     out = {r["date"]: (r["cars"], "exit_profile") for r in ex["list"]}
-    return out, "출차 분석(exit_profile.json)의 공연별 관객 차 대수(2025 자료 약 88% 받은 시점, 받은 만큼 그대로)"
+    return out, "출차 분석(exit_profile.json)의 공연별 관객 차 대수(2025는 받은 만큼 그대로, 보정 없음)"
 
 
 def main():

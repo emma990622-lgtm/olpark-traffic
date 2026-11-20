@@ -299,7 +299,7 @@
       }).join("");
     const gm = exitProf.gateMeta || {};
     const gShows = gm.shows || Object.values(exitProf.gates)[0].shows;
-    $("gateSrc").textContent = `2025년 입출차 기록(약 88% 받은 시점) 중 출구 기록이 있는 KSPO DOME 공연 ${gShows}회 기준. ` +
+    $("gateSrc").textContent = `2025년 입출차 기록(전체의 약 77% 받은 시점, 겹친 줄 뺀 값) 중 출구 기록이 있는 KSPO DOME 공연 ${gShows}회 기준. ` +
       `비중은 공연마다 출구별 비중(합 100%)을 구해 평균한 값이고, 그 출구가 안 쓰인 공연은 0%로 넣어 합이 100%가 돼요. ` +
       `절반 넘는 공연에서 쓰인 출구만 따로 보이고 나머지는 '그 밖의 출구'로 묶었어요. "보통"은 공연 4개 중 가운데 2개가 들어가는 범위예요. ` +
       `시간은 출차가 몰리기 시작한 때부터 잰 값이에요(2024년 7월 포함 전체 ${sm.shows}회). 다운로드 완료 후 다시 계산해요.`;

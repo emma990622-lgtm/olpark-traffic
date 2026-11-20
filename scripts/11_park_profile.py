@@ -3,7 +3,8 @@ KSPO DOME 공연일, 공연 시작 시각을 기준으로 공원 주차장에 �
 (공연 시작 3시간 전 ~ 6시간 뒤, 5분 간격). 운영자 화면 3D 지도의 시간 슬라이더에 쓴다.
 
 입력: data/raw/parking_inout_202407.csv (2024년 7월 전체, 빠짐없는 기록)
-      data/raw/kcisa_inout_2025.jsonl   (2025년, 전체의 80% 이상 받았을 때만 대수에 씀. 받은 비율로 보정 → inout_common.py)
+      data/raw/kcisa_inout_2025.jsonl   (2025년, 못 받은 번호 덩어리가 없을 때만 대수에 씀. 받은 비율로 보정 → inout_common.py)
+                                        65,535줄로 잘린 8·9월, 공연 시간대(시작 6시간 전~6시간 뒤)를 90% 넘게 못 받은 10~12월 공연은 뺀다
       data/processed/event_days.csv
 출력: web/data/park_profile.json
 2024년 7월과 2025년 공연을 모두 넣어 공연별 곡선의 중앙값을 낸다. 2025 자료가 모자라면 2024년 7월만 쓴다.
@@ -37,17 +38,19 @@ def curves(x, s):
 def main():
     d24 = ic.load_2024()
     d25, cov = ic.load_2025()
-    got = sum(v["got"] for v in cov.values())
-    use25 = ic.enough_2025(got)
+    use25 = ic.enough_2025(cov)
     d = pd.concat([d24, d25] if use25 else [d24], ignore_index=True)
-    d = d[d.w.notna()]
-    shows = []
+    shows, skipped = [], []
     for day, start, title in ic.kspo_shows("2024-07"):
         s = pd.Timestamp(f"{day} {start}")
         win = d[(d.in_time <= s + pd.Timedelta(hours=6)) & (d.out_time > s - pd.Timedelta(minutes=195))]
         if len(win) < 800:
             continue
-        parked, ins, outs = curves(win, s)
+        w, ok, _ = ic.show_weights(win, s, before=360, after=360)
+        if not ok:
+            skipped.append(day)
+            continue
+        parked, ins, outs = curves(win.assign(w=w), s)
         shows.append({"date": day, "start": start, "title": title, "src": day[:4],
                       "parked": parked, "in15": ins, "out15": outs})
     if not shows:
@@ -58,10 +61,11 @@ def main():
     n24 = sum(1 for s in shows if s["src"] == "2024")
     n25 = len(shows) - n24
     src = f"공원 주차장 입출차 기록, KSPO DOME 공연 {len(shows)}회 중앙값 (2024년 7월 {n24}회"
-    src += f" + 2025년 {n25}회, 2025 자료 {got / ic.TOTAL_2025:.0%} 받아 받은 비율로 보정)" if n25 else ")"
+    src += f" + 2025년 {n25}회. {ic.note_2025(cov)})" if n25 else ")"
     out = {
         "venue": "KSPO DOME", "source": src, "built": pd.Timestamp.now().strftime("%Y-%m-%d"),
-        "bySource": {"2024": n24, "2025": n25}, "share2025": round(got / ic.TOTAL_2025, 3) if n25 else None,
+        "bySource": {"2024": n24, "2025": n25}, "share2025": round(ic.got_2025(cov) / ic.TOTAL_2025, 3) if n25 else None,
+        "skipped2025": skipped,
         "relMin": REL.tolist(), "parked": med("parked"), "parkedMin": lo("parked"), "parkedMax": hi("parked"),
         "rangeNote": "공연별 10~90% 범위" if len(shows) >= 10 else "공연별 최소~최대",
         "peakByShow": [{"date": s["date"], "title": s["title"], "peak": int(round(max(s["parked"])))} for s in shows],
@@ -75,7 +79,9 @@ def main():
     pk = int(np.argmax(out["parked"]))
     print(f"{src}. 주차 최대 {out['parked'][pk]}대(시작 {REL[pk]:+d}분), 저장 → {OUT}")
     if not use25:
-        print(f"※ 2025 자료가 {got / ic.TOTAL_2025:.0%}만 있어 대수에는 2024년 7월만 썼어요.")
+        print(f"※ 2025 자료를 다 못 받아(못 받은 번호 덩어리가 있음, {ic.got_2025(cov) / ic.TOTAL_2025:.0%}) 대수에는 2024년 7월만 썼어요.")
+    elif skipped:
+        print(f"※ 대수를 못 쓴 2025 공연(잘린 달·빈 시간대) {len(skipped)}회: {', '.join(skipped)}")
 
 
 if __name__ == "__main__":
