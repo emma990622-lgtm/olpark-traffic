@@ -155,11 +155,11 @@
     const ep = exitProf && exitProf.summary;
     const peakText = isBig && ep
       ? `공연 시작 약 ${durText(ep.surgeMin.med)} 뒤(${toHHMM(startMin + ep.surgeMin.med)} 무렵)부터 출차가 몰려요.
-         그때부터 공원 주차장 차의 <b>절반이 빠지는 데 약 ${ep.t50.med}분</b>, <b>90%는 약 ${ep.t90.med}분</b> 걸려요
+         그때부터 관객 차의 <b>절반이 빠지는 데 약 ${ep.t50.med}분</b>, <b>90%는 약 ${ep.t90.med}분</b> 걸려요
          <span class="muted small">(보통 ${ep.t50.p25}~${ep.t50.p75}분 / ${ep.t90.p25}~${ep.t90.p75}분, KSPO DOME 공연 ${ep.shows}회 입출차 기록${ep.bySource && ep.bySource["2024"] && ep.bySource["2025"]
            ? `: 2024년 7월 전체 기록 ${ep.bySource["2024"].shows}회는 절반 ${ep.bySource["2024"].t50}분, 2025년 일부 기록 ${ep.bySource["2025"].shows}회는 ${ep.bySource["2025"].t50}분` : ""})</span>`
       : isBig
-        ? `공연 시작 약 ${durText(ref.lagMed)} 뒤(${toHHMM(startMin + ref.lagMed)} 무렵) 출차가 가장 몰려요. 15분에 ${ref.peakMin}~${ref.peakMax}대`
+        ? `공연 시작 약 ${durText(ref.lagMed)} 뒤(${toHHMM(startMin + ref.lagMed)} 무렵) 출차가 가장 몰려요. 15분에 ${ref.peakMin}~${ref.peakMax}대 <span class="muted small">(공원 주차장 전체 출차, 평소 방문 차 포함)</span>`
         : "이 공연장의 출차 기록은 2025 데이터로 채울 예정이에요";
 
     // 추천 (예측 모델 연결 전: 공연 규모 기반 분산 안내)

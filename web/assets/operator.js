@@ -205,7 +205,7 @@
         const over = parkProf.overCapacity && ((parkProf.parkedMax || parkProf.parked)[i] > cap || parkProf.parked[i] > cap)
           ? `<br><span>※ 기록상 면수(${cap.toLocaleString()}면${parkProf.capacityNote ? ", " + parkProf.capacityNote : ""})보다 많은 공연이 ${parkProf.overCapacity}회 있어요. 공연날 통로·임시 주차나 출차 기록 누락이 섞였을 수 있어 참고값이에요(원인 확인 전).</span>`
           : "";
-        park += `${realPark != null ? "참고: 과거 " : ""}공원 주차 약 <b>${parkProf.parked[i].toLocaleString()}대</b> / ${cap.toLocaleString()}면${rng} · 최근 15분 입차 ${parkProf.in15[i]}대 · 출차 ${parkProf.out15[i]}대
+        park += `${realPark != null ? "참고: 과거 " : ""}공원 주차 약 <b>${parkProf.parked[i].toLocaleString()}대</b> / ${cap.toLocaleString()}면 <span>(공원 주차장 전체 = 관객 차 + 평소 방문 차)</span>${rng} · 최근 15분 입차 ${parkProf.in15[i]}대 · 출차 ${parkProf.out15[i]}대
           <span>(KSPO DOME 공연 ${ppLabel} 중앙값${tl.venue === "KSPO DOME" ? "" : ", 이날은 KSPO DOME 공연이 아니라 참고만"})</span>${over}<br>`;
       }
     }
@@ -407,7 +407,7 @@
     $("gateSrc").textContent = `2025년 입출차 기록(전체의 약 77% 받은 시점, 겹친 줄 뺀 값) 중 출구 기록이 있는 KSPO DOME 공연 ${gShows}회 기준. ` +
       `비중은 공연마다 출구별 비중(합 100%)을 구해 평균한 값이고, 그 출구가 안 쓰인 공연은 0%로 넣어 합이 100%가 돼요. ` +
       `절반 넘는 공연에서 쓰인 출구만 따로 보이고 나머지는 '그 밖의 출구'로 묶었어요. "보통"은 공연 4개 중 가운데 2개가 들어가는 범위예요. ` +
-      `시간은 출차가 몰리기 시작한 때부터 잰 값이에요(2024년 7월 포함 전체 ${sm.shows}회). 다운로드 완료 후 다시 계산해요. ` +
+      `시간은 출차가 몰리기 시작한 때부터 잰 값이에요(2024년 7월 포함 전체 ${sm.shows}회). 남은 자료를 받으면 다시 계산해요(원본이 잘린 8·9·11·12월은 더 받아도 늘지 않아요). ` +
       `관객 차 기준(시작 3시간 전~20분 뒤 입차, 2시간 넘게 주차)에는 평소 방문 차도 일부 섞여요(2024년 7월 평일 하루 약 140~170대, 공연날 센 값의 8~40%). ` +
       `그 차를 빼고 다시 재도 빠지는 시각은 0~5분만 달라져 시간·비중은 그대로 써요.`;
   }
@@ -427,7 +427,7 @@
       <table>
         <tr><th>당일 공연</th><td>${list.map((e) => `<b>${e.venue}</b> ${e.times.join("·")} — ${e.title}`).join("<br>")}</td></tr>
         <tr><th>대응 수준</th><td><b>${lv.sym} ${lv.label}</b> (공원 공연 좌석 합 약 ${seats.toLocaleString()}석)</td></tr>
-        <tr><th>출차 최대 예상</th><td>${big ? `<b>${peakAt} 무렵</b>, 15분에 ${ref.peakMin}~${ref.peakMax}대 (KSPO DOME 공연 ${ref.label} 기준 참고값)` : "참고 기록 없음"}</td></tr>
+        <tr><th>출차 최대 예상</th><td>${big ? `<b>${peakAt} 무렵</b>, 15분에 ${ref.peakMin}~${ref.peakMax}대 (공원 주차장 전체 출차, KSPO DOME 공연 ${ref.label} 기준 참고값)` : "참고 기록 없음"}</td></tr>
         <tr><th>주차장 만차</th><td>${cgSum ? `KSPO DOME 저녁 공연일 ${cgSum.kspoEveningDays}일 중 ${cgSum.kspoDaysWithFull}일 일부 구역 만차 기록. 첫 만차 보통 공연 ${cgSum.hoursBefore.med}시간 전${big ? `(${toHHMM(toMin(big.times[0]) - cgSum.hoursBefore.med * 60)} 무렵)` : ""}, 자주 차는 구역 ${Object.keys(cgSum.zoneFullDays).slice(0, 3).join("·")} → 그 전에 입구 안내 요원 배치 및 인근·환승 분산 주차 안내` : "-"}</td></tr>
         <tr><th>집중 관리 출구</th><td>${exitProf ? Object.entries(exitProf.gates).map(([n, v]) => `<b>${n}</b> ${v.pct != null ? v.pct : Math.round(v.share * 100)}%`).join(" · ") + ` (관객 차량 비중 합 100%, 2025 기록 공연 ${(exitProf.gateMeta || {}).shows || "-"}회 평균)` : "2025 입출차 데이터 반영 후 제시"}</td></tr>
         <tr><th>출차 소요</th><td>${exitProf ? `몰리기 시작해서 절반 약 <b>${exitProf.summary.t50.med}분</b>, 90% 약 <b>${exitProf.summary.t90.med}분</b> (KSPO DOME 공연 ${exitProf.summary.shows}회)` : "-"}</td></tr>

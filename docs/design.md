@@ -77,7 +77,7 @@
   - `id`: `date`, `event`, `eventInfo`, `mode`, `carSection`, `reco`, `options`, `walkSrc`, `subwayNote`, `transitSection`, `stations`, `stationTip`, `map3d`, `legend3d`, `flat`, `map`, `legend`, `roadNote`
   - `data-*`: `#mode` 내부 버튼의 `data-v="car"`, `data-v="transit"` / `#options` 내부 환승 탭 버튼의 `data-tmode="go"`, `data-tmode="out"`
 - **`web/operator.html`**:
-  - `id`: `date`, `showMin`, `events`, `kpis`, `chart`, `chartNote`, `map3d`, `tPlay`, `tSlider`, `tNow`, `tLabel`, `tInfo`, `legend3d`, `flat`, `map`, `legend`, `roadNote`, `roadCheck`, `roadDayNote`, `roadChart`, `roadChartLegend`, `heat`, `slowTop`, `gateNote`, `gateTable`, `gateSrc`, `brief`, `liveExit`, `leReplay`, `leStatus`, `leKpis`, `leChart`, `leMark`, `leCsv`, `leMarks`, `leRec`, `leErr`, `leSrc`, `audCar`, `acStatus`, `acPreset`, `acDay`, `acPredict`, `acCoef`, `acChart`, `acLegend`, `acSrc`
+  - `id`: `date`, `showMin`, `events`, `kpis`, `chart`, `chartNote`, `map3d`, `tPlay`, `tSlider`, `tNow`, `tLabel`, `tInfo`, `legend3d`, `flat`, `map`, `legend`, `roadNote`, `roadCheck`, `roadDayNote`, `roadChart`, `roadChartLegend`, `heat`, `slowTop`, `gateNote`, `gateTable`, `gateSrc`, `brief`, `liveExit`, `leReplay`, `leStatus`, `leKpis`, `leChart`, `leMark`, `leCsv`, `leMarks`, `leRec`, `leErr`, `leSrc`, `audCar`, `acStatus`, `acPreset`, `acDay`, `acPredict`, `acCoef`, `acChart`, `acLegend`, `acSrc`, `dataQuality`, `dqStatus`, `dqIssues`, `dqMonths`, `dqSkipped`, `dqSrc`
 
 ---
 
@@ -92,3 +92,4 @@
 4. **이모티콘 미사용**: 버튼·경로 칩·안내 문구에 그림 이모티콘(`🚗`, `🚶`, `🚇`, `💡`, `🖨` 등)을 넣지 않는다. 접근성 상태 기호(`●`/`▲`/`■`/`○`/`—`)와 3D 지도 재생 기호(`▶`/`❚❚`)만 사용한다.
 
 - 2026-11-20: 운영자 '공연 후 출차 곡선' 카드와 '주변 도로 (3D)' 카드는 `.grid2`(두 칸)에서 빼서 한 줄 전체 폭 카드로 둔다(실시간 입출차 감지 카드와 같은 폭). 출차 곡선 그래프 viewBox는 760×280.
+- 2026-11-20: `web/data-guide.html`(결과 데이터 설명서)은 JS 없는 정적 페이지. 운영자 화면과 같은 머리(`header.top`)·`card`·`table.list`를 쓴다. 운영자 '데이터 점검 결과' 카드(`data_quality.js`)는 새 class 없이 `.le-status`, `.chip.warn`, `table.list`, `.subhead` 재사용, 비고는 기호+글자(`●`/`▲`).

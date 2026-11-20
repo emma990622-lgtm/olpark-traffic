@@ -72,8 +72,8 @@
   </section>
 
   <section class="card">
-      <h2>공연 후 출차 곡선 (실제 입출차 기록)</h2>
-      <p class="sec-sub">시작 시각이 같은 KSPO DOME 공연들과 큰 공연 없는 평소 날의 15분 출차 흐름 비교 (기간·공연 수는 그래프 아래)</p>
+      <h2>공연 전후 입차·출차 곡선 (실제 입출차 기록)</h2>
+      <p class="sec-sub">시작 시각이 같은 KSPO DOME 공연들의 15분 입차·출차 흐름과 큰 공연 없는 평소 날 비교. 곡선은 공원 주차장 전체 차(관객 차 + 평소 방문 차)예요. (기간·공연 수는 그래프 아래)</p>
       <svg id="chart" style="width:100%;height:auto"></svg>
       <p class="footnote" id="chartNote"></p>
   </section>
@@ -104,7 +104,8 @@
     <div class="muted small" id="roadDayNote">불러오는 중…</div>
     <svg id="roadChart" style="width:100%;height:auto;margin-top:10px"></svg>
     <div class="legend" id="roadChartLegend"></div>
-    <h3 class="subhead">도로별 속도 변화 (5분 간격 히트맵)</h3>
+    <h3 class="subhead">도로별 혼잡 변화 (5분 간격)</h3>
+    <p class="muted small" style="margin:0 0 8px">가로줄 하나가 도로 하나, 칸 하나가 5분이에요. 왼쪽에서 오른쪽으로 시간이 흐르고, 가장 심하게 막힌 도로가 맨 위에 와요. 색은 그 5분 동안 그 도로 구간들의 혼잡 단계(원활·서행·정체) 평균이에요.</p>
     <div id="heat" class="table-scroll"></div>
     <h3 class="subhead">가장 많이 느려진 구간 (상위 5곳)</h3>
     <div class="table-scroll">
@@ -147,6 +148,19 @@
     <p class="footnote" id="acSrc"></p>
   </section>
 
+  <section class="card" id="dataQuality">
+    <h2>데이터 점검 결과</h2>
+    <div class="muted small" style="margin-bottom:10px">원본 공공데이터에서 찾은 문제와 처리 방법이에요. 이 화면의 숫자는 모두 아래 처리를 거친 값이에요.</div>
+    <div id="dqStatus" class="le-status" role="status">불러오는 중…</div>
+    <h3 class="subhead">찾은 문제와 처리</h3>
+    <div class="table-scroll"><table class="list" id="dqIssues"></table></div>
+    <h3 class="subhead">2025년 입출차: 달별 받은 비율</h3>
+    <div class="table-scroll"><table class="list" id="dqMonths"></table></div>
+    <h3 class="subhead">분석에서 뺀 공연</h3>
+    <div class="table-scroll"><table class="list" id="dqSkipped"></table></div>
+    <p class="footnote" id="dqSrc"></p>
+  </section>
+
   <section class="card print-me">
     <div class="no-print brief-header-bar">
       <div>
@@ -165,5 +179,6 @@
 <script src="assets/operator.js"></script>
 <script src="assets/live_exit.js"></script>
 <script src="assets/audience_car.js"></script>
+<script src="assets/data_quality.js"></script>
 </body>
 </html>
