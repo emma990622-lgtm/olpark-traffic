@@ -1,0 +1,122 @@
+"""
+운영자 화면 '공연 후 출차 곡선'용: KSPO DOME 공연일과 큰 공연 없는 날의 15분 출차 흐름(12:00 ~ 다음날 01:00).
+예전에는 2024년 7월 하루치 곡선(exits_2024_07.json)만 썼다. 이제 2024년 7월 + 2025년 공연을 시작 시각별로 묶어
+중앙값과 가운데 50% 범위를 내고, 비교 기준도 같은 요일 유형(평일 / 주말·공휴일)의 큰 공연 없는 날 중앙값으로 바꾼다.
+
+입력: data/raw/parking_inout_202407.csv (2024년 7월 전체)
+      data/raw/kcisa_inout_2025.jsonl   (2025년, 못 받은 번호 덩어리가 없을 때만 씀. 받은 비율로 보정 → inout_common.py)
+      data/processed/event_days.csv
+출력: web/data/exit_curves.json
+기준
+  - 공원 주차장 동2문·남2문·북2문 구역(2024년 7월 자료와 같은 구역): 2025는 이 세 곳으로 들어온 차만
+  - 0분·24시간 이상 주차는 뺀다(scripts/04와 같게)
+  - 2025: 65,535줄로 잘린 8·9월은 뺀다. 시간순 저장인 10~12월은 그날 06~24시 입차 기록을 90% 넘게 받은 날만
+  - 큰 공연 없는 날 = KSPO DOME·핸드볼경기장·올림픽홀에 공연이 없는 날
+
+  실행: python scripts\\18_exit_curves.py
+"""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import inout_common as ic  # noqa: E402
+
+OUT = ic.ROOT / "web" / "data" / "exit_curves.json"
+SLOT_START, SLOT_MIN, N_SLOTS = "12:00", 15, 52          # 12:00 ~ 다음날 00:45 시작 구간
+
+
+def day_kind(day):
+    t = pd.Timestamp(day)
+    return "weekend" if day in ic.HOLIDAYS or t.dayofweek >= 5 else "weekday"
+
+
+def curve(x, day):
+    """그날 12:00 ~ 다음날 01:00 15분 출차(가중) 대수"""
+    s = pd.Timestamp(f"{day} {SLOT_START}")
+    i = ((x.out_time - s).dt.total_seconds() // (SLOT_MIN * 60)).astype(int).values
+    m = (i >= 0) & (i < N_SLOTS)
+    return np.bincount(i[m], weights=x.w.values[m], minlength=N_SLOTS)[:N_SLOTS]
+
+
+def stats(curves):
+    a = np.array(curves)
+    r = lambda q: [int(round(v)) for v in np.percentile(a, q, axis=0)]
+    return {"med": r(50), "p25": r(25), "p75": r(75)}
+
+
+def main():
+    d24 = ic.load_2024()
+    d25, cov = ic.load_2025()
+    use25 = ic.enough_2025(cov)
+    d = pd.concat([d24, d25] if use25 else [d24], ignore_index=True)
+    dur = (d.out_time - d.in_time).dt.total_seconds() / 60
+    d = d[(dur > 0) & (dur < 24 * 60) & ((d.src == "2024") | d.igate.isin(ic.MAIN_GATES))]
+    d = d.sort_values("out_time").reset_index(drop=True)
+    ot = d.out_time.values
+
+    shows = {day: (start, title) for day, start, title in ic.kspo_shows("2024-07")}
+    big = ic.big_event_days()
+    days = sorted(set(d.in_time.dt.strftime("%Y-%m-%d")))
+    show_rows, base = [], {"weekday": [], "weekend": []}
+    base_src = {"weekday": {"2024": 0, "2025": 0}, "weekend": {"2024": 0, "2025": 0}}
+    skipped = []
+    for day in days:
+        if day < "2024-07-01":
+            continue
+        s = pd.Timestamp(f"{day} {SLOT_START}")
+        lo, hi = np.searchsorted(ot, np.datetime64(s), "left"), np.searchsorted(ot, np.datetime64(s + pd.Timedelta(hours=13)), "left")
+        x = d.iloc[lo:hi]
+        if len(x) < 300:
+            continue
+        w, ok, _ = ic.show_weights(x, pd.Timestamp(f"{day} 06:00"), before=0, after=18 * 60)
+        if not ok:
+            if day in shows and day >= "2025":
+                skipped.append(day)
+            continue
+        c = curve(x.assign(w=w), day)
+        if day in shows:
+            start, title = shows[day]
+            k = int(c.argmax())
+            show_rows.append({"date": day, "start": start, "title": title, "src": day[:4], "kind": day_kind(day),
+                              "peak15": int(round(c[k])), "peakTime": (s + pd.Timedelta(minutes=SLOT_MIN * k)).strftime("%H:%M"),
+                              "exits": [int(round(v)) for v in c]})
+        elif day not in big:
+            base[day_kind(day)].append(c)
+            base_src[day_kind(day)][day[:4]] += 1
+    if not show_rows:
+        raise SystemExit("계산할 공연일이 없습니다.")
+
+    groups = {}
+    for start in sorted({r["start"] for r in show_rows}):
+        g = [r for r in show_rows if r["start"] == start]
+        groups[start] = {"n": len(g), "bySource": {"2024": sum(r["src"] == "2024" for r in g), "2025": sum(r["src"] == "2025" for r in g)},
+                         **stats([r["exits"] for r in g]),
+                         "dates": [{"date": r["date"], "title": r["title"], "peak15": r["peak15"], "peakTime": r["peakTime"]} for r in g]}
+    baseline = {k: {"n": len(v), "bySource": base_src[k], **stats(v)} for k, v in base.items() if v}
+    n24 = sum(r["src"] == "2024" for r in show_rows)
+    label = f"2024년 7월 {n24}회" + (f" + 2025년 {len(show_rows) - n24}회" if len(show_rows) > n24 else "")
+    out = {
+        "built": pd.Timestamp.now().strftime("%Y-%m-%d"), "slotStart": SLOT_START, "slotMin": SLOT_MIN, "nSlots": N_SLOTS,
+        "label": label, "zone": "동2문·남2문·북2문 구역",
+        "source": "공원 주차장(동2문·남2문·북2문 구역) 입출차 기록, 2024년 7월"
+                  + (f" + 2025년. {ic.note_2025(cov)}" if len(show_rows) > n24 else ""),
+        "method": "15분마다 나간 차 대수(0분·24시간 이상 주차 제외). 공연은 시작 시각이 같은 날끼리 묶어 중앙값과 가운데 50%(4개 중 가운데 2개), "
+                  "비교 기준은 같은 요일 유형(평일 / 주말·공휴일)의 큰 공연(KSPO DOME·핸드볼경기장·올림픽홀) 없는 날 중앙값",
+        "groups": groups, "baseline": baseline, "skipped2025": skipped,
+    }
+    OUT.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
+    print(f"KSPO DOME 공연 {label}, 시작 시각 {len(groups)}가지: "
+          + ", ".join(f"{k} {v['n']}회" for k, v in groups.items()))
+    print("비교 기준(큰 공연 없는 날): " + ", ".join(f"{k} {v['n']}일" for k, v in baseline.items()) + f" → {OUT}")
+    if not use25:
+        print(f"※ 2025 자료를 다 못 받아(못 받은 번호 덩어리가 있음, {ic.got_2025(cov) / ic.TOTAL_2025:.0%}) 2024년 7월만 썼어요.")
+    elif skipped:
+        print(f"※ 그날 기록이 모자라 뺀 2025 공연 {len(skipped)}회: {', '.join(skipped)}")
+
+
+if __name__ == "__main__":
+    main()

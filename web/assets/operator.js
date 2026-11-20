@@ -116,6 +116,7 @@
 
   // ---------- 3D 지도 시간 슬라이더: 공연 2시간 전 ~ 공연 끝나고 2시간 ----------
   const parkProf = await loadJSON("park_profile.json").catch(() => null);
+  const curves = await loadJSON("exit_curves.json").catch(() => null);   // 2024년 7월 + 2025 출차 곡선(scripts/18), 없으면 2024년 7월 하루 곡선
   const ppLabel = !parkProf ? "" : parkProf.bySource
     ? `2024년 7월 ${parkProf.bySource["2024"]}회${parkProf.bySource["2025"] ? ` + 2025년 ${parkProf.bySource["2025"]}회` : ""}`
     : `2024년 7월 ${parkProf.shows.length}회`;
@@ -233,8 +234,67 @@
     }, 700);
   });
 
-  // 출차 곡선: 시작 시각이 가장 비슷한 2024-07 KSPO 공연일 vs 같은 시간대 평일 평균
+  // 출차 곡선(exit_curves.json): 시작 시각이 같은(없으면 가장 가까운) KSPO DOME 공연들의 중앙값·가운데 50%
+  // vs 같은 요일 유형(평일 / 주말·공휴일)의 큰 공연 없는 날 중앙값
+  function drawCurves(big) {
+    const C = curves, n = C.nSlots, s0 = toMin(C.slotStart);
+    const d = $("date").value;
+    const dow = new Date(d + "T00:00:00").getDay();
+    const FIXED_HOL = ["01-01", "03-01", "05-05", "06-06", "08-15", "10-03", "10-09", "12-25"];   // 날짜가 정해진 공휴일만
+    const kind = dow === 0 || dow === 6 || FIXED_HOL.includes(d.slice(5)) ? "weekend" : "weekday";
+    let bk = kind, base = C.baseline[kind];
+    if (!base || base.n < 5) { bk = "weekday"; base = C.baseline.weekday; }
+    let gk = null;
+    if (big && big.times && big.times.length) {
+      const s = toMin(big.times[0]);
+      const keys = Object.keys(C.groups);
+      const near = (ks) => [...ks].sort((a, b) => Math.abs(toMin(a) - s) - Math.abs(toMin(b) - s))[0];
+      const many = keys.filter((k) => C.groups[k].n >= 3);
+      gk = keys.find((k) => toMin(k) === s && C.groups[k].n >= 2) || near(many.length ? many : keys);
+    }
+    const G = gk ? C.groups[gk] : null;
+    const W = 560, H = 260, L = 40, R = 12, T = 16, B = 30;
+    const maxY = Math.max(10, ...(base ? base.med : [0]), ...(G ? G.p75 : [0])) * 1.12;
+    const step = maxY > 600 ? 200 : 100;
+    const X = (i) => L + (i / (n - 1)) * (W - L - R);
+    const Y = (v) => H - B - (v / maxY) * (H - T - B);
+    const path = (arr) => arr.map((v, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1)).join("");
+    let g = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-size="11" role="img" aria-label="공연 후 15분 출차 곡선">`;
+    for (let v = 0; v <= maxY; v += step) {
+      g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/>
+            <text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end" fill="var(--ink-2)">${v}</text>`;
+    }
+    for (let i = 0; i < n; i += 8) {
+      g += `<text x="${X(i)}" y="${H - 10}" text-anchor="middle" fill="var(--ink-2)">${toHHMM(s0 + i * 15)}</text>`;
+    }
+    if (base) g += `<path d="${path(base.med)}" fill="none" stroke="var(--none)" stroke-width="2" stroke-dasharray="4 3"/>`;
+    if (G) {
+      const band = path(G.p75) + G.p25.map((v, i) => [i, v]).reverse().map(([i, v]) => "L" + X(i).toFixed(1) + " " + Y(v).toFixed(1)).join("") + "Z";
+      g += `<path d="${band}" fill="rgba(29, 78, 216, 0.12)"/>`;
+      g += `<path d="${path(G.med)}" fill="none" stroke="var(--accent)" stroke-width="2.6"/>`;
+      const si = (toMin(gk) - s0) / 15;
+      g += `<line x1="${X(si)}" x2="${X(si)}" y1="${T}" y2="${H - B}" stroke="var(--accent)" stroke-dasharray="4 4"/>
+            <text x="${X(si) + 5}" y="${T + 11}" fill="var(--accent)" font-weight="700">공연 시작 ${gk}</text>`;
+    }
+    g += `</svg>`;
+    $("chart").outerHTML = g.replace("<svg ", '<svg id="chart" style="width:100%;height:auto" ');
+    const src = (b) => [b["2024"] ? `2024년 7월 ${b["2024"]}` : "", b["2025"] ? `2025년 ${b["2025"]}` : ""].filter(Boolean).join(" + ");
+    const baseTxt = base
+      ? `<span style="color:var(--none);font-weight:700">┅</span> ${bk === "weekend" ? "주말·공휴일" : "평일"} 중 큰 공연 없는 날 ${base.n}일(${src(base.bySource)}일) 중앙값${bk !== kind ? " — 주말에 큰 공연 없는 날이 적어 평일로 비교" : ""}`
+      : "비교할 평소 날 자료가 없어요";
+    const eg = G ? G.dates.slice(-3).map((x) => `${x.date} ${x.title.slice(0, 18)}(15분 최대 ${x.peak15}대, ${x.peakTime})`).join(", ") : "";
+    $("chartNote").innerHTML = (G
+      ? `<span style="color:var(--accent);font-weight:700">━</span> 시작 <b>${gk}</b> KSPO DOME 공연 <b>${G.n}회</b>(${src(G.bySource)}회)${G.n > 1 ? " 중앙값" : " 곡선"}
+         ${toMin(gk) !== toMin(big.times[0]) ? ` — 이날 시작(${big.times[0]})과 같은 시각 공연이 적어 가장 가까운 시각으로 보여요` : ""}
+         ${G.n > 1 ? `&nbsp;·&nbsp; <span style="color:var(--accent);font-weight:700">▒</span> 가운데 50%(공연 4개 중 가운데 2개)${G.n < 4 ? "(공연이 적어 참고만)" : ""}` : ""}
+         &nbsp;·&nbsp; ${baseTxt}.<br>예: ${eg}.`
+      : `KSPO DOME 공연이 없는 날이라 공연 곡선이 없어요. ${baseTxt}.`) +
+      `<br>출처: ${C.source}. 방법: ${C.method}.`;
+  }
+
+  // 출차 곡선(예전 방식, exit_curves.json이 없을 때): 시작 시각이 가장 비슷한 2024-07 KSPO 공연일 vs 같은 시간대 평일 평균
   function drawChart(big) {
+    if (curves && curves.groups && Object.keys(curves.groups).length) return drawCurves(big);
     const svg = $("chart");
     const waves = exits.kspoWaves;
     let refDay = null;
