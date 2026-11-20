@@ -1597,3 +1597,70 @@ details#flat[open] {
   display: none;
 }
 
+/* ==========================================================================
+   운영자: 관객 성향으로 본 자가용 예상 (audience_car.js)
+   ========================================================================== */
+.ac-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.ac-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ac-pick select {
+  min-height: var(--tap-min);
+}
+
+.ac-result {
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+}
+
+.ac-result.is-match {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+
+.ac-result-head {
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.ac-num {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 6px;
+}
+
+.ac-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--surface-3);
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.ac-bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+@media (max-width: 900px) {
+  .ac-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

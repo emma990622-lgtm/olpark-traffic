@@ -5,11 +5,12 @@
     loadJSON("events.json"), loadJSON("links.json"), loadPlaces(), loadJSON("exits_2024_07.json"),
     loadSubwayTimes(),
   ]);
-  const ref = kspoReference(exits);
+  const ref = kspoReference(exits, await loadJSON("kspo_waves.json").catch(() => null));
   // 선택 자료: 공연 후 출차 소요(과거 기록 분석), 역 주차장 → 공원 주차장 운전 시간
   const optJSON = (n) => loadJSON(n).catch(() => null);
-  const [exitProf, stDrive, cg] = await Promise.all([
+  const [exitProf, stDrive, cg, audCar] = await Promise.all([
     optJSON("exit_profile.json"), optJSON("station_drive.json"), optJSON("congestion_summary.json"),
+    optJSON("audience_car.json"),
   ]);
   let liveDrive = null;
   fetch("/api/drivetime").then((r) => (r.ok ? r.json() : null)).then((d) => {
@@ -207,6 +208,22 @@
         </div>`;
     }
 
+    // 관객 성향(연령·성별)으로 본 예상 관객 차: 같은 가수의 지난 공연 관객 구성이 있을 때만 (scripts/15)
+    let carCrowdText = "";
+    const ac = audCar && audCar.meaningful && isBig && (audCar.upcoming || []).find((u) => u.date === dateSel.value && u.match && u.match.length);
+    if (ac) {
+      const idol = (audCar.presets || [])[0];
+      const base = idol ? (ac.dayType === "fri" || ac.dayType === "wk" ? idol.fri.pred : idol.sun.pred) : null;
+      const ratio = base ? ac.pred / base : null;
+      const many = ratio && ratio >= 1.4, few = ratio && ratio <= 0.8;
+      carCrowdText = `지난 같은 가수 공연 관객은 평균 약 <b>${Math.round(ac.meanAge)}세</b>였어요.
+        ${many ? "연령대가 높은 공연은 <b>차로 오는 관객이 많은 편</b>이라 공원 주차장이 일찍 찰 수 있어요."
+          : few ? "젊은 관객이 많은 공연은 차로 오는 관객이 적은 편이에요."
+          : "차로 오는 관객은 보통 수준으로 보여요."}
+        예상 관객 차 <b>약 ${ac.pred.toLocaleString()}대</b>${base ? `(10~20대 팬 중심 공연의 약 ${ratio.toFixed(1)}배)` : ""}
+        <span class="muted small">(보통 ${ac.lo.toLocaleString()}~${ac.hi.toLocaleString()}대 · 서울시 생활인구로 추정한 관객 구성과 공원 주차장 입출차 기록 ${audCar.model.n}회 공연 분석)</span>`;
+    }
+
     const minWalk = Math.min(...walk.map((w) => w.walkMin));
     const maxWalk = Math.max(...walk.map((w) => w.walkMin));
     const walkCapSum = walk.reduce((s, w) => s + (w.cap || 0), 0);
@@ -247,6 +264,7 @@
         <dl>
           <dt>도착할 때</dt><dd>${arrivalCgText}</dd>
           <dt>귀가할 때</dt><dd>${peakText}</dd>
+          ${carCrowdText ? `<dt>차로 오는 관객</dt><dd>${carCrowdText}</dd>` : ""}
         </dl>
       </div>
 

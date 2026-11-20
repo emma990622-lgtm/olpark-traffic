@@ -229,15 +229,22 @@ function lineBadgesHTML(lineStr) {
   return nums.map((n) => `<span class="line-badge l${n}">${n}호선</span>`).join(" ");
 }
 
-// ---------- 2024년 7월 참고값 ----------
-// KSPO DOME 공연 7회: 공연 시작부터 15분 출차가 가장 많았던 때까지 걸린 분, 그때 대수
-function kspoReference(exits) {
-  const w = Object.values(exits.kspoWaves);
+// ---------- KSPO DOME 출차 최대 참고값 ----------
+// 공연 시작부터 15분 출차가 가장 많았던 때까지 걸린 분, 그때 대수.
+// kspo_waves.json(2024년 7월 + 2025년, scripts/16)이 있으면 그것을, 없으면 exits_2024_07.json(2024년 7월만)을 쓴다.
+function kspoReference(exits, waves) {
+  if (waves && waves.summary && waves.summary.n) {
+    const s = waves.summary;
+    return { n: s.n, lagMed: s.lagMed, lagMin: s.lagLo, lagMax: s.lagHi, peakMin: s.peakLo, peakMax: s.peakHi,
+             label: waves.label || `${s.n}회`, rangeNote: s.rangeNote || "" };
+  }
+  const w = Object.values((exits && exits.kspoWaves) || {});
+  if (!w.length) return { n: 0, lagMed: 0, lagMin: 0, lagMax: 0, peakMin: 0, peakMax: 0, label: "기록 없음", rangeNote: "" };
   const lags = w.map((x) => x.lagMin).sort((a, b) => a - b);
   const peaks = w.map((x) => x.peak15).sort((a, b) => a - b);
   const med = (a) => a.length % 2 ? a[(a.length - 1) / 2] : (a[a.length / 2 - 1] + a[a.length / 2]) / 2;
   return { n: w.length, lagMed: med(lags), lagMin: lags[0], lagMax: lags.at(-1),
-           peakMin: peaks[0], peakMax: peaks.at(-1) };
+           peakMin: peaks[0], peakMax: peaks.at(-1), label: `2024년 7월 ${w.length}회`, rangeNote: "공연별 최소~최대" };
 }
 
 // ---------- 최근 수집값 (GitHub 공개 저장소에서 읽기) ----------

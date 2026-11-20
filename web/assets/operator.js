@@ -3,7 +3,7 @@
   const [events, links, places, exits] = await Promise.all([
     loadJSON("events.json"), loadJSON("links.json"), loadPlaces(), loadJSON("exits_2024_07.json"),
   ]);
-  const ref = kspoReference(exits);
+  const ref = kspoReference(exits, await loadJSON("kspo_waves.json").catch(() => null));
   const exitProf = await loadJSON("exit_profile.json").catch(() => null);
   const cgSum = await loadJSON("congestion_summary.json").catch(() => null);   // 주차장 혼잡도 기록(구역별 만차)
 
@@ -96,11 +96,11 @@
       </div>
       <div class="kpi">
         <div class="v">${peakAt}</div>
-        <div class="l">출차 최대 예상 시각 (2024-07 KSPO DOME ${ref.n}회: 시작 후 ${durText(ref.lagMin)}~${durText(ref.lagMax)}, 중앙값 기준)</div>
+        <div class="l">출차 최대 예상 시각 (KSPO DOME 공연 ${ref.label}: 시작 후 ${durText(ref.lagMin)}~${durText(ref.lagMax)}, 중앙값 기준)</div>
       </div>
       <div class="kpi">
         <div class="v">${big ? ref.peakMin + "~" + ref.peakMax + "대" : "-"}</div>
-        <div class="l">15분 최대 출차 참고 범위</div>
+        <div class="l">15분 최대 출차 참고 범위 (${ref.rangeNote || "공연별"})</div>
       </div>
       <div class="kpi">
         <div class="v">${toHHMM(lastEnd)}</div>
@@ -116,6 +116,9 @@
 
   // ---------- 3D 지도 시간 슬라이더: 공연 2시간 전 ~ 공연 끝나고 2시간 ----------
   const parkProf = await loadJSON("park_profile.json").catch(() => null);
+  const ppLabel = !parkProf ? "" : parkProf.bySource
+    ? `2024년 7월 ${parkProf.bySource["2024"]}회${parkProf.bySource["2025"] ? ` + 2025년 ${parkProf.bySource["2025"]}회` : ""}`
+    : `2024년 7월 ${parkProf.shows.length}회`;
   loadParkNight();
   const roadCache = {};
   const tl = { mode: "live", d: null, st: null, end: null, day: null, ref: null, refSt: null, timer: null };
@@ -196,9 +199,9 @@
     if (parkProf) {
       const i = parkProf.relMin.findIndex((x) => x >= rel);
       if (i >= 0) {
-        const rng = parkProf.parkedMin ? ` <span>(공연에 따라 ${parkProf.parkedMin[i].toLocaleString()}~${parkProf.parkedMax[i].toLocaleString()}대)</span>` : "";
+        const rng = parkProf.parkedMin ? ` <span>(공연에 따라 ${parkProf.parkedMin[i].toLocaleString()}~${parkProf.parkedMax[i].toLocaleString()}대${parkProf.rangeNote ? ", " + parkProf.rangeNote : ""})</span>` : "";
         park += `${realPark != null ? "참고: 과거 " : ""}공원 주차 약 <b>${parkProf.parked[i].toLocaleString()}대</b> / ${parkProf.capacity.toLocaleString()}면${rng} · 최근 15분 입차 ${parkProf.in15[i]}대 · 출차 ${parkProf.out15[i]}대
-          <span>(2024년 7월 KSPO DOME 공연 ${parkProf.shows.length}회 중앙값${tl.venue === "KSPO DOME" ? "" : ", 이날은 KSPO DOME 공연이 아니라 참고만"})</span><br>`;
+          <span>(KSPO DOME 공연 ${ppLabel} 중앙값${tl.venue === "KSPO DOME" ? "" : ", 이날은 KSPO DOME 공연이 아니라 참고만"})</span><br>`;
       }
     }
     $("tInfo").innerHTML = park + src;
@@ -317,7 +320,7 @@
       <table>
         <tr><th>당일 공연</th><td>${list.map((e) => `<b>${e.venue}</b> ${e.times.join("·")} — ${e.title}`).join("<br>")}</td></tr>
         <tr><th>대응 수준</th><td><b>${lv.sym} ${lv.label}</b> (공원 공연 좌석 합 약 ${seats.toLocaleString()}석)</td></tr>
-        <tr><th>출차 최대 예상</th><td>${big ? `<b>${peakAt} 무렵</b>, 15분에 ${ref.peakMin}~${ref.peakMax}대 (2024년 7월 KSPO DOME 공연 ${ref.n}회 기준 참고값)` : "참고 기록 없음"}</td></tr>
+        <tr><th>출차 최대 예상</th><td>${big ? `<b>${peakAt} 무렵</b>, 15분에 ${ref.peakMin}~${ref.peakMax}대 (KSPO DOME 공연 ${ref.label} 기준 참고값)` : "참고 기록 없음"}</td></tr>
         <tr><th>주차장 만차</th><td>${cgSum ? `KSPO DOME 저녁 공연일 ${cgSum.kspoEveningDays}일 중 ${cgSum.kspoDaysWithFull}일 일부 구역 만차 기록. 첫 만차 보통 공연 ${cgSum.hoursBefore.med}시간 전${big ? `(${toHHMM(toMin(big.times[0]) - cgSum.hoursBefore.med * 60)} 무렵)` : ""}, 자주 차는 구역 ${Object.keys(cgSum.zoneFullDays).slice(0, 3).join("·")} → 그 전에 입구 안내 요원 배치 및 인근·환승 분산 주차 안내` : "-"}</td></tr>
         <tr><th>집중 관리 출구</th><td>${exitProf ? Object.entries(exitProf.gates).map(([n, v]) => `<b>${n}</b> ${v.pct != null ? v.pct : Math.round(v.share * 100)}%`).join(" · ") + ` (관객 차량 비중 합 100%, 2025 기록 공연 ${(exitProf.gateMeta || {}).shows || "-"}회 평균)` : "2025 입출차 데이터 반영 후 제시"}</td></tr>
         <tr><th>출차 소요</th><td>${exitProf ? `몰리기 시작해서 절반 약 <b>${exitProf.summary.t50.med}분</b>, 90% 약 <b>${exitProf.summary.t90.med}분</b> (KSPO DOME 공연 ${exitProf.summary.shows}회)` : "-"}</td></tr>

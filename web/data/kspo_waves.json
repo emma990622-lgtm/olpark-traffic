@@ -1,0 +1,86 @@
+{
+ "built": "2026-11-20",
+ "label": "2024년 7월 7회",
+ "method": "공연 시작 60~360분 뒤 출차를 15분(정각 기준) 단위로 세어 가장 많은 구간",
+ "source": "공원 주차장 입출차 기록 KSPO DOME 공연 2024년 7월 7회",
+ "summary": {
+  "n": 7,
+  "bySource": {
+   "2024": 7,
+   "2025": 0
+  },
+  "share2025": null,
+  "lagMed": 210,
+  "lagLo": 150,
+  "lagHi": 240,
+  "peakLo": 211,
+  "peakMed": 265,
+  "peakHi": 391,
+  "rangeNote": "공연별 최소~최대"
+ },
+ "list": [
+  {
+   "date": "2024-07-12",
+   "start": "19:00",
+   "title": "THE BOYZ WORLD TOUR : ZENERATION Ⅱ",
+   "src": "2024",
+   "peakTime": "22:45",
+   "peak15": 211,
+   "lagMin": 225
+  },
+  {
+   "date": "2024-07-13",
+   "start": "17:00",
+   "title": "THE BOYZ WORLD TOUR : ZENERATION Ⅱ",
+   "src": "2024",
+   "peakTime": "20:30",
+   "peak15": 265,
+   "lagMin": 210
+  },
+  {
+   "date": "2024-07-14",
+   "start": "16:00",
+   "title": "THE BOYZ WORLD TOUR : ZENERATION Ⅱ",
+   "src": "2024",
+   "peakTime": "20:00",
+   "peak15": 300,
+   "lagMin": 240
+  },
+  {
+   "date": "2024-07-20",
+   "start": "18:00",
+   "title": "SG워너비 콘서트 : 우리의 노래 2024 앙코르",
+   "src": "2024",
+   "peakTime": "21:15",
+   "peak15": 376,
+   "lagMin": 195
+  },
+  {
+   "date": "2024-07-21",
+   "start": "17:00",
+   "title": "SG워너비 콘서트 : 우리의 노래 2024 앙코르",
+   "src": "2024",
+   "peakTime": "20:30",
+   "peak15": 391,
+   "lagMin": 210
+  },
+  {
+   "date": "2024-07-27",
+   "start": "18:00",
+   "title": "2024 BAEKHYUN ASIA TOUR ‘Lonsdaleite［dot］’",
+   "src": "2024",
+   "peakTime": "20:30",
+   "peak15": 248,
+   "lagMin": 150
+  },
+  {
+   "date": "2024-07-28",
+   "start": "16:00",
+   "title": "2024 BAEKHYUN ASIA TOUR ‘Lonsdaleite［dot］’",
+   "src": "2024",
+   "peakTime": "19:15",
+   "peak15": 250,
+   "lagMin": 195
+  }
+ ]
+}

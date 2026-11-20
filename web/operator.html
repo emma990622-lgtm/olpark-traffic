@@ -6,7 +6,7 @@
 <title>올팍 공연 혼잡 대응 · 운영자·기관</title>
 <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-<link rel="stylesheet" href="assets/style.css?v=3">
+<link rel="stylesheet" href="assets/style.css?v=4">
 </head>
 <body class="is-operator">
 <header class="top">
@@ -123,6 +123,32 @@
     <p class="footnote" id="gateSrc"></p>
   </section>
 
+  <section class="card" id="audCar">
+    <h2>관객 성향으로 본 자가용 예상 (다중회귀분석)</h2>
+    <div class="muted small" style="margin-bottom:10px">공연 날 늘어난 생활인구의 성별·연령으로 관객 구성을 추정하고, 공원 주차장 관객 차 대수와 함께 분석했어요.</div>
+    <div id="acStatus" class="le-status" role="status">불러오는 중…</div>
+    <div class="ac-grid">
+      <div>
+        <div class="ac-pick no-print">
+          <label class="field" for="acPreset">예상 관객 유형</label>
+          <select id="acPreset"></select>
+          <label class="field" for="acDay">요일</label>
+          <select id="acDay">
+            <option value="we">주말·공휴일</option>
+            <option value="wk">금요일·평일 저녁</option>
+          </select>
+        </div>
+        <div id="acPredict"></div>
+      </div>
+      <div>
+        <div class="table-scroll"><table class="list" id="acCoef"></table></div>
+      </div>
+    </div>
+    <div id="acChart" class="le-chart"></div>
+    <div class="legend" id="acLegend"></div>
+    <p class="footnote" id="acSrc"></p>
+  </section>
+
   <section class="card print-me">
     <div class="no-print brief-header-bar">
       <div>
@@ -140,5 +166,6 @@
 <script src="assets/map3d.js"></script>
 <script src="assets/operator.js"></script>
 <script src="assets/live_exit.js"></script>
+<script src="assets/audience_car.js"></script>
 </body>
 </html>

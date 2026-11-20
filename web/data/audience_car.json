@@ -1,0 +1,2945 @@
+{
+ "built": "2026-11-20 13:44",
+ "meaningful": true,
+ "sources": {
+  "population": "서울시 행정동 단위 생활인구(내국인), 서울 열린데이터광장 OA-14991 · 올림픽공원이 있는 행정동(코드 11710566) · KT 통신 자료 기반 추정",
+  "populationPeriod": "2024-06 ~ 2025-12",
+  "cars": "출차 분석(exit_profile.json)의 공연별 관객 차 대수(2025 자료 약 88% 받은 시점, 받은 만큼 그대로)",
+  "events": "올림픽공원 공식 행사 일정"
+ },
+ "method": {
+  "composition": "공연 날 공연 시간(시작부터 3시간대) 생활인구에서 평소 같은 요일(공원 큰 공연이 없는 날, 앞뒤 5주 안팎) 중앙값을 뺀 '늘어난 사람'을 성별·연령대로 나눔",
+  "cars": "시작 3시간 전~20분 뒤에 들어와 2시간 넘게 머문 공원 주차장 차(관객 차로 봄)",
+  "model": "ln(관객 차) = b0 + b1·(평균 나이 ÷ 10) + b2·(여성 비율) + b3·(금요일이면 1)",
+  "ci": "같은 가수 공연끼리 묶어 다시 뽑는 부트스트랩 3,000번, 95% 구간",
+  "excluded": "토요일 공연(평소 토요일에도 공연이 있어 비교할 날이 거의 없음), 늘어난 사람이 3,000명 미만인 날, 월~목 공연",
+  "limits": "공연별 관객 수를 몰라 '관객 1명이 차로 올 확률'은 직접 구하지 못했고, 같은 조건에서 관객 차가 몇 % 늘고 주는지로 해석함. 생활인구는 통신 자료로 추정한 값이라 같은 날 다른 공연장 관객도 섞일 수 있음. 주차장이 차면(2,120면) 더 오는 차는 세지 못함."
+ },
+ "model": {
+  "n": 41,
+  "artists": 30,
+  "r2": 0.413,
+  "looRmse": 0.4,
+  "nullRmse": 0.493,
+  "improve": 0.188,
+  "looMedianErrPct": 20,
+  "b": [
+   6.73023,
+   0.21516,
+   -1.26521,
+   -0.27217
+  ],
+  "s2": 0.15051,
+  "XtXi": [
+   [
+    2.839335,
+    -0.287578,
+    -2.471719,
+    0.202497
+   ],
+   [
+    -0.287578,
+    0.05511,
+    0.153854,
+    -0.013736
+   ],
+   [
+    -2.471719,
+    0.153854,
+    2.567048,
+    -0.251648
+   ],
+   [
+    0.202497,
+    -0.013736,
+    -0.251648,
+    0.137346
+   ]
+  ],
+  "t80": 1.3049,
+  "coef": {
+   "age10": {
+    "label": "관객 평균 나이 10살 많을 때",
+    "b": 0.2152,
+    "se": 0.0911,
+    "p": 0.0235,
+    "bootLo": 0.1012,
+    "bootHi": 0.4301,
+    "pct": 24,
+    "pctLo": 11,
+    "pctHi": 54
+   },
+   "female": {
+    "label": "여성 비율 10%p 높을 때",
+    "b": -1.2652,
+    "se": 0.6216,
+    "p": 0.049,
+    "bootLo": -2.5879,
+    "bootHi": -0.096,
+    "pct": -12,
+    "pctLo": -23,
+    "pctHi": -1
+   },
+   "fri": {
+    "label": "금요일 공연(주말 대비)",
+    "b": -0.2722,
+    "se": 0.1438,
+    "p": 0.0662,
+    "bootLo": -0.4786,
+    "bootHi": -0.0453,
+    "pct": -24,
+    "pctLo": -38,
+    "pctHi": -4
+   }
+  }
+ },
+ "presets": [
+  {
+   "label": "10~20대 여성 팬 중심 (아이돌 공연 등)",
+   "meanAge": 25,
+   "female": 0.92,
+   "sun": {
+    "pred": 448,
+    "lo": 265,
+    "hi": 757
+   },
+   "fri": {
+    "pred": 341,
+    "lo": 201,
+    "hi": 578
+   }
+  },
+  {
+   "label": "20~30대 중심, 남녀 섞임",
+   "meanAge": 30,
+   "female": 0.7,
+   "sun": {
+    "pred": 659,
+    "lo": 392,
+    "hi": 1107
+   },
+   "fri": {
+    "pred": 502,
+    "lo": 291,
+    "hi": 866
+   }
+  },
+  {
+   "label": "30~40대 중심",
+   "meanAge": 38,
+   "female": 0.75,
+   "sun": {
+    "pred": 734,
+    "lo": 436,
+    "hi": 1238
+   },
+   "fri": {
+    "pred": 559,
+    "lo": 327,
+    "hi": 957
+   }
+  },
+  {
+   "label": "50대 이상 중심 (트로트·원로 가수 등)",
+   "meanAge": 55,
+   "female": 0.8,
+   "sun": {
+    "pred": 994,
+    "lo": 548,
+    "hi": 1803
+   },
+   "fri": {
+    "pred": 757,
+    "lo": 418,
+    "hi": 1370
+   }
+  }
+ ],
+ "upcoming": [
+  {
+   "date": "2026-11-21",
+   "title": "2026-27 로이킴 LIVE TOUR ［R:O:Y］ in SEOUL",
+   "match": []
+  },
+  {
+   "date": "2026-11-22",
+   "title": "2026-27 로이킴 LIVE TOUR ［R:O:Y］ in SEOUL",
+   "match": []
+  },
+  {
+   "date": "2026-11-27",
+   "title": "[서울] 2026 조용필 ＆ 위대한탄생 콘서트",
+   "dayType": "fri",
+   "match": [
+    {
+     "date": "2024-11-24",
+     "title": "[20집 발매 기념 조용필&위대한탄생 Concert - 서울]"
+    },
+    {
+     "date": "2024-12-01",
+     "title": "[20집 발매 기념 조용필&위대한탄생 Concert - 서울]"
+    }
+   ],
+   "meanAge": 47.0,
+   "female": 0.698,
+   "ages": {
+    "10대 이하": 0.092,
+    "20대": 0.163,
+    "30대": 0.098,
+    "40대": 0.088,
+    "50대 이상": 0.558
+   },
+   "pred": 725,
+   "lo": 414,
+   "hi": 1271
+  },
+  {
+   "date": "2026-11-28",
+   "title": "[서울] 2026 조용필 ＆ 위대한탄생 콘서트",
+   "dayType": "sat",
+   "match": [
+    {
+     "date": "2024-11-24",
+     "title": "[20집 발매 기념 조용필&위대한탄생 Concert - 서울]"
+    },
+    {
+     "date": "2024-12-01",
+     "title": "[20집 발매 기념 조용필&위대한탄생 Concert - 서울]"
+    }
+   ],
+   "meanAge": 47.0,
+   "female": 0.698,
+   "ages": {
+    "10대 이하": 0.092,
+    "20대": 0.163,
+    "30대": 0.098,
+    "40대": 0.088,
+    "50대 이상": 0.558
+   },
+   "pred": 952,
+   "lo": 552,
+   "hi": 1644
+  },
+  {
+   "date": "2026-11-29",
+   "title": "[서울] 2026 조용필 ＆ 위대한탄생 콘서트",
+   "dayType": "sun",
+   "match": [
+    {
+     "date": "2024-11-24",
+     "title": "[20집 발매 기념 조용필&위대한탄생 Concert - 서울]"
+    },
+    {
+     "date": "2024-12-01",
+     "title": "[20집 발매 기념 조용필&위대한탄생 Concert - 서울]"
+    }
+   ],
+   "meanAge": 47.0,
+   "female": 0.698,
+   "ages": {
+    "10대 이하": 0.092,
+    "20대": 0.163,
+    "30대": 0.098,
+    "40대": 0.088,
+    "50대 이상": 0.558
+   },
+   "pred": 952,
+   "lo": 552,
+   "hi": 1644
+  },
+  {
+   "date": "2026-12-04",
+   "title": "[서울] 2026 이승철 40주년 콘서트 [THE VOICE: LEE SEUNG CHUL]",
+   "match": []
+  },
+  {
+   "date": "2026-12-05",
+   "title": "[서울] 2026 이승철 40주년 콘서트 [THE VOICE: LEE SEUNG CHUL]",
+   "match": []
+  },
+  {
+   "date": "2026-12-06",
+   "title": "[서울] 2026 이승철 40주년 콘서트 [THE VOICE: LEE SEUNG CHUL]",
+   "match": []
+  },
+  {
+   "date": "2026-12-12",
+   "title": "2026 DAVICHI CONCERT 〈IN OUR SCENES〉",
+   "dayType": "sat",
+   "match": [
+    {
+     "date": "2025-01-19",
+     "title": "2025 DAVICHI CONCERT 〈A Stitch in Time〉"
+    }
+   ],
+   "meanAge": 31.7,
+   "female": 0.684,
+   "ages": {
+    "10대 이하": 0.122,
+    "20대": 0.385,
+    "30대": 0.325,
+    "40대": 0.083,
+    "50대 이상": 0.085
+   },
+   "pred": 697,
+   "lo": 414,
+   "hi": 1173
+  },
+  {
+   "date": "2026-12-18",
+   "title": "2026 DAY6 Special Concert ‘The Present’",
+   "dayType": "fri",
+   "match": [
+    {
+     "date": "2025-05-16",
+     "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL"
+    },
+    {
+     "date": "2025-05-18",
+     "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL"
+    },
+    {
+     "date": "2025-12-19",
+     "title": "2025 DAY6 Special Concert ‘The Present’"
+    },
+    {
+     "date": "2025-12-21",
+     "title": "2025 DAY6 Special Concert ‘The Present’"
+    }
+   ],
+   "meanAge": 28.7,
+   "female": 0.924,
+   "ages": {
+    "10대 이하": 0.127,
+    "20대": 0.511,
+    "30대": 0.268,
+    "40대": 0.066,
+    "50대 이상": 0.027
+   },
+   "pred": 367,
+   "lo": 217,
+   "hi": 622
+  },
+  {
+   "date": "2026-12-31",
+   "title": "2026 성시경 연말 콘서트 〈성시경〉",
+   "match": []
+  },
+  {
+   "date": "2027-01-01",
+   "title": "2026 성시경 연말 콘서트 〈성시경〉",
+   "match": []
+  },
+  {
+   "date": "2027-01-02",
+   "title": "2026 성시경 연말 콘서트 〈성시경〉",
+   "match": []
+  },
+  {
+   "date": "2027-01-03",
+   "title": "2026 성시경 연말 콘서트 〈성시경〉",
+   "match": []
+  }
+ ],
+ "shows": [
+  {
+   "date": "2024-06-08",
+   "start": "17:00",
+   "title": "2024 이찬원 콘서트 ‘ 찬가（燦歌）’",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2024-06-09",
+   "start": "17:00",
+   "title": "2024 이찬원 콘서트 ‘ 찬가（燦歌）’",
+   "dayType": "sun",
+   "baseDays": 8,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "excess": 18028,
+   "ok": true,
+   "female": 0.728,
+   "ages": {
+    "10대 이하": 0.069,
+    "20대": 0.215,
+    "30대": 0.202,
+    "40대": 0.119,
+    "50대 이상": 0.396
+   },
+   "meanAge": 44.1
+  },
+  {
+   "date": "2024-06-15",
+   "start": "18:00",
+   "title": "2024 AKMU 10th ANNIVERSARY CONCERT ［10VE］",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 0,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2024-06-16",
+   "start": "17:00",
+   "title": "2024 AKMU 10th ANNIVERSARY CONCERT ［10VE］",
+   "dayType": "sun",
+   "baseDays": 8,
+   "baseWindowDays": 140,
+   "otherVenues": 0,
+   "excess": 16341,
+   "ok": true,
+   "female": 0.729,
+   "ages": {
+    "10대 이하": 0.147,
+    "20대": 0.439,
+    "30대": 0.254,
+    "40대": 0.104,
+    "50대 이상": 0.057
+   },
+   "meanAge": 29.7
+  },
+  {
+   "date": "2024-06-22",
+   "start": "19:00",
+   "title": "2024 SUPER JUNIOR 〈SUPER SHOW SPIN－OFF：Halftime〉 in SEOUL",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2024-06-23",
+   "start": "16:00",
+   "title": "2024 SUPER JUNIOR 〈SUPER SHOW SPIN－OFF：Halftime〉 in SEOUL",
+   "dayType": "sun",
+   "baseDays": 4,
+   "baseWindowDays": 91,
+   "otherVenues": 1,
+   "excess": 6154,
+   "ok": true,
+   "female": 0.803,
+   "ages": {
+    "10대 이하": 0.087,
+    "20대": 0.484,
+    "30대": 0.22,
+    "40대": 0.122,
+    "50대 이상": 0.088
+   },
+   "meanAge": 31.3
+  },
+  {
+   "date": "2024-07-12",
+   "start": "19:00",
+   "title": "THE BOYZ WORLD TOUR : ZENERATION Ⅱ",
+   "dayType": "fri",
+   "baseDays": 9,
+   "baseWindowDays": 35,
+   "otherVenues": 0,
+   "excess": 9098,
+   "ok": true,
+   "female": 0.962,
+   "ages": {
+    "10대 이하": 0.263,
+    "20대": 0.571,
+    "30대": 0.122,
+    "40대": 0.032,
+    "50대 이상": 0.011
+   },
+   "meanAge": 24.4,
+   "cars": 333,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2024-07-13",
+   "start": "17:00",
+   "title": "THE BOYZ WORLD TOUR : ZENERATION Ⅱ",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 327,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2024-07-14",
+   "start": "16:00",
+   "title": "THE BOYZ WORLD TOUR : ZENERATION Ⅱ",
+   "dayType": "sun",
+   "baseDays": 7,
+   "baseWindowDays": 91,
+   "otherVenues": 1,
+   "excess": 9740,
+   "ok": true,
+   "female": 0.95,
+   "ages": {
+    "10대 이하": 0.302,
+    "20대": 0.537,
+    "30대": 0.11,
+    "40대": 0.031,
+    "50대 이상": 0.02
+   },
+   "meanAge": 24.3,
+   "cars": 422,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2024-07-20",
+   "start": "18:00",
+   "title": "SG워너비 콘서트 : 우리의 노래 2024 앙코르",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 1080,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2024-07-21",
+   "start": "17:00",
+   "title": "SG워너비 콘서트 : 우리의 노래 2024 앙코르",
+   "dayType": "sun",
+   "baseDays": 4,
+   "baseWindowDays": 63,
+   "otherVenues": 1,
+   "excess": 10501,
+   "ok": true,
+   "female": 0.613,
+   "ages": {
+    "10대 이하": 0.126,
+    "20대": 0.31,
+    "30대": 0.234,
+    "40대": 0.156,
+    "50대 이상": 0.175
+   },
+   "meanAge": 34.8,
+   "cars": 1360,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2024-07-27",
+   "start": "18:00",
+   "title": "2024 BAEKHYUN ASIA TOUR ‘Lonsdaleite［dot］’",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 0,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 203,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2024-07-28",
+   "start": "16:00",
+   "title": "2024 BAEKHYUN ASIA TOUR ‘Lonsdaleite［dot］’",
+   "dayType": "sun",
+   "baseDays": 4,
+   "baseWindowDays": 63,
+   "otherVenues": 0,
+   "excess": 8399,
+   "ok": true,
+   "female": 0.92,
+   "ages": {
+    "10대 이하": 0.113,
+    "20대": 0.651,
+    "30대": 0.141,
+    "40대": 0.05,
+    "50대 이상": 0.045
+   },
+   "meanAge": 27.3,
+   "cars": 408,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2024-08-24",
+   "start": "18:00",
+   "title": "Stray Kids World Tour〈dominATE SEOUL〉",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2024-08-25",
+   "start": "17:00",
+   "title": "Stray Kids World Tour〈dominATE SEOUL〉",
+   "dayType": "sun",
+   "baseDays": 3,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 19196,
+   "ok": true,
+   "female": 0.895,
+   "ages": {
+    "10대 이하": 0.355,
+    "20대": 0.39,
+    "30대": 0.146,
+    "40대": 0.071,
+    "50대 이상": 0.039
+   },
+   "meanAge": 25.0
+  },
+  {
+   "date": "2024-08-31",
+   "start": "18:00",
+   "title": "Stray Kids World Tour〈dominATE SEOUL〉",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2024-09-01",
+   "start": "17:00",
+   "title": "Stray Kids World Tour〈dominATE SEOUL〉",
+   "dayType": "sun",
+   "baseDays": 5,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 14197,
+   "ok": true,
+   "female": 0.855,
+   "ages": {
+    "10대 이하": 0.258,
+    "20대": 0.377,
+    "30대": 0.196,
+    "40대": 0.096,
+    "50대 이상": 0.073
+   },
+   "meanAge": 28.5
+  },
+  {
+   "date": "2024-10-12",
+   "start": "17:00",
+   "title": "2024 오페라 투란도트 - 아레나 디 베로나 오리지널 <2024 Opera Turandot - Arena Di Verona Original>",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2024-10-14",
+   "start": "19:30",
+   "title": "2024 오페라 투란도트 - 아레나 디 베로나 오리지널 <2024 Opera Turandot - Arena Di Verona Original>",
+   "dayType": "wk",
+   "baseDays": 33,
+   "baseWindowDays": 35,
+   "otherVenues": 0,
+   "excess": -966,
+   "ok": false,
+   "why": "늘어난 사람이 3,000명 미만"
+  },
+  {
+   "date": "2024-10-18",
+   "start": "19:30",
+   "title": "2024 오페라 투란도트 - 아레나 디 베로나 오리지널 <2024 Opera Turandot - Arena Di Verona Original>",
+   "dayType": "fri",
+   "baseDays": 3,
+   "baseWindowDays": 35,
+   "otherVenues": 0,
+   "excess": 1285,
+   "ok": false,
+   "why": "늘어난 사람이 3,000명 미만"
+  },
+  {
+   "date": "2024-10-19",
+   "start": "17:00",
+   "title": "2024 오페라 투란도트 - 아레나 디 베로나 오리지널 <2024 Opera Turandot - Arena Di Verona Original>",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 0,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2024-10-25",
+   "start": "18:00",
+   "title": "2024 영탁 단독 콘서트 “TAK SHOW3”",
+   "dayType": "fri",
+   "baseDays": 4,
+   "baseWindowDays": 35,
+   "otherVenues": 0,
+   "excess": 2891,
+   "ok": false,
+   "why": "늘어난 사람이 3,000명 미만"
+  },
+  {
+   "date": "2024-10-26",
+   "start": "15:00",
+   "title": "2024 영탁 단독 콘서트 “TAK SHOW3”",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2024-10-27",
+   "start": "15:00",
+   "title": "2024 영탁 단독 콘서트 “TAK SHOW3”",
+   "dayType": "sun",
+   "baseDays": 4,
+   "baseWindowDays": 35,
+   "otherVenues": 2,
+   "excess": 17682,
+   "ok": true,
+   "female": 0.852,
+   "ages": {
+    "10대 이하": 0.143,
+    "20대": 0.384,
+    "30대": 0.142,
+    "40대": 0.083,
+    "50대 이상": 0.247
+   },
+   "meanAge": 36.0
+  },
+  {
+   "date": "2024-11-01",
+   "start": "19:00",
+   "title": "TOMORROW X TOGETHER WORLD TOUR 〈ACT : PROMISE〉 ENCORE IN SEOUL",
+   "dayType": "fri",
+   "baseDays": 4,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 11560,
+   "ok": true,
+   "female": 0.944,
+   "ages": {
+    "10대 이하": 0.379,
+    "20대": 0.385,
+    "30대": 0.112,
+    "40대": 0.089,
+    "50대 이상": 0.035
+   },
+   "meanAge": 23.8
+  },
+  {
+   "date": "2024-11-02",
+   "start": "18:00",
+   "title": "TOMORROW X TOGETHER WORLD TOUR 〈ACT : PROMISE〉 ENCORE IN SEOUL",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2024-11-03",
+   "start": "17:00",
+   "title": "TOMORROW X TOGETHER WORLD TOUR 〈ACT : PROMISE〉 ENCORE IN SEOUL",
+   "dayType": "sun",
+   "baseDays": 4,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 20216,
+   "ok": true,
+   "female": 0.866,
+   "ages": {
+    "10대 이하": 0.385,
+    "20대": 0.323,
+    "30대": 0.136,
+    "40대": 0.1,
+    "50대 이상": 0.056
+   },
+   "meanAge": 25.4
+  },
+  {
+   "date": "2024-11-08",
+   "start": "19:30",
+   "title": "JX 2024 CONCERT < IDENTITY > in Seoul",
+   "dayType": "fri",
+   "baseDays": 4,
+   "baseWindowDays": 35,
+   "otherVenues": 0,
+   "excess": 7200,
+   "ok": true,
+   "female": 0.971,
+   "ages": {
+    "10대 이하": 0.012,
+    "20대": 0.258,
+    "30대": 0.625,
+    "40대": 0.058,
+    "50대 이상": 0.048
+   },
+   "meanAge": 33.6
+  },
+  {
+   "date": "2024-11-09",
+   "start": "18:00",
+   "title": "JX 2024 CONCERT < IDENTITY > in Seoul",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2024-11-10",
+   "start": "17:00",
+   "title": "JX 2024 CONCERT < IDENTITY > in Seoul",
+   "dayType": "sun",
+   "baseDays": 8,
+   "baseWindowDays": 63,
+   "otherVenues": 1,
+   "excess": 12233,
+   "ok": true,
+   "female": 0.873,
+   "ages": {
+    "10대 이하": 0.026,
+    "20대": 0.259,
+    "30대": 0.481,
+    "40대": 0.137,
+    "50대 이상": 0.097
+   },
+   "meanAge": 35.4
+  },
+  {
+   "date": "2024-11-15",
+   "start": "20:00",
+   "title": "2024 윤하 연말 콘서트 〈GROWTH THEORY〉",
+   "dayType": "fri",
+   "baseDays": 3,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 7345,
+   "ok": true,
+   "female": 0.544,
+   "ages": {
+    "10대 이하": 0.074,
+    "20대": 0.518,
+    "30대": 0.307,
+    "40대": 0.045,
+    "50대 이상": 0.056
+   },
+   "meanAge": 30.1
+  },
+  {
+   "date": "2024-11-16",
+   "start": "19:00",
+   "title": "2024 윤하 연말 콘서트 〈GROWTH THEORY〉",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2024-11-17",
+   "start": "18:00",
+   "title": "2024 윤하 연말 콘서트 〈GROWTH THEORY〉",
+   "dayType": "sun",
+   "baseDays": 8,
+   "baseWindowDays": 63,
+   "otherVenues": 1,
+   "excess": 10654,
+   "ok": true,
+   "female": 0.567,
+   "ages": {
+    "10대 이하": 0.112,
+    "20대": 0.431,
+    "30대": 0.293,
+    "40대": 0.093,
+    "50대 이상": 0.071
+   },
+   "meanAge": 30.9
+  },
+  {
+   "date": "2024-11-24",
+   "start": "18:00",
+   "title": "[20집 발매 기념 조용필&위대한탄생 Concert - 서울]",
+   "dayType": "sun",
+   "baseDays": 5,
+   "baseWindowDays": 63,
+   "otherVenues": 0,
+   "excess": 8699,
+   "ok": true,
+   "female": 0.677,
+   "ages": {
+    "10대 이하": 0.088,
+    "20대": 0.133,
+    "30대": 0.105,
+    "40대": 0.092,
+    "50대 이상": 0.582
+   },
+   "meanAge": 48.1
+  },
+  {
+   "date": "2024-12-01",
+   "start": "18:00",
+   "title": "[20집 발매 기념 조용필&위대한탄생 Concert - 서울]",
+   "dayType": "sun",
+   "baseDays": 9,
+   "baseWindowDays": 63,
+   "otherVenues": 1,
+   "excess": 11910,
+   "ok": true,
+   "female": 0.718,
+   "ages": {
+    "10대 이하": 0.096,
+    "20대": 0.192,
+    "30대": 0.091,
+    "40대": 0.085,
+    "50대 이상": 0.535
+   },
+   "meanAge": 45.9
+  },
+  {
+   "date": "2024-12-06",
+   "start": "20:00",
+   "title": "INFINITE 15TH ANNIVERSARY CONCERT : LIMITED EDITION",
+   "dayType": "fri",
+   "baseDays": 3,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 9478,
+   "ok": true,
+   "female": 0.799,
+   "ages": {
+    "10대 이하": 0.074,
+    "20대": 0.574,
+    "30대": 0.219,
+    "40대": 0.079,
+    "50대 이상": 0.054
+   },
+   "meanAge": 29.8
+  },
+  {
+   "date": "2024-12-07",
+   "start": "18:00",
+   "title": "INFINITE 15TH ANNIVERSARY CONCERT : LIMITED EDITION",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2024-12-08",
+   "start": "17:00",
+   "title": "INFINITE 15TH ANNIVERSARY CONCERT : LIMITED EDITION",
+   "dayType": "sun",
+   "baseDays": 7,
+   "baseWindowDays": 63,
+   "otherVenues": 2,
+   "excess": 13103,
+   "ok": true,
+   "female": 0.774,
+   "ages": {
+    "10대 이하": 0.065,
+    "20대": 0.544,
+    "30대": 0.212,
+    "40대": 0.095,
+    "50대 이상": 0.083
+   },
+   "meanAge": 31.0
+  },
+  {
+   "date": "2024-12-13",
+   "start": "19:00",
+   "title": "[서울 앵콜] 2024 이찬원 콘서트 ‘ 찬가（燦歌）’",
+   "dayType": "fri",
+   "baseDays": 3,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 7459,
+   "ok": true,
+   "female": 0.788,
+   "ages": {
+    "10대 이하": 0.02,
+    "20대": 0.29,
+    "30대": 0.196,
+    "40대": 0.072,
+    "50대 이상": 0.421
+   },
+   "meanAge": 45.2
+  },
+  {
+   "date": "2024-12-14",
+   "start": "17:00",
+   "title": "[서울 앵콜] 2024 이찬원 콘서트 ‘ 찬가（燦歌）’",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2024-12-15",
+   "start": "17:00",
+   "title": "[서울 앵콜] 2024 이찬원 콘서트 ‘ 찬가（燦歌）’",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 63,
+   "otherVenues": 2,
+   "excess": 14532,
+   "ok": true,
+   "female": 0.742,
+   "ages": {
+    "10대 이하": 0.047,
+    "20대": 0.195,
+    "30대": 0.172,
+    "40대": 0.104,
+    "50대 이상": 0.482
+   },
+   "meanAge": 47.2
+  },
+  {
+   "date": "2024-12-20",
+   "start": "20:00",
+   "title": "2024 CRUSH CONCERT ［CRUSH HOUR : O］",
+   "dayType": "fri",
+   "baseDays": 4,
+   "baseWindowDays": 35,
+   "otherVenues": 2,
+   "excess": 11470,
+   "ok": true,
+   "female": 0.743,
+   "ages": {
+    "10대 이하": 0.118,
+    "20대": 0.386,
+    "30대": 0.363,
+    "40대": 0.087,
+    "50대 이상": 0.046
+   },
+   "meanAge": 30.7
+  },
+  {
+   "date": "2024-12-21",
+   "start": "19:00",
+   "title": "2024 CRUSH CONCERT ［CRUSH HOUR : O］",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2024-12-22",
+   "start": "18:00",
+   "title": "2024 CRUSH CONCERT ［CRUSH HOUR : O］",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 63,
+   "otherVenues": 2,
+   "excess": 13874,
+   "ok": true,
+   "female": 0.692,
+   "ages": {
+    "10대 이하": 0.129,
+    "20대": 0.37,
+    "30대": 0.323,
+    "40대": 0.093,
+    "50대 이상": 0.086
+   },
+   "meanAge": 31.7
+  },
+  {
+   "date": "2025-01-05",
+   "start": "13:00",
+   "title": "로드 투 킹덤 : ACE OF ACE 콘서트",
+   "dayType": "sun",
+   "baseDays": 5,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 4179,
+   "ok": true,
+   "female": 0.505,
+   "ages": {
+    "10대 이하": 0.226,
+    "20대": 0.163,
+    "30대": 0.112,
+    "40대": 0.208,
+    "50대 이상": 0.291
+   },
+   "meanAge": 37.7
+  },
+  {
+   "date": "2025-01-10",
+   "start": "19:30",
+   "title": "나훈아 ‘2024 고마웠습니다-라스트 콘서트(LAST CONCERT)’",
+   "dayType": "fri",
+   "baseDays": 6,
+   "baseWindowDays": 63,
+   "otherVenues": 0,
+   "excess": 8336,
+   "ok": true,
+   "female": 0.717,
+   "ages": {
+    "10대 이하": 0.009,
+    "20대": 0.04,
+    "30대": 0.067,
+    "40대": 0.042,
+    "50대 이상": 0.842
+   },
+   "meanAge": 61.0,
+   "cars": 792,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-01-18",
+   "start": "18:00",
+   "title": "2025 DAVICHI CONCERT 〈A Stitch in Time〉",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 938,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-01-19",
+   "start": "17:00",
+   "title": "2025 DAVICHI CONCERT 〈A Stitch in Time〉",
+   "dayType": "sun",
+   "baseDays": 5,
+   "baseWindowDays": 35,
+   "otherVenues": 2,
+   "excess": 17259,
+   "ok": true,
+   "female": 0.684,
+   "ages": {
+    "10대 이하": 0.122,
+    "20대": 0.385,
+    "30대": 0.325,
+    "40대": 0.083,
+    "50대 이상": 0.085
+   },
+   "meanAge": 31.7,
+   "cars": 1040,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-01-25",
+   "start": "18:00",
+   "title": "2025 BABYMONSTER 1st WORLD TOUR 〈HELLO MONSTERS〉 IN SEOUL",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 657,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-01-26",
+   "start": "17:00",
+   "title": "2025 BABYMONSTER 1st WORLD TOUR 〈HELLO MONSTERS〉 IN SEOUL",
+   "dayType": "sun",
+   "baseDays": 5,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 12599,
+   "ok": true,
+   "female": 0.708,
+   "ages": {
+    "10대 이하": 0.305,
+    "20대": 0.351,
+    "30대": 0.171,
+    "40대": 0.09,
+    "50대 이상": 0.083
+   },
+   "meanAge": 27.8,
+   "cars": 725,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-01-31",
+   "start": "19:00",
+   "title": "THE BOYZ FAN-CON 〈THE B LAND〉",
+   "dayType": "fri",
+   "baseDays": 3,
+   "baseWindowDays": 35,
+   "otherVenues": 0,
+   "excess": 8407,
+   "ok": true,
+   "female": 0.973,
+   "ages": {
+    "10대 이하": 0.339,
+    "20대": 0.478,
+    "30대": 0.151,
+    "40대": 0.012,
+    "50대 이상": 0.02
+   },
+   "meanAge": 24.2
+  },
+  {
+   "date": "2025-02-01",
+   "start": "17:00",
+   "title": "THE BOYZ FAN-CON 〈THE B LAND〉",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 0,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 288,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-02-02",
+   "start": "16:00",
+   "title": "THE BOYZ FAN-CON 〈THE B LAND〉",
+   "dayType": "sun",
+   "baseDays": 5,
+   "baseWindowDays": 35,
+   "otherVenues": 0,
+   "excess": 15670,
+   "ok": true,
+   "female": 0.809,
+   "ages": {
+    "10대 이하": 0.3,
+    "20대": 0.366,
+    "30대": 0.145,
+    "40대": 0.081,
+    "50대 이상": 0.108
+   },
+   "meanAge": 28.9,
+   "cars": 320,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-02-08",
+   "start": "17:00",
+   "title": "2025 황영웅 앨범 발매 쇼케이스 PANORAMA : SHOWKING",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 723,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-02-09",
+   "start": "17:00",
+   "title": "2025 황영웅 앨범 발매 쇼케이스 PANORAMA : SHOWKING",
+   "dayType": "sun",
+   "baseDays": 5,
+   "baseWindowDays": 35,
+   "otherVenues": 2,
+   "excess": 18023,
+   "ok": true,
+   "female": 0.754,
+   "ages": {
+    "10대 이하": 0.115,
+    "20대": 0.207,
+    "30대": 0.132,
+    "40대": 0.11,
+    "50대 이상": 0.437
+   },
+   "meanAge": 44.7,
+   "cars": 801,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-02-14",
+   "start": "20:00",
+   "title": "2025 윤하 앵콜 콘서트 〈GROWTH THEORY : Final Edition〉",
+   "dayType": "fri",
+   "baseDays": 3,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 5009,
+   "ok": true,
+   "female": 0.692,
+   "ages": {
+    "10대 이하": 0.206,
+    "20대": 0.472,
+    "30대": 0.232,
+    "40대": 0.052,
+    "50대 이상": 0.038
+   },
+   "meanAge": 27.2,
+   "cars": 472,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-02-15",
+   "start": "19:00",
+   "title": "2025 윤하 앵콜 콘서트 〈GROWTH THEORY : Final Edition〉",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 601,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-02-16",
+   "start": "18:00",
+   "title": "2025 윤하 앵콜 콘서트 〈GROWTH THEORY : Final Edition〉",
+   "dayType": "sun",
+   "baseDays": 5,
+   "baseWindowDays": 35,
+   "otherVenues": 2,
+   "excess": 13623,
+   "ok": true,
+   "female": 0.629,
+   "ages": {
+    "10대 이하": 0.203,
+    "20대": 0.309,
+    "30대": 0.203,
+    "40대": 0.121,
+    "50대 이상": 0.164
+   },
+   "meanAge": 33.3,
+   "cars": 722,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-02-22",
+   "start": "15:00",
+   "title": "2025 영탁 단독 콘서트 “TAK SHOW3” - 앙코르",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 873,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-02-23",
+   "start": "15:00",
+   "title": "2025 영탁 단독 콘서트 “TAK SHOW3” - 앙코르",
+   "dayType": "sun",
+   "baseDays": 5,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 11671,
+   "ok": true,
+   "female": 0.725,
+   "ages": {
+    "10대 이하": 0.082,
+    "20대": 0.109,
+    "30대": 0.143,
+    "40대": 0.167,
+    "50대 이상": 0.499
+   },
+   "meanAge": 47.4,
+   "cars": 848,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-02-28",
+   "start": "19:00",
+   "title": "j-hope Tour ‘HOPE ON THE STAGE’ in SEOUL",
+   "dayType": "fri",
+   "baseDays": 4,
+   "baseWindowDays": 35,
+   "otherVenues": 0,
+   "excess": 9844,
+   "ok": true,
+   "female": 0.935,
+   "ages": {
+    "10대 이하": 0.192,
+    "20대": 0.29,
+    "30대": 0.244,
+    "40대": 0.163,
+    "50대 이상": 0.112
+   },
+   "meanAge": 32.4
+  },
+  {
+   "date": "2025-03-01",
+   "start": "18:00",
+   "title": "j-hope Tour ‘HOPE ON THE STAGE’ in SEOUL",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 412,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-03-02",
+   "start": "17:00",
+   "title": "j-hope Tour ‘HOPE ON THE STAGE’ in SEOUL",
+   "dayType": "sun",
+   "baseDays": 5,
+   "baseWindowDays": 35,
+   "otherVenues": 0,
+   "excess": 14085,
+   "ok": true,
+   "female": 0.822,
+   "ages": {
+    "10대 이하": 0.155,
+    "20대": 0.266,
+    "30대": 0.262,
+    "40대": 0.196,
+    "50대 이상": 0.121
+   },
+   "meanAge": 33.9,
+   "cars": 324,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-03-07",
+   "start": "20:00",
+   "title": "TAEYEON CONCERT - The TENSE",
+   "dayType": "fri",
+   "baseDays": 4,
+   "baseWindowDays": 35,
+   "otherVenues": 0,
+   "excess": 7035,
+   "ok": true,
+   "female": 0.743,
+   "ages": {
+    "10대 이하": 0.054,
+    "20대": 0.631,
+    "30대": 0.26,
+    "40대": 0.037,
+    "50대 이상": 0.019
+   },
+   "meanAge": 28.4,
+   "cars": 405,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-03-08",
+   "start": "18:00",
+   "title": "TAEYEON CONCERT - The TENSE",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 537,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-03-09",
+   "start": "17:00",
+   "title": "TAEYEON CONCERT - The TENSE",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 63,
+   "otherVenues": 0,
+   "excess": 12311,
+   "ok": true,
+   "female": 0.64,
+   "ages": {
+    "10대 이하": 0.115,
+    "20대": 0.449,
+    "30대": 0.228,
+    "40대": 0.103,
+    "50대 이상": 0.105
+   },
+   "meanAge": 31.8,
+   "cars": 500,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-03-15",
+   "start": "18:00",
+   "title": "2024-25 aespa LIVE TOUR－SYNK：PARALLEL LINE－ENCORE",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 843,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-03-16",
+   "start": "17:00",
+   "title": "2024-25 aespa LIVE TOUR－SYNK：PARALLEL LINE－ENCORE",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 63,
+   "otherVenues": 1,
+   "excess": 13744,
+   "ok": true,
+   "female": 0.658,
+   "ages": {
+    "10대 이하": 0.211,
+    "20대": 0.287,
+    "30대": 0.171,
+    "40대": 0.2,
+    "50대 이상": 0.131
+   },
+   "meanAge": 32.7,
+   "cars": 724,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-03-22",
+   "start": "17:00",
+   "title": "2025 ATEEZ WORLD TOUR [TOWARDS THE LIGHT : WILL TO POWER] FINALE IN SEOUL",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 391,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-03-23",
+   "start": "17:00",
+   "title": "2025 ATEEZ WORLD TOUR [TOWARDS THE LIGHT : WILL TO POWER] FINALE IN SEOUL",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 63,
+   "otherVenues": 2,
+   "excess": 14223,
+   "ok": true,
+   "female": 0.765,
+   "ages": {
+    "10대 이하": 0.222,
+    "20대": 0.363,
+    "30대": 0.197,
+    "40대": 0.115,
+    "50대 이상": 0.104
+   },
+   "meanAge": 30.5,
+   "cars": 377,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-04-05",
+   "start": "18:00",
+   "title": "2025 IVE THE 3RD FAN CONCERT 〈IVE SCOUT〉",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 630,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-04-06",
+   "start": "17:00",
+   "title": "2025 IVE THE 3RD FAN CONCERT 〈IVE SCOUT〉",
+   "dayType": "sun",
+   "baseDays": 4,
+   "baseWindowDays": 63,
+   "otherVenues": 1,
+   "excess": 16168,
+   "ok": true,
+   "female": 0.701,
+   "ages": {
+    "10대 이하": 0.431,
+    "20대": 0.168,
+    "30대": 0.135,
+    "40대": 0.194,
+    "50대 이상": 0.072
+   },
+   "meanAge": 26.2,
+   "cars": 781,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-04-12",
+   "start": "18:00",
+   "title": "2025 2NE1 CONCERT ［WELCOME BACK］ ENCORE IN SEOUL",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 738,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-04-13",
+   "start": "17:00",
+   "title": "2025 2NE1 CONCERT ［WELCOME BACK］ ENCORE IN SEOUL",
+   "dayType": "sun",
+   "baseDays": 4,
+   "baseWindowDays": 63,
+   "otherVenues": 1,
+   "excess": 8938,
+   "ok": true,
+   "female": 0.739,
+   "ages": {
+    "10대 이하": 0.062,
+    "20대": 0.573,
+    "30대": 0.261,
+    "40대": 0.065,
+    "50대 이상": 0.039
+   },
+   "meanAge": 29.5,
+   "cars": 782,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-04-18",
+   "start": "19:30",
+   "title": "2025 ZEROBASEONE FAN-CON［BLUE MANSION］",
+   "dayType": "fri",
+   "baseDays": 4,
+   "baseWindowDays": 35,
+   "otherVenues": 0,
+   "excess": 6333,
+   "ok": true,
+   "female": 0.923,
+   "ages": {
+    "10대 이하": 0.315,
+    "20대": 0.434,
+    "30대": 0.137,
+    "40대": 0.067,
+    "50대 이상": 0.047
+   },
+   "meanAge": 25.5,
+   "cars": 384,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-04-19",
+   "start": "18:00",
+   "title": "2025 ZEROBASEONE FAN-CON［BLUE MANSION］",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 382,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-04-20",
+   "start": "17:00",
+   "title": "2025 ZEROBASEONE FAN-CON［BLUE MANSION］",
+   "dayType": "sun",
+   "baseDays": 4,
+   "baseWindowDays": 63,
+   "otherVenues": 1,
+   "excess": 11229,
+   "ok": true,
+   "female": 0.798,
+   "ages": {
+    "10대 이하": 0.313,
+    "20대": 0.311,
+    "30대": 0.176,
+    "40대": 0.117,
+    "50대 이상": 0.083
+   },
+   "meanAge": 28.4,
+   "cars": 647,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-04-26",
+   "start": "17:00",
+   "title": "2024-25 TAEMIN WORLD TOUR [Ephemeral Gaze] Finale",
+   "dayType": "sat",
+   "baseDays": 0,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 718,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-04-27",
+   "start": "16:00",
+   "title": "2024-25 TAEMIN WORLD TOUR [Ephemeral Gaze] Finale",
+   "dayType": "sun",
+   "baseDays": 4,
+   "baseWindowDays": 63,
+   "otherVenues": 1,
+   "excess": 8924,
+   "ok": true,
+   "female": 0.813,
+   "ages": {
+    "10대 이하": 0.057,
+    "20대": 0.396,
+    "30대": 0.322,
+    "40대": 0.14,
+    "50대 이상": 0.085
+   },
+   "meanAge": 33.6,
+   "cars": 814,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-05-03",
+   "start": "18:00",
+   "title": "YUURI ARENA LIVE 2025 at SEOUL",
+   "dayType": "sat",
+   "baseDays": 1,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 709,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-05-04",
+   "start": "17:00",
+   "title": "YUURI ARENA LIVE 2025 at SEOUL",
+   "dayType": "sun",
+   "baseDays": 3,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 11187,
+   "ok": true,
+   "female": 0.589,
+   "ages": {
+    "10대 이하": 0.174,
+    "20대": 0.579,
+    "30대": 0.187,
+    "40대": 0.029,
+    "50대 이상": 0.031
+   },
+   "meanAge": 27.0,
+   "cars": 794,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-05-09",
+   "start": "19:00",
+   "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL",
+   "dayType": "fri",
+   "baseDays": 4,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 16610,
+   "ok": true,
+   "female": 0.966,
+   "ages": {
+    "10대 이하": 0.111,
+    "20대": 0.546,
+    "30대": 0.284,
+    "40대": 0.05,
+    "50대 이상": 0.009
+   },
+   "meanAge": 28.0,
+   "cars": 655,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-05-10",
+   "start": "18:00",
+   "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL",
+   "dayType": "sat",
+   "baseDays": 1,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 499,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-05-11",
+   "start": "17:00",
+   "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL",
+   "dayType": "sun",
+   "baseDays": 3,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 20105,
+   "ok": true,
+   "female": 0.889,
+   "ages": {
+    "10대 이하": 0.135,
+    "20대": 0.498,
+    "30대": 0.247,
+    "40대": 0.078,
+    "50대 이상": 0.041
+   },
+   "meanAge": 29.2,
+   "cars": 533,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-05-16",
+   "start": "19:00",
+   "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL",
+   "dayType": "fri",
+   "baseDays": 3,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 15473,
+   "ok": true,
+   "female": 0.919,
+   "ages": {
+    "10대 이하": 0.15,
+    "20대": 0.553,
+    "30대": 0.243,
+    "40대": 0.048,
+    "50대 이상": 0.006
+   },
+   "meanAge": 27.1,
+   "cars": 636,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-05-17",
+   "start": "18:00",
+   "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL",
+   "dayType": "sat",
+   "baseDays": 1,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 548,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-05-18",
+   "start": "17:00",
+   "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL",
+   "dayType": "sun",
+   "baseDays": 3,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 21983,
+   "ok": true,
+   "female": 0.908,
+   "ages": {
+    "10대 이하": 0.106,
+    "20대": 0.525,
+    "30대": 0.271,
+    "40대": 0.069,
+    "50대 이상": 0.029
+   },
+   "meanAge": 29.0,
+   "cars": 712,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-06-07",
+   "start": "18:00",
+   "title": "2025 BAEKHYUN WORLD TOUR 〈Reverie〉 in SEOUL",
+   "dayType": "sat",
+   "baseDays": 1,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 557,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-06-08",
+   "start": "16:00",
+   "title": "2025 BAEKHYUN WORLD TOUR 〈Reverie〉 in SEOUL",
+   "dayType": "sun",
+   "baseDays": 3,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 9431,
+   "ok": true,
+   "female": 0.833,
+   "ages": {
+    "10대 이하": 0.099,
+    "20대": 0.557,
+    "30대": 0.187,
+    "40대": 0.099,
+    "50대 이상": 0.059
+   },
+   "meanAge": 29.7,
+   "cars": 579,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-07-04",
+   "start": "20:00",
+   "title": "2025 RIIZE CONCERT TOUR [RIIZING LOUD] IN SEOUL",
+   "dayType": "fri",
+   "baseDays": 3,
+   "baseWindowDays": 63,
+   "otherVenues": 0,
+   "excess": 9267,
+   "ok": true,
+   "female": 0.978,
+   "ages": {
+    "10대 이하": 0.193,
+    "20대": 0.551,
+    "30대": 0.202,
+    "40대": 0.043,
+    "50대 이상": 0.012
+   },
+   "meanAge": 26.3,
+   "cars": 206,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-07-05",
+   "start": "18:00",
+   "title": "2025 RIIZE CONCERT TOUR [RIIZING LOUD] IN SEOUL",
+   "dayType": "sat",
+   "baseDays": 1,
+   "baseWindowDays": 140,
+   "otherVenues": 0,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 283,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-07-06",
+   "start": "16:00",
+   "title": "2025 RIIZE CONCERT TOUR [RIIZING LOUD] IN SEOUL",
+   "dayType": "sun",
+   "baseDays": 4,
+   "baseWindowDays": 63,
+   "otherVenues": 0,
+   "excess": 9504,
+   "ok": true,
+   "female": 0.962,
+   "ages": {
+    "10대 이하": 0.272,
+    "20대": 0.526,
+    "30대": 0.144,
+    "40대": 0.033,
+    "50대 이상": 0.024
+   },
+   "meanAge": 25.1,
+   "cars": 367,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-07-11",
+   "start": "19:30",
+   "title": "HIGHLIGHT LIVE 2025 [RIDE OR DIE]",
+   "dayType": "fri",
+   "baseDays": 4,
+   "baseWindowDays": 63,
+   "otherVenues": 0,
+   "excess": 5804,
+   "ok": true,
+   "female": 0.924,
+   "ages": {
+    "10대 이하": 0.038,
+    "20대": 0.566,
+    "30대": 0.291,
+    "40대": 0.063,
+    "50대 이상": 0.043
+   },
+   "meanAge": 30.7,
+   "cars": 341,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-07-12",
+   "start": "18:00",
+   "title": "HIGHLIGHT LIVE 2025 [RIDE OR DIE]",
+   "dayType": "sat",
+   "baseDays": 1,
+   "baseWindowDays": 140,
+   "otherVenues": 0,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 396,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-07-13",
+   "start": "17:00",
+   "title": "HIGHLIGHT LIVE 2025 [RIDE OR DIE]",
+   "dayType": "sun",
+   "baseDays": 3,
+   "baseWindowDays": 63,
+   "otherVenues": 0,
+   "excess": 5886,
+   "ok": true,
+   "female": 0.971,
+   "ages": {
+    "10대 이하": 0.137,
+    "20대": 0.608,
+    "30대": 0.192,
+    "40대": 0.028,
+    "50대 이상": 0.035
+   },
+   "meanAge": 27.5,
+   "cars": 838,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-07-18",
+   "start": "20:00",
+   "title": "2025 MONSTA X CONNECT X",
+   "dayType": "fri",
+   "baseDays": 5,
+   "baseWindowDays": 63,
+   "otherVenues": 1,
+   "excess": 7206,
+   "ok": true,
+   "female": 0.983,
+   "ages": {
+    "10대 이하": 0.066,
+    "20대": 0.488,
+    "30대": 0.367,
+    "40대": 0.064,
+    "50대 이상": 0.015
+   },
+   "meanAge": 29.9,
+   "cars": 202,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-07-19",
+   "start": "18:00",
+   "title": "2025 MONSTA X CONNECT X",
+   "dayType": "sat",
+   "baseDays": 1,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 228,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-07-20",
+   "start": "16:00",
+   "title": "2025 MONSTA X CONNECT X",
+   "dayType": "sun",
+   "baseDays": 4,
+   "baseWindowDays": 63,
+   "otherVenues": 1,
+   "excess": 1885,
+   "ok": false,
+   "why": "늘어난 사람이 3,000명 미만",
+   "cars": 337,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-07-25",
+   "start": "19:00",
+   "title": "BOYNEXTDOOR TOUR ‘KNOCK ON Vol.1’ FINAL",
+   "dayType": "fri",
+   "baseDays": 5,
+   "baseWindowDays": 63,
+   "otherVenues": 1,
+   "excess": 11461,
+   "ok": true,
+   "female": 0.893,
+   "ages": {
+    "10대 이하": 0.486,
+    "20대": 0.357,
+    "30대": 0.074,
+    "40대": 0.055,
+    "50대 이상": 0.028
+   },
+   "meanAge": 22.3,
+   "cars": 283,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-07-26",
+   "start": "18:00",
+   "title": "BOYNEXTDOOR TOUR ‘KNOCK ON Vol.1’ FINAL",
+   "dayType": "sat",
+   "baseDays": 1,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 253,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-07-27",
+   "start": "17:00",
+   "title": "BOYNEXTDOOR TOUR ‘KNOCK ON Vol.1’ FINAL",
+   "dayType": "sun",
+   "baseDays": 4,
+   "baseWindowDays": 63,
+   "otherVenues": 1,
+   "excess": 5700,
+   "ok": true,
+   "female": 0.962,
+   "ages": {
+    "10대 이하": 0.765,
+    "20대": 0.223,
+    "30대": 0.0,
+    "40대": 0.003,
+    "50대 이상": 0.009
+   },
+   "meanAge": 16.8,
+   "cars": 293,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-08-02",
+   "start": "17:00",
+   "title": "그룹사운드 잔나비 앵콜 콘서트 <모든소년소녀들 2125>",
+   "dayType": "sat",
+   "baseDays": 1,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2025-08-03",
+   "start": "17:00",
+   "title": "그룹사운드 잔나비 앵콜 콘서트 <모든소년소녀들 2125>",
+   "dayType": "sun",
+   "baseDays": 4,
+   "baseWindowDays": 63,
+   "otherVenues": 2,
+   "excess": 2909,
+   "ok": false,
+   "why": "늘어난 사람이 3,000명 미만"
+  },
+  {
+   "date": "2025-08-08",
+   "start": "19:00",
+   "title": "THE BOYZ〈THE BLAZE〉WORLD TOUR in SEOUL",
+   "dayType": "fri",
+   "baseDays": 3,
+   "baseWindowDays": 35,
+   "otherVenues": 0,
+   "excess": 4768,
+   "ok": true,
+   "female": 0.916,
+   "ages": {
+    "10대 이하": 0.196,
+    "20대": 0.535,
+    "30대": 0.19,
+    "40대": 0.048,
+    "50대 이상": 0.031
+   },
+   "meanAge": 27.0
+  },
+  {
+   "date": "2025-08-09",
+   "start": "17:00",
+   "title": "THE BOYZ〈THE BLAZE〉WORLD TOUR in SEOUL",
+   "dayType": "sat",
+   "baseDays": 2,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2025-08-10",
+   "start": "16:00",
+   "title": "THE BOYZ〈THE BLAZE〉WORLD TOUR in SEOUL",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 63,
+   "otherVenues": 2,
+   "excess": 10467,
+   "ok": true,
+   "female": 0.929,
+   "ages": {
+    "10대 이하": 0.242,
+    "20대": 0.423,
+    "30대": 0.187,
+    "40대": 0.091,
+    "50대 이상": 0.057
+   },
+   "meanAge": 28.0
+  },
+  {
+   "date": "2025-08-15",
+   "start": "20:00",
+   "title": "2025 PLAVE Asia Tour ［DASH: Quantum Leap］ in Seoul",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 63,
+   "otherVenues": 0,
+   "excess": 7160,
+   "ok": true,
+   "female": 0.993,
+   "ages": {
+    "10대 이하": 0.055,
+    "20대": 0.505,
+    "30대": 0.397,
+    "40대": 0.04,
+    "50대 이상": 0.004
+   },
+   "meanAge": 29.6
+  },
+  {
+   "date": "2025-08-16",
+   "start": "18:00",
+   "title": "2025 PLAVE Asia Tour ［DASH: Quantum Leap］ in Seoul",
+   "dayType": "sat",
+   "baseDays": 2,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2025-08-17",
+   "start": "17:00",
+   "title": "2025 PLAVE Asia Tour ［DASH: Quantum Leap］ in Seoul",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 63,
+   "otherVenues": 2,
+   "excess": 13361,
+   "ok": true,
+   "female": 0.904,
+   "ages": {
+    "10대 이하": 0.084,
+    "20대": 0.453,
+    "30대": 0.322,
+    "40대": 0.092,
+    "50대 이상": 0.049
+   },
+   "meanAge": 30.9
+  },
+  {
+   "date": "2025-08-22",
+   "start": "20:00",
+   "title": "SUPER JUNIOR 20th Anniversary TOUR 〈SUPER SHOW 10〉 in SEOUL",
+   "dayType": "fri",
+   "baseDays": 4,
+   "baseWindowDays": 35,
+   "otherVenues": 0,
+   "excess": 1393,
+   "ok": false,
+   "why": "늘어난 사람이 3,000명 미만"
+  },
+  {
+   "date": "2025-08-23",
+   "start": "18:00",
+   "title": "SUPER JUNIOR 20th Anniversary TOUR 〈SUPER SHOW 10〉 in SEOUL",
+   "dayType": "sat",
+   "baseDays": 2,
+   "baseWindowDays": 140,
+   "otherVenues": 0,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2025-08-24",
+   "start": "17:00",
+   "title": "SUPER JUNIOR 20th Anniversary TOUR 〈SUPER SHOW 10〉 in SEOUL",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 63,
+   "otherVenues": 0,
+   "excess": 3724,
+   "ok": true,
+   "female": 0.784,
+   "ages": {
+    "10대 이하": 0.102,
+    "20대": 0.313,
+    "30대": 0.381,
+    "40대": 0.111,
+    "50대 이상": 0.094
+   },
+   "meanAge": 33.1
+  },
+  {
+   "date": "2025-08-29",
+   "start": "20:00",
+   "title": "2025 aespa LIVE TOUR - SYNK : aeXIS LINE -",
+   "dayType": "fri",
+   "baseDays": 4,
+   "baseWindowDays": 35,
+   "otherVenues": 0,
+   "excess": 5513,
+   "ok": true,
+   "female": 0.681,
+   "ages": {
+    "10대 이하": 0.26,
+    "20대": 0.443,
+    "30대": 0.18,
+    "40대": 0.087,
+    "50대 이상": 0.029
+   },
+   "meanAge": 26.2
+  },
+  {
+   "date": "2025-08-30",
+   "start": "18:00",
+   "title": "2025 aespa LIVE TOUR - SYNK : aeXIS LINE -",
+   "dayType": "sat",
+   "baseDays": 2,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2025-08-31",
+   "start": "17:00",
+   "title": "2025 aespa LIVE TOUR - SYNK : aeXIS LINE -",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 63,
+   "otherVenues": 1,
+   "excess": 9193,
+   "ok": true,
+   "female": 0.648,
+   "ages": {
+    "10대 이하": 0.286,
+    "20대": 0.324,
+    "30대": 0.184,
+    "40대": 0.122,
+    "50대 이상": 0.084
+   },
+   "meanAge": 28.3
+  },
+  {
+   "date": "2025-09-06",
+   "start": "19:00",
+   "title": "크리스토퍼 내한공연 CHRISTOPHER LIVE IN SEOUL 2025",
+   "dayType": "sat",
+   "baseDays": 2,
+   "baseWindowDays": 140,
+   "otherVenues": 0,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2025-09-13",
+   "start": "17:00",
+   "title": "2025 IU FAN MEET-UP ［Bye, Summer］",
+   "dayType": "sat",
+   "baseDays": 2,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2025-09-14",
+   "start": "16:00",
+   "title": "2025 IU FAN MEET-UP ［Bye, Summer］",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 14847,
+   "ok": true,
+   "female": 0.599,
+   "ages": {
+    "10대 이하": 0.112,
+    "20대": 0.457,
+    "30대": 0.281,
+    "40대": 0.1,
+    "50대 이상": 0.05
+   },
+   "meanAge": 30.2
+  },
+  {
+   "date": "2025-10-03",
+   "start": "19:30",
+   "title": "2025 ZEROBASEONE WORLD TOUR ［HERE ＆ NOW］ IN SEOUL",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 35,
+   "otherVenues": 2,
+   "excess": 6146,
+   "ok": true,
+   "female": 0.86,
+   "ages": {
+    "10대 이하": 0.334,
+    "20대": 0.358,
+    "30대": 0.18,
+    "40대": 0.081,
+    "50대 이상": 0.047
+   },
+   "meanAge": 25.7
+  },
+  {
+   "date": "2025-10-04",
+   "start": "18:00",
+   "title": "2025 ZEROBASEONE WORLD TOUR ［HERE ＆ NOW］ IN SEOUL",
+   "dayType": "sat",
+   "baseDays": 2,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 301,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-10-05",
+   "start": "17:00",
+   "title": "2025 ZEROBASEONE WORLD TOUR ［HERE ＆ NOW］ IN SEOUL",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 7369,
+   "ok": true,
+   "female": 0.78,
+   "ages": {
+    "10대 이하": 0.465,
+    "20대": 0.307,
+    "30대": 0.16,
+    "40대": 0.052,
+    "50대 이상": 0.017
+   },
+   "meanAge": 22.8,
+   "cars": 414,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-10-10",
+   "start": "19:00",
+   "title": "2025-26 TREASURE TOUR［PULSE ON］IN SEOUL",
+   "dayType": "fri",
+   "baseDays": 3,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 7282,
+   "ok": true,
+   "female": 0.898,
+   "ages": {
+    "10대 이하": 0.26,
+    "20대": 0.61,
+    "30대": 0.082,
+    "40대": 0.027,
+    "50대 이상": 0.02
+   },
+   "meanAge": 24.0,
+   "cars": 337,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-10-11",
+   "start": "18:00",
+   "title": "2025-26 TREASURE TOUR［PULSE ON］IN SEOUL",
+   "dayType": "sat",
+   "baseDays": 2,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2025-10-12",
+   "start": "17:00",
+   "title": "2025-26 TREASURE TOUR［PULSE ON］IN SEOUL",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 35,
+   "otherVenues": 2,
+   "excess": 12708,
+   "ok": true,
+   "female": 0.795,
+   "ages": {
+    "10대 이하": 0.242,
+    "20대": 0.416,
+    "30대": 0.093,
+    "40대": 0.078,
+    "50대 이상": 0.171
+   },
+   "meanAge": 31.6
+  },
+  {
+   "date": "2025-10-24",
+   "start": "19:00",
+   "title": "ENHYPEN WORLD TOUR ‘WALK THE LINE’ : FINAL",
+   "dayType": "fri",
+   "baseDays": 4,
+   "baseWindowDays": 63,
+   "otherVenues": 0,
+   "excess": 5758,
+   "ok": true,
+   "female": 0.83,
+   "ages": {
+    "10대 이하": 0.308,
+    "20대": 0.381,
+    "30대": 0.117,
+    "40대": 0.106,
+    "50대 이상": 0.088
+   },
+   "meanAge": 27.6
+  },
+  {
+   "date": "2025-10-25",
+   "start": "18:00",
+   "title": "ENHYPEN WORLD TOUR ‘WALK THE LINE’ : FINAL",
+   "dayType": "sat",
+   "baseDays": 2,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2025-10-26",
+   "start": "17:00",
+   "title": "ENHYPEN WORLD TOUR ‘WALK THE LINE’ : FINAL",
+   "dayType": "sun",
+   "baseDays": 5,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 8080,
+   "ok": true,
+   "female": 0.747,
+   "ages": {
+    "10대 이하": 0.281,
+    "20대": 0.335,
+    "30대": 0.134,
+    "40대": 0.131,
+    "50대 이상": 0.12
+   },
+   "meanAge": 30.0,
+   "cars": 208,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-10-31",
+   "start": "19:30",
+   "title": "IVE WORLD TOUR [SHOW WHAT I AM]",
+   "dayType": "fri",
+   "baseDays": 4,
+   "baseWindowDays": 63,
+   "otherVenues": 0,
+   "excess": 10227,
+   "ok": true,
+   "female": 0.74,
+   "ages": {
+    "10대 이하": 0.452,
+    "20대": 0.158,
+    "30대": 0.126,
+    "40대": 0.202,
+    "50대 이상": 0.062
+   },
+   "meanAge": 25.3
+  },
+  {
+   "date": "2025-11-01",
+   "start": "18:00",
+   "title": "IVE WORLD TOUR [SHOW WHAT I AM]",
+   "dayType": "sat",
+   "baseDays": 2,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 673,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-11-02",
+   "start": "16:00",
+   "title": "IVE WORLD TOUR [SHOW WHAT I AM]",
+   "dayType": "sun",
+   "baseDays": 4,
+   "baseWindowDays": 35,
+   "otherVenues": 1,
+   "excess": 17405,
+   "ok": true,
+   "female": 0.681,
+   "ages": {
+    "10대 이하": 0.396,
+    "20대": 0.133,
+    "30대": 0.132,
+    "40대": 0.234,
+    "50대 이상": 0.105
+   },
+   "meanAge": 28.5,
+   "cars": 887,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-11-08",
+   "start": "17:00",
+   "title": "2025 김동률 콘서트 ‘산책’",
+   "dayType": "sat",
+   "baseDays": 2,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2025-11-09",
+   "start": "17:00",
+   "title": "2025 김동률 콘서트 ‘산책’",
+   "dayType": "sun",
+   "baseDays": 4,
+   "baseWindowDays": 35,
+   "otherVenues": 2,
+   "excess": 21279,
+   "ok": true,
+   "female": 0.73,
+   "ages": {
+    "10대 이하": 0.152,
+    "20대": 0.235,
+    "30대": 0.243,
+    "40대": 0.253,
+    "50대 이상": 0.117
+   },
+   "meanAge": 34.8
+  },
+  {
+   "date": "2025-11-10",
+   "start": "19:30",
+   "title": "2025 김동률 콘서트 ‘산책’",
+   "dayType": "wk",
+   "baseDays": 35,
+   "baseWindowDays": 35,
+   "otherVenues": 0,
+   "excess": 10722,
+   "ok": true,
+   "female": 0.717,
+   "ages": {
+    "10대 이하": 0.019,
+    "20대": 0.114,
+    "30대": 0.319,
+    "40대": 0.394,
+    "50대 이상": 0.154
+   },
+   "meanAge": 40.8
+  },
+  {
+   "date": "2025-11-13",
+   "start": "19:30",
+   "title": "2025 김동률 콘서트 ‘산책’",
+   "dayType": "wk",
+   "baseDays": 38,
+   "baseWindowDays": 35,
+   "otherVenues": 0,
+   "excess": 10699,
+   "ok": true,
+   "female": 0.698,
+   "ages": {
+    "10대 이하": 0.021,
+    "20대": 0.139,
+    "30대": 0.333,
+    "40대": 0.382,
+    "50대 이상": 0.124
+   },
+   "meanAge": 39.6
+  },
+  {
+   "date": "2025-11-14",
+   "start": "19:30",
+   "title": "2025 김동률 콘서트 ‘산책’",
+   "dayType": "fri",
+   "baseDays": 3,
+   "baseWindowDays": 63,
+   "otherVenues": 0,
+   "excess": 10520,
+   "ok": true,
+   "female": 0.712,
+   "ages": {
+    "10대 이하": 0.034,
+    "20대": 0.12,
+    "30대": 0.337,
+    "40대": 0.401,
+    "50대 이상": 0.108
+   },
+   "meanAge": 39.4
+  },
+  {
+   "date": "2025-11-15",
+   "start": "17:00",
+   "title": "2025 김동률 콘서트 ‘산책’",
+   "dayType": "sat",
+   "baseDays": 2,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2025-11-16",
+   "start": "17:00",
+   "title": "2025 김동률 콘서트 ‘산책’",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 63,
+   "otherVenues": 0,
+   "excess": 16069,
+   "ok": true,
+   "female": 0.679,
+   "ages": {
+    "10대 이하": 0.08,
+    "20대": 0.16,
+    "30대": 0.266,
+    "40대": 0.317,
+    "50대 이상": 0.176
+   },
+   "meanAge": 39.3
+  },
+  {
+   "date": "2025-11-21",
+   "start": "18:00",
+   "title": "임영웅 IM HERO TOUR 2025 - 서울",
+   "dayType": "fri",
+   "baseDays": 4,
+   "baseWindowDays": 91,
+   "otherVenues": 0,
+   "excess": 10669,
+   "ok": true,
+   "female": 0.882,
+   "ages": {
+    "10대 이하": 0.017,
+    "20대": 0.034,
+    "30대": 0.054,
+    "40대": 0.084,
+    "50대 이상": 0.81
+   },
+   "meanAge": 59.3
+  },
+  {
+   "date": "2025-11-22",
+   "start": "17:00",
+   "title": "임영웅 IM HERO TOUR 2025 - 서울",
+   "dayType": "sat",
+   "baseDays": 2,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2025-11-23",
+   "start": "17:00",
+   "title": "임영웅 IM HERO TOUR 2025 - 서울",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 63,
+   "otherVenues": 1,
+   "excess": 13758,
+   "ok": true,
+   "female": 0.821,
+   "ages": {
+    "10대 이하": 0.029,
+    "20대": 0.041,
+    "30대": 0.083,
+    "40대": 0.108,
+    "50대 이상": 0.739
+   },
+   "meanAge": 56.2
+  },
+  {
+   "date": "2025-11-28",
+   "start": "18:00",
+   "title": "임영웅 IM HERO TOUR 2025 - 서울",
+   "dayType": "fri",
+   "baseDays": 4,
+   "baseWindowDays": 91,
+   "otherVenues": 1,
+   "excess": 13043,
+   "ok": true,
+   "female": 0.904,
+   "ages": {
+    "10대 이하": 0.049,
+    "20대": 0.137,
+    "30대": 0.082,
+    "40대": 0.056,
+    "50대 이상": 0.676
+   },
+   "meanAge": 53.9
+  },
+  {
+   "date": "2025-11-29",
+   "start": "17:00",
+   "title": "임영웅 IM HERO TOUR 2025 - 서울",
+   "dayType": "sat",
+   "baseDays": 2,
+   "baseWindowDays": 140,
+   "otherVenues": 1,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2025-11-30",
+   "start": "17:00",
+   "title": "임영웅 IM HERO TOUR 2025 - 서울",
+   "dayType": "sun",
+   "baseDays": 5,
+   "baseWindowDays": 63,
+   "otherVenues": 1,
+   "excess": 14112,
+   "ok": true,
+   "female": 0.813,
+   "ages": {
+    "10대 이하": 0.037,
+    "20대": 0.055,
+    "30대": 0.101,
+    "40대": 0.121,
+    "50대 이상": 0.686
+   },
+   "meanAge": 54.4
+  },
+  {
+   "date": "2025-12-05",
+   "start": "20:00",
+   "title": "2025 god CONCERT < ICONIC BOX > - 서울",
+   "dayType": "fri",
+   "baseDays": 4,
+   "baseWindowDays": 91,
+   "otherVenues": 1,
+   "excess": 16594,
+   "ok": true,
+   "female": 0.849,
+   "ages": {
+    "10대 이하": 0.016,
+    "20대": 0.12,
+    "30대": 0.686,
+    "40대": 0.127,
+    "50대 이상": 0.051
+   },
+   "meanAge": 36.4,
+   "cars": 615,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-12-06",
+   "start": "18:00",
+   "title": "2025 god CONCERT < ICONIC BOX > - 서울",
+   "dayType": "sat",
+   "baseDays": 2,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 1468,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-12-07",
+   "start": "17:00",
+   "title": "2025 god CONCERT < ICONIC BOX > - 서울",
+   "dayType": "sun",
+   "baseDays": 5,
+   "baseWindowDays": 63,
+   "otherVenues": 2,
+   "excess": 20444,
+   "ok": true,
+   "female": 0.811,
+   "ages": {
+    "10대 이하": 0.027,
+    "20대": 0.114,
+    "30대": 0.609,
+    "40대": 0.128,
+    "50대 이상": 0.122
+   },
+   "meanAge": 38.4,
+   "cars": 1272,
+   "carsSrc": "exit_profile"
+  },
+  {
+   "date": "2025-12-13",
+   "start": "18:00",
+   "title": "2025 이문세 ‘The Best’",
+   "dayType": "sat",
+   "baseDays": 2,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2025-12-14",
+   "start": "17:00",
+   "title": "2025 이문세 ‘The Best’",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 91,
+   "otherVenues": 2,
+   "excess": 14924,
+   "ok": true,
+   "female": 0.701,
+   "ages": {
+    "10대 이하": 0.056,
+    "20대": 0.146,
+    "30대": 0.11,
+    "40대": 0.17,
+    "50대 이상": 0.518
+   },
+   "meanAge": 46.2
+  },
+  {
+   "date": "2025-12-19",
+   "start": "19:00",
+   "title": "2025 DAY6 Special Concert ‘The Present’",
+   "dayType": "fri",
+   "baseDays": 5,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "excess": 16710,
+   "ok": true,
+   "female": 0.944,
+   "ages": {
+    "10대 이하": 0.123,
+    "20대": 0.47,
+    "30대": 0.3,
+    "40대": 0.074,
+    "50대 이상": 0.033
+   },
+   "meanAge": 29.6
+  },
+  {
+   "date": "2025-12-20",
+   "start": "18:00",
+   "title": "2025 DAY6 Special Concert ‘The Present’",
+   "dayType": "sat",
+   "baseDays": 2,
+   "baseWindowDays": 140,
+   "otherVenues": 2,
+   "ok": false,
+   "why": "비교할 평소 같은 요일이 모자람"
+  },
+  {
+   "date": "2025-12-21",
+   "start": "17:00",
+   "title": "2025 DAY6 Special Concert ‘The Present’",
+   "dayType": "sun",
+   "baseDays": 6,
+   "baseWindowDays": 91,
+   "otherVenues": 2,
+   "excess": 18720,
+   "ok": true,
+   "female": 0.921,
+   "ages": {
+    "10대 이하": 0.138,
+    "20대": 0.477,
+    "30대": 0.262,
+    "40대": 0.078,
+    "50대 이상": 0.046
+   },
+   "meanAge": 29.5
+  }
+ ]
+}
