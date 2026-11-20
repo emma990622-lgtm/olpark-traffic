@@ -37,9 +37,7 @@ _spec.loader.exec_module(ep)             # 출차 절반·90% 시각을 scripts/
 SLOT_START, SLOT_MIN, N_SLOTS = "12:00", 15, 52          # 12:00 ~ 다음날 00:45 시작 구간
 
 
-def day_kind(day):
-    t = pd.Timestamp(day)
-    return "weekend" if day in ic.HOLIDAYS or t.dayofweek >= 5 else "weekday"
+day_kind = ic.day_kind
 
 
 def curve(x, day, col="out_time"):
@@ -50,7 +48,7 @@ def curve(x, day, col="out_time"):
     return np.bincount(i[m], weights=x.w.values[m], minlength=N_SLOTS)[:N_SLOTS]
 
 
-def timing(dall, day, start):
+def timing(dall, day, start, aud):
     """공연 하나의 관객 차 출차 절반·90%(09 방식)와 입차 절반·90%(시작 기준 분). 못 재면 None"""
     s = pd.Timestamp(f"{day} {start}")
     x = dall[(dall.oday == day) | (dall.iday == day)]
@@ -59,10 +57,9 @@ def timing(dall, day, start):
         prof = ep.analyze(x[x.oday == day], day, start)
         if prof:
             r["exit50"], r["exit90"] = prof["surgeMin"] + prof["t50"], prof["surgeMin"] + prof["t90"]
-    if ic.ordered_ok(x, s, -ic.ENTRY_FROM, ic.ENTRY_TO)[0]:
-        e = ic.entry_timing(x, s)
-        if e:
-            r["in50"], r["in90"] = e["in50"], e["in90"]
+    e = aud.entry(day, start)                 # 평소에도 있는 차를 뺀 관객 차 기준
+    if e:
+        r["in50"], r["in90"] = e["in50"], e["in90"]
     return r
 
 
@@ -80,6 +77,7 @@ def main():
     d25, cov = ic.load_2025()
     use25 = ic.enough_2025(cov)
     d = pd.concat([d24, d25] if use25 else [d24], ignore_index=True)
+    aud = ic.Audience(d)
     dall = d[["in_time", "out_time", "gate", "src", "ord"]].copy()     # 절반·90% 시각용(모든 출입구, 09와 같게)
     dall["iday"] = dall.in_time.dt.strftime("%Y-%m-%d")
     dall["oday"] = dall.out_time.dt.strftime("%Y-%m-%d")
@@ -122,7 +120,7 @@ def main():
                               "peak15": int(round(c[k])), "peakTime": (s + pd.Timedelta(minutes=SLOT_MIN * k)).strftime("%H:%M"),
                               "exits": [int(round(v)) for v in c],
                               "entries": [int(round(v)) for v in curve(xi.assign(w=wi), day, "in_time")] if oki else None,
-                              **timing(dall, day, start)})
+                              **timing(dall, day, start, aud)})
         elif day not in big:
             base[day_kind(day)].append(c)
             base_src[day_kind(day)][day[:4]] += 1
@@ -161,7 +159,9 @@ def main():
                   "비교 기준은 같은 요일 유형(평일 / 주말·공휴일)의 큰 공연(KSPO DOME·핸드볼경기장·올림픽홀) 없는 날 중앙값",
         "timingMethod": ("실제 = 시작 시각이 같은 지난 공연에서 관객 차 절반·90%가 들어온(입차)·빠진(출차) 시각의 중앙값. "
                          "예상 = 공연 시작 시각만 보고 미리 예측한 값(전체 지난 공연의 시작 기준 시간 중앙값, 띠는 가운데 50%). "
-                         "출차 관객 차 = 시작 3시간 전~20분 뒤 입차, 입차 관객 차 = 시작 6시간 전~30분 뒤 입차(둘 다 2시간 넘게 머물고 시작 1.5~7시간 사이 출차, 모든 출입구)"),
+                         "출차 관객 차 = 시작 3시간 전~20분 뒤 입차, 입차 관객 차 = 시작 6시간 전~30분 뒤 입차(둘 다 2시간 넘게 머물고 시작 1.5~7시간 사이 출차, 모든 출입구). "
+                         "입차 시각은 같은 기준에 걸리는 평소 방문 차(큰 공연 없는 같은 요일 유형 날의 중앙값)를 빼고 잰 값. "
+                         "곡선(입차·출차)은 관객 차만이 아니라 공원 주차장 전체 차"),
         "predict": predict,
         "groups": groups, "baseline": baseline, "skipped2025": skipped,
     }

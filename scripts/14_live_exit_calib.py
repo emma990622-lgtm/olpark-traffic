@@ -83,6 +83,9 @@ def main():
     d = pd.concat([ep.load_2025(), ep.load_2024()], ignore_index=True)
     d["day"] = d.in_time.dt.strftime("%Y-%m-%d")
     d["oday"] = d.out_time.dt.strftime("%Y-%m-%d")
+    # 입차 시각은 평소에도 있는 차를 빼고 잰다(inout_common.Audience). 2025 대수 보정을 못 믿는 곳(클라우드 일부 사본)에서는 2024만
+    _, cov = ep.ic.load_2025()
+    aud = ep.ic.Audience(d if ep.ic.enough_2025(cov) else d[d.src == "2024"])
     shows = []
     for _, row in ev[ev["공연장"] == "KSPO DOME"].iterrows():
         day, ts = row["날짜"], str(row["시작시각들"]).split(";")
@@ -101,7 +104,7 @@ def main():
         A = int(P[t >= 0].max())                # 시작 뒤 최고 대수(참고용)
         if A < 100:
             continue
-        ent = ep.ic.entry_timing(x, s) if ep.ic.ordered_ok(x, s, -ep.ic.ENTRY_FROM, ep.ic.ENTRY_TO)[0] else None
+        ent = aud.entry(day, ts[0])
         shows.append({"date": day, "start": ts[0], "src": prof["src"], "title": row["공연명"], "A": A,
                       "surge": prof["surgeMin"], "t50": prof["t50"], "t90": prof["t90"], "t": t, "P": P,
                       "in50": ent and ent["in50"], "in90": ent and ent["in90"]})
@@ -176,7 +179,7 @@ def main():
                    f"시작 {EARLIEST}분 뒤부터, 최근 {w}분 동안 M의 {int(r * 100)}% 이상 줄고 다음 값도 계속 줄면 감지. "
                    "감지되면 '관객 차 절반·90%가 빠지는 시각' = 감지 시각 + 과거 공연에서 감지 뒤 걸린 시간(중앙값)."),
         "entryMethod": (f"관객 차 입차: 공연 시작 {-ep.ic.ENTRY_FROM // 60}시간 전~{ep.ic.ENTRY_TO}분 뒤에 들어와 2시간 넘게 머물고 시작 1.5~7시간 사이에 나간 차. "
-                        "절반·90%가 들어온 시각을 과거 공연 중앙값으로 미리 예측(공연 시작 시각만 봄)."),
+                        "같은 기준에 걸리는 평소 방문 차(큰 공연 없는 같은 요일 유형 날의 중앙값)를 빼고, 절반·90%가 들어온 시각을 과거 공연 중앙값으로 미리 예측(공연 시작 시각만 봄)."),
         "entry": entry, "entryBacktest": entry_bt,
         "series": {"fromMin": SER_FROM, "stepMin": STEP},
         "rule": {"ratio": r, "windowMin": w, "earliestMin": EARLIEST, "stepMin": STEP, "minPeak": 100, "confirmNext": True},

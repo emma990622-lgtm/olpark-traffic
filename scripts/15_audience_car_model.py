@@ -18,6 +18,8 @@
      안 같은 요일의 중앙값; 모자라면 9·13·20주까지 넓힘). 늘어난 사람을 성별·연령대로 나눠 '관객 구성'으로 본다.
      늘어난 사람이 3,000명 미만이거나 비교일이 3일 미만이면(대부분 토요일 — 평소 토요일에도 공연이 있어서) 뺀다.
   2) 관객 차: scripts/09와 같은 기준(시작 3시간 전~20분 뒤 입차, 2시간 넘게 머물고 시작 1.5~7시간 사이 출차한 차).
+     이 기준에는 공연과 상관없는 평소 방문 차도 걸려서(2024년 7월 평일 하루 약 140~170대), 큰 공연 없는 같은 요일 유형 날의
+     중앙값을 빼고 남은 대수를 쓴다(inout_common.Audience). 남은 차가 100대 미만인 공연은 뺀다.
   3) 회귀식: ln(관객 차) = b0 + b1·(평균 나이/10) + b2·(여성 비율) + b3·(금요일 여부)
      - 공연마다 관객 수를 알 수 없어(연계 데이터의 관람객수 칸이 비어 있음) '1명이 차로 올 확률'은 직접 못 구한다.
        대신 '같은 조건에서 관객 차가 몇 % 늘고 주는지'로 해석한다.
@@ -181,28 +183,25 @@ def cars_by_show():
     if raw.exists() and (ic.RAW / "parking_inout_202407.csv").exists():
         d, cov, got = ic.load_all()
         if ic.enough_2025(cov):                            # 못 받은 번호 덩어리가 없으면 원본에서 직접 센다
-            d["day"] = d.in_time.dt.strftime("%Y-%m-%d")
-            by = dict(tuple(d.groupby("day")))
+            aud = ic.Audience(d)                           # 평소에도 있는 차(큰 공연 없는 같은 요일 유형 날 중앙값)를 뺀다
             out, skipped = {}, []
             for day, start, _ in ic.kspo_shows("2024-07"):
-                if day not in by:
+                if day not in aud.by:
                     continue
-                s = pd.Timestamp(f"{day} {start}")
-                wt, ok, _ = ic.show_weights(by[day], s, before=180, after=20)   # 관객 차 입차 시간대
-                if not ok:
+                c = aud.cars(day, start)
+                if c is None:
                     skipped.append(day)
                     continue
-                w, n = ic.audience_cars(by[day].assign(w=wt), day, start)
-                if n >= 100 and w == w:
-                    out[day] = (round(w), "raw-weighted" if day >= "2025" else "raw")
+                if c["net"] >= 100:
+                    out[day] = (c["net"], "raw-net")
             if skipped:
                 print(f"※ 관객 차를 못 센 2025 공연 {len(skipped)}회(잘린 달·빈 시간대): {', '.join(skipped)}")
-            return out, f"입출차 원본에서 직접 셈. {ic.note_2025(cov)}"
+            return out, f"입출차 원본에서 직접 셈(같은 기준에 걸리는 평소 방문 차는 뺌). {ic.note_2025(cov)}"
     # 원본이 없는 곳(클라우드 등): 전에 원본으로 센 값이 있으면 그대로 쓴다
     if OUT.exists():
         prev = json.loads(OUT.read_text(encoding="utf-8"))
         old = {r["date"]: (r["cars"], r["carsSrc"]) for r in prev.get("shows", [])
-               if r.get("cars") and r.get("carsSrc") in ("raw", "raw-weighted")}
+               if r.get("cars") and r.get("carsSrc") in ("raw-net", "raw", "raw-weighted")}
         if old:
             return old, prev["sources"]["cars"]
     ex = json.loads(EXIT.read_text(encoding="utf-8"))
@@ -301,7 +300,7 @@ def main():
         "method": {
             "composition": (f"공연 날 공연 시간(시작부터 {SHOW_HOURS}시간대) 생활인구에서 평소 같은 요일(공원 큰 공연이 없는 날, 앞뒤 5주 안팎) "
                             "중앙값을 뺀 '늘어난 사람'을 성별·연령대로 나눔"),
-            "cars": "시작 3시간 전~20분 뒤에 들어와 2시간 넘게 머문 공원 주차장 차(관객 차로 봄)",
+            "cars": "시작 3시간 전~20분 뒤에 들어와 2시간 넘게 머문 공원 주차장 차에서, 큰 공연 없는 같은 요일 유형 날에도 같은 기준에 걸리는 차(평소 방문 차)를 뺀 값",
             "model": "ln(관객 차) = b0 + b1·(평균 나이 ÷ 10) + b2·(여성 비율) + b3·(금요일이면 1)",
             "ci": "같은 가수 공연끼리 묶어 다시 뽑는 부트스트랩 3,000번, 95% 구간",
             "excluded": "토요일 공연(평소 토요일에도 공연이 있어 비교할 날이 거의 없음), 늘어난 사람이 3,000명 미만인 날, 월~목 공연",

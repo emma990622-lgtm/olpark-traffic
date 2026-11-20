@@ -40,6 +40,7 @@ HOLIDAYS = set("""2024-06-06 2024-08-15 2024-09-16 2024-09-17 2024-09-18 2024-10
 2025-01-01 2025-01-27 2025-01-28 2025-01-29 2025-01-30 2025-03-03 2025-05-05 2025-05-06 2025-06-03 2025-06-06
 2025-08-15 2025-10-03 2025-10-06 2025-10-07 2025-10-08 2025-10-09 2025-12-25""".split())
 CAP_SPAN = 70000                           # 번호 폭이 이보다 작은 달 = 65,535줄로 잘린 달
+_CACHE = {}
 _ORD = {"N": None, "T": None}              # 시간순 덩어리 기록의 (번호, 입차 시각) — load_2025가 채운다
 
 
@@ -112,6 +113,8 @@ def load_2025(min_ratio=0.2):
     p = RAW / "kcisa_inout_2025.jsonl"
     if not p.exists():
         return pd.DataFrame(columns=COLS), {}
+    if _CACHE.get("k") == min_ratio:               # 큰 파일을 한 실행에서 두 번 읽지 않게
+        return _CACHE["df"].copy(), _CACHE["cov"]
     rows, seen = [], set()
     with open(p, encoding="utf-8") as f:
         for line in f:
@@ -161,6 +164,7 @@ def load_2025(min_ratio=0.2):
     o = df[df["ord"]]
     _ORD["N"] = o.num.values.astype(np.float64)
     _ORD["T"] = np.maximum.accumulate(o.in_time.values.astype("datetime64[s]").astype(np.int64)).astype(np.float64)
+    _CACHE.update(k=min_ratio, df=df[COLS].copy(), cov=cov)
     return df[COLS], cov
 
 
@@ -270,4 +274,94 @@ def entry_timing(x, s, lo=ENTRY_FROM, hi=ENTRY_TO):
     if len(a) < 150:
         return None
     return {"in50": int(round(float(np.percentile(a, 50)))), "in90": int(round(float(np.percentile(a, 90)))), "n": int(len(a))}
+
+
+def day_kind(day):
+    """평일 / 주말·공휴일"""
+    t = pd.Timestamp(day)
+    return "weekend" if day in HOLIDAYS or t.dayofweek >= 5 else "weekday"
+
+
+class Audience:
+    """관객 차에서 '평소에도 있는 차'를 뺀다.
+    관객 차 기준(공연 시작 몇 시간 전~직후 입차, 2시간 넘게 머물고 시작 1.5~7시간 사이 출차)에는 공연과 상관없는
+    공원 방문·직원·체육시설 이용 차도 걸린다. 2024년 7월 큰 공연 없는 평일 22일로 재 보면 같은 기준에 하루 약 140~170대,
+    공연날 관객 차로 센 값의 8~40%였다(공연이 작을수록 비중이 큼).
+    → 같은 자료(2024 / 2025)·같은 요일 유형(평일 / 주말·공휴일)의 큰 공연 없는 날에 같은 시계 시각 기준으로 센 값의 중앙값을
+      5분 단위로 빼고 남은 것(음수는 0)을 관객 차로 본다. 요일 유형의 기준일이 5일 미만이면 평일 기준일을 쓴다.
+    대수는 가중치 w(받은 비율 보정)를 쓰므로 w가 없는 날(잘린 8·9월, 빈 시간대가 있는 10~12월 날)은 계산하지 않는다.
+    d: load_2024()/load_2025()를 합친 표(in_time, out_time, src, w, ord)."""
+
+    STEP = 5
+
+    def __init__(self, d):
+        d = d[["in_time", "out_time", "src", "w", "ord"]].copy()
+        d["day"] = d.in_time.dt.strftime("%Y-%m-%d")
+        self.by = dict(tuple(d.groupby("day")))
+        big = big_event_days()
+        self.base = {}
+        for day, x in self.by.items():
+            if day in big or len(x) < 300:
+                continue
+            ordm = x["ord"].fillna(False).values.astype(bool)
+            if ordm.any():                              # 시간순 덩어리 날: 그날 06~24시 기록을 90% 넘게 받았을 때만
+                w, ok, _ = show_weights(x, pd.Timestamp(f"{day} 06:00"), before=0, after=18 * 60)
+                if not ok:
+                    continue
+                self.by[day] = x = x.assign(w=w)
+            elif x.w.isna().any():
+                continue
+            self.base.setdefault((x.src.iloc[0], day_kind(day)), []).append(day)
+        self._bg = {}
+
+    def _hist(self, x, w, s, lo, hi, col, edges):
+        rin = ((x.in_time - s).dt.total_seconds() / 60).values
+        rout = ((x.out_time - s).dt.total_seconds() / 60).values
+        m = (rin >= lo) & (rin <= hi) & (rout >= 90) & (rout <= 420) & (rout - rin >= 120)
+        return np.histogram((rin if col == "in" else rout)[m], bins=edges, weights=w[m])[0]
+
+    def background(self, src, kind, start, lo, hi, col, edges):
+        """큰 공연 없는 날 같은 기준으로 센 5분 단위 대수의 중앙값. 돌려주는 값: (배열, 기준일 수, 쓴 요일 유형)"""
+        days, used = self.base.get((src, kind), []), kind
+        if len(days) < 5:
+            days, used = self.base.get((src, "weekday"), []), "weekday"
+        if len(days) < 5:
+            return None, 0, None
+        key = (src, used, start, lo, hi, col)
+        if key not in self._bg:
+            hs = [self._hist(self.by[b], self.by[b].w.values, pd.Timestamp(f"{b} {start}"), lo, hi, col, edges) for b in days]
+            self._bg[key] = np.median(np.array(hs), axis=0)
+        return self._bg[key], len(days), used
+
+    def net(self, day, start, lo, hi, col):
+        """공연 하나: (평소 차를 뺀 5분 단위 대수, 구간 경계, 빼기 전 대수, 뺀 대수) 또는 None"""
+        if day not in self.by:
+            return None
+        x, s = self.by[day], pd.Timestamp(f"{day} {start}")
+        w, ok, _ = show_weights(x, s, before=-lo, after=hi)
+        if not ok:
+            return None
+        edges = np.arange(lo, hi + self.STEP, self.STEP) if col == "in" else np.arange(90, 420 + self.STEP, self.STEP)
+        h = self._hist(x, w, s, lo, hi, col, edges)
+        bg, n, _ = self.background(x.src.iloc[0], day_kind(day), start, lo, hi, col, edges)
+        if bg is None:
+            return None
+        return np.clip(h - bg, 0, None), edges, float(h.sum()), float(bg.sum())
+
+    def entry(self, day, start):
+        """평소 차를 뺀 관객 차 절반·90%가 들어온 때(시작 기준 분). 남은 관객 차가 150대 미만이면 None"""
+        r = self.net(day, start, ENTRY_FROM, ENTRY_TO, "in")
+        if r is None or r[0].sum() < 150:
+            return None
+        h, edges, raw, bg = r
+        c = np.cumsum(h)
+        at = lambda p: int(round(float(np.interp(p * c[-1], c, edges[1:]))))
+        return {"in50": at(0.5), "in90": at(0.9), "n": int(round(c[-1])), "raw": int(round(raw)), "bg": int(round(bg))}
+
+    def cars(self, day, start):
+        """평소 차를 뺀 관객 차 대수(출차 분석 기준: 시작 3시간 전~20분 뒤 입차). {'net', 'raw', 'bg'} 또는 None"""
+        r = self.net(day, start, -180, 20, "in")
+        if r is None:
+            return None
+        return {"net": int(round(r[0].sum())), "raw": int(round(r[2])), "bg": int(round(r[3]))}
 

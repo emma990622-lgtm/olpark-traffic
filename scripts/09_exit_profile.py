@@ -44,7 +44,7 @@ PAT = re.compile(r"입구:([^,]*), 입차시간:([^,]*), 출구:([^,]*), 출차�
 def load_2025():
     """2025 입출차 (겹친 줄은 번호로 하나만). 읽는 방법은 inout_common.load_2025와 같다(시간순 덩어리 정보도 함께)."""
     d, _ = ic.load_2025()
-    return d[["in_time", "out_time", "gate", "src", "ord"]]
+    return d[["in_time", "out_time", "gate", "src", "ord", "w"]]
 
 
 def load_2024():
@@ -57,7 +57,9 @@ def load_2024():
     o["out_time"] = pd.to_datetime(o.out_time, errors="coerce")
     o["gate"] = None
     o["src"] = "2024"
-    return o.dropna(subset=["in_time", "out_time"])[["in_time", "out_time", "gate", "src"]]
+    o["ord"] = False
+    o["w"] = 1.0
+    return o.dropna(subset=["in_time", "out_time"])[["in_time", "out_time", "gate", "src", "ord", "w"]]
 
 
 def analyze(x, day, start):
