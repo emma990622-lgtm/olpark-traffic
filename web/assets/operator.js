@@ -255,7 +255,7 @@
     }
     const G = gk ? C.groups[gk] : null;
     const myStart = big && big.times && big.times.length ? toMin(big.times[0]) : null;
-    const W = 560, H = 300, L = 40, R = 12, T = 16, B = 30;
+    const W = 760, H = 280, L = 44, R = 12, T = 18, B = 30;      // 실시간 입출차 감지 그래프와 같은 폭
     const maxY = Math.max(10, ...(base ? base.med : [0]), ...(G ? G.p75 : [0]), ...(G && G.inMed ? G.inMed : [0])) * 1.12;
     const step = maxY > 600 ? 200 : 100;
     const X = (i) => L + (i / (n - 1)) * (W - L - R);
@@ -268,7 +268,7 @@
       g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/>
             <text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end" fill="var(--ink-2)">${v}</text>`;
     }
-    for (let i = 0; i < n; i += 8) {
+    for (let i = 0; i < n; i += 4) {
       g += `<text x="${X(i)}" y="${H - 10}" text-anchor="middle" fill="var(--ink-2)">${toHHMM(s0 + i * 15)}</text>`;
     }
     // 예상 띠·점선(이날 공연 시작 기준)
