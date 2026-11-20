@@ -92,6 +92,8 @@ def main():
         if len(x) < 800:
             continue
         s = pd.Timestamp(f"{day} {ts[0]}")
+        if not ep.ic.ordered_ok(x, s, 180, 20)[0]:   # 10~12월: 관객 차 입차 시간대 기록에 빈 곳이 있는 공연은 뺀다(09와 같게)
+            continue
         prof = ep.analyze(d[d.oday == day], day, ts[0])   # 기존 방식의 '몰리기 시작'(정답 역할)
         if not prof:
             continue

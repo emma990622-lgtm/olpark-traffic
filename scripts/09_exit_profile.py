@@ -13,7 +13,9 @@
      시작 1.5시간 ~ 7시간 사이에 나간 차
   2) 15분 출차 대수가 가장 많은 때를 찾고, 그 절반 이상으로 늘어난 첫 시각을 '출차가 몰리기 시작한 때'(≈ 공연 종료)로 본다
   3) 그때부터 관객 차의 50%, 90%가 빠져나가기까지 걸린 분을 잰다
-  2025 자료는 아직 일부만 받아서(날마다 일부 기록) 대수는 쓰지 않고 비율과 시간만 쓴다.
+  2025 자료는 일부만 받아서(날마다 일부 기록) 대수는 쓰지 않고 비율과 시간만 쓴다.
+  10~12월 기록은 입차 시각 순서로 번호가 붙어 있어, 못 받은 묶음 = 빈 시간대가 된다. 관객 차 입차 시간대
+  (시작 3시간 전~20분 뒤) 기록을 90% 넘게 받은 공연만 쓴다(inout_common.ordered_ok).
 
   출구별 비중: 공연마다 출구별 비중(합 100%)을 구한 뒤 공연들의 평균. 그 출구가 안 쓰인 공연은 0%로 넣는다.
   절반 이상 공연에서 쓰인 출구만 따로 보이고, 나머지는 '그 밖의 출구'로 묶는다 → 합이 항상 100%.
@@ -23,10 +25,14 @@
 """
 import json
 import re
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import inout_common as ic  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "data" / "raw"
@@ -36,28 +42,9 @@ PAT = re.compile(r"입구:([^,]*), 입차시간:([^,]*), 출구:([^,]*), 출차�
 
 
 def load_2025():
-    p = RAW / "kcisa_inout_2025.jsonl"
-    if not p.exists():
-        return pd.DataFrame(columns=["in_time", "out_time", "gate", "src"])
-    rows, seen = [], set()
-    with open(p, encoding="utf-8") as f:
-        for line in f:
-            try:
-                d = json.loads(line)
-            except ValueError:
-                continue                       # 받는 중이라 마지막 줄이 잘렸을 수 있다
-            if d.get("LOCAL_ID") in seen:
-                continue
-            seen.add(d.get("LOCAL_ID"))
-            m = PAT.search(d.get("DESCRIPTION") or "")
-            if m:
-                rows.append([x.strip() for x in m.groups()])
-    df = pd.DataFrame(rows, columns=["in_gate", "in_time", "out_gate", "out_time"])
-    df["in_time"] = pd.to_datetime(df.in_time, errors="coerce")
-    df["out_time"] = pd.to_datetime(df.out_time, errors="coerce")
-    df["gate"] = df.out_gate.str.extract(r"^(\S+?문)")[0]
-    df["src"] = "2025"
-    return df.dropna(subset=["in_time", "out_time"])[["in_time", "out_time", "gate", "src"]]
+    """2025 입출차 (겹친 줄은 번호로 하나만). 읽는 방법은 inout_common.load_2025와 같다(시간순 덩어리 정보도 함께)."""
+    d, _ = ic.load_2025()
+    return d[["in_time", "out_time", "gate", "src", "ord"]]
 
 
 def load_2024():
@@ -173,12 +160,16 @@ def main():
     d = pd.concat([load_2025(), load_2024()], ignore_index=True)
     d["day"] = d.out_time.dt.strftime("%Y-%m-%d")
     by_day = dict(tuple(d.groupby("day")))
-    shows = []
+    shows, skipped = [], []
     for _, row in ev[ev["공연장"] == "KSPO DOME"].iterrows():
         day, ts = row["날짜"], str(row["시작시각들"]).split(";")
         if len(ts) != 1 or day not in by_day or len(by_day[day]) < 800:
             continue
         if "페스티벌" in str(row["공연명"]):       # 하루 종일 하는 행사는 공연 종료가 뚜렷하지 않아 뺀다
+            continue
+        ok, _ = ic.ordered_ok(by_day[day], pd.Timestamp(f"{day} {ts[0]}"), 180, 20)
+        if not ok:                              # 10~12월: 관객 차 입차 시간대 기록에 빈 곳이 있음
+            skipped.append(day)
             continue
         r = analyze(by_day[day], day, ts[0])
         if r:
@@ -202,12 +193,14 @@ def main():
     out = {
         "venue": "KSPO DOME", "built": pd.Timestamp.now().strftime("%Y-%m-%d"),
         "method": "시작 3시간 전~20분 뒤 입차, 2시간 넘게 머문 차를 관객 차로 보고, 출차가 몰리기 시작한 때부터 50%·90%가 빠지기까지 걸린 시간",
-        "summary": summary, "gates": gate_sum, "gateMeta": gate_meta,
+        "summary": summary, "gates": gate_sum, "gateMeta": gate_meta, "skipped2025": skipped,
         "list": sorted(shows, key=lambda r: r["date"]),
     }
     OUT.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
     print(json.dumps(summary, ensure_ascii=False))
     print("출구별:", json.dumps(out["gates"], ensure_ascii=False))
+    if skipped:
+        print(f"※ 관객 차 입차 시간대 기록이 모자라 뺀 2025 공연 {len(skipped)}회: {', '.join(skipped)}")
     print(f"저장 → {OUT}")
 
 
