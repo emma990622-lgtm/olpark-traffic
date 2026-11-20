@@ -7,6 +7,7 @@ KSPO DOME 공연일, 공연 시작 시각을 기준으로 공원 주차장에 �
                                         65,535줄로 잘린 8·9월, 공연 시간대(시작 6시간 전~6시간 뒤)를 90% 넘게 못 받은 10~12월 공연은 뺀다
                                         2024년 7월 자료·2,120면과 같은 구역이 되도록 동2문·남2문·북2문으로 들어온 차만 센다
                                         (2025 자료에는 서2문·남3문·남4문·서1문 기록도 있음, 들어온 차의 약 16%)
+                                        24시간 이상 주차한 장기 차량은 뺀다(공연 시작 무렵 주차 중인 차의 1~13%, 2026-11-21 추가)
       data/processed/event_days.csv
 출력: web/data/park_profile.json
 2024년 7월과 2025년 공연을 모두 넣어 공연별 곡선의 중앙값을 낸다. 2025 자료가 모자라면 2024년 7월만 쓴다.
@@ -54,6 +55,8 @@ def main():
             continue
         win = win.assign(w=w)
         win = win[(win.src == "2024") | win.igate.isin(ic.MAIN_GATES)]      # 같은 구역(동2·남2·북2문)만
+        stay = (win.out_time - win.in_time).dt.total_seconds() / 60
+        win = win[(stay > 0) & (stay < 24 * 60)]                          # 0분·24시간 이상 주차(장기 차량)는 뺀다 — 16·18과 같게
         parked, ins, outs = curves(win, s)
         shows.append({"date": day, "start": start, "title": title, "src": day[:4],
                       "parked": parked, "in15": ins, "out15": outs})
@@ -64,7 +67,7 @@ def main():
     hi = lambda k: [int(round(np.percentile([s[k][i] for s in shows], 90))) for i in range(len(REL))]
     n24 = sum(1 for s in shows if s["src"] == "2024")
     n25 = len(shows) - n24
-    src = f"공원 주차장(동2문·남2문·북2문 구역) 입출차 기록, KSPO DOME 공연 {len(shows)}회 중앙값 (2024년 7월 {n24}회"
+    src = f"공원 주차장(동2문·남2문·북2문 구역) 입출차 기록, 24시간 이상 주차한 장기 차량 제외, KSPO DOME 공연 {len(shows)}회 중앙값 (2024년 7월 {n24}회"
     src += f" + 2025년 {n25}회. {ic.note_2025(cov)})" if n25 else ")"
     out = {
         "venue": "KSPO DOME", "source": src, "built": pd.Timestamp.now().strftime("%Y-%m-%d"),
