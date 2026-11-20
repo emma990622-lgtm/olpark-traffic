@@ -38,7 +38,7 @@ STEP = 5                                   # 실시간 값이 5분마다라고 �
 RATIOS = [0.06, 0.08, 0.10, 0.12, 0.15, 0.18, 0.22]
 WINDOWS = [10, 15]
 EARLIEST = 60                              # 시작 후 이 분 전에는 감지하지 않음(늦게 온 관객·다른 행사 차)
-SER_FROM, SER_TO = -30, 330                # 화면 미리 보기용 곡선 범위
+SER_FROM, SER_TO = -180, 330               # 화면 미리 보기용 곡선 범위(공연 전 입차도 보이게 3시간 전부터)
 
 
 def series(x, s):
@@ -101,8 +101,10 @@ def main():
         A = int(P[t >= 0].max())                # 시작 뒤 최고 대수(참고용)
         if A < 100:
             continue
+        ent = ep.ic.entry_timing(x, s) if ep.ic.ordered_ok(x, s, -ep.ic.ENTRY_FROM, ep.ic.ENTRY_TO)[0] else None
         shows.append({"date": day, "start": ts[0], "src": prof["src"], "title": row["공연명"], "A": A,
-                      "surge": prof["surgeMin"], "t50": prof["t50"], "t90": prof["t90"], "t": t, "P": P})
+                      "surge": prof["surgeMin"], "t50": prof["t50"], "t90": prof["t90"], "t": t, "P": P,
+                      "in50": ent and ent["in50"], "in90": ent and ent["in90"]})
     if not shows:
         raise SystemExit("계산할 공연일이 없습니다.")
 
@@ -149,17 +151,33 @@ def main():
 
     rows = [{"date": d["sh"]["date"], "start": d["sh"]["start"], "src": d["sh"]["src"], "peak": d["sh"]["A"],
              "det": d["det"], "surge": d["sh"]["surge"], "abs50": d["sh"]["abs50"], "abs90": d["sh"]["abs90"],
-             # 화면 '지난 공연으로 미리 보기'용: 시작 −30분 ~ +330분, 5분 간격 대수
+             "in50": d["sh"]["in50"], "in90": d["sh"]["in90"],
+             # 화면 '지난 공연으로 미리 보기'용: 시작 −180분 ~ +330분, 5분 간격 대수
              "series": [int(v) for v in d["sh"]["P"][(d["sh"]["t"] >= SER_FROM) & (d["sh"]["t"] <= SER_TO)]]} for d in D]
     R = pd.DataFrame(rows)
     d50, d90 = (R.abs50 - R.det).values, (R.abs90 - R.det).values
 
     q = lambda v, p: int(round(float(np.percentile(v, p))))
+    # 입차: 관객 차 절반·90%가 들어온 시각(공연 시작 기준 분). 공연 시작 시각만 보고 미리 예측(나머지 공연 중앙값)했을 때 오차
+    E = [sh for sh in shows if sh["in50"] is not None]
+    entry, entry_bt = None, None
+    if len(E) >= 5:
+        i50, i90 = np.array([sh["in50"] for sh in E]), np.array([sh["in90"] for sh in E])
+        entry = {"half": {"p25": q(i50, 25), "med": q(i50, 50), "p75": q(i50, 75), "n": int(len(i50))},
+                 "most": {"p25": q(i90, 25), "med": q(i90, 50), "p75": q(i90, 75), "n": int(len(i90))}}
+        loo = lambda v: np.array([abs(np.median(np.delete(v, j)) - v[j]) for j in range(len(v))])
+        e50, e90 = loo(i50), loo(i90)
+        entry_bt = {"half": {"before": round(float(e50.mean()), 1), "within15": round(float((e50 <= 15).mean()), 2)},
+                    "most": {"before": round(float(e90.mean()), 1), "within15": round(float((e90 <= 15).mean()), 2)},
+                    "shows": int(len(E)), "bySource": {k: sum(sh["src"] == k for sh in E) for k in sorted({sh["src"] for sh in E})}}
     out = {
         "built": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"),
         "method": ("실시간 주차 대수(약 5분마다)로 '출차 시작'을 감지. M = 공연 시작 뒤 지금까지의 최고 대수(출차 기록 없는 차를 뺀 값). "
                    f"시작 {EARLIEST}분 뒤부터, 최근 {w}분 동안 M의 {int(r * 100)}% 이상 줄고 다음 값도 계속 줄면 감지. "
                    "감지되면 '관객 차 절반·90%가 빠지는 시각' = 감지 시각 + 과거 공연에서 감지 뒤 걸린 시간(중앙값)."),
+        "entryMethod": (f"관객 차 입차: 공연 시작 {-ep.ic.ENTRY_FROM // 60}시간 전~{ep.ic.ENTRY_TO}분 뒤에 들어와 2시간 넘게 머물고 시작 1.5~7시간 사이에 나간 차. "
+                        "절반·90%가 들어온 시각을 과거 공연 중앙값으로 미리 예측(공연 시작 시각만 봄)."),
+        "entry": entry, "entryBacktest": entry_bt,
         "series": {"fromMin": SER_FROM, "stepMin": STEP},
         "rule": {"ratio": r, "windowMin": w, "earliestMin": EARLIEST, "stepMin": STEP, "minPeak": 100, "confirmNext": True},
         "after": {  # 감지 시점부터 관객 차 절반·90%가 빠지기까지 걸린 분(과거 공연)
@@ -183,6 +201,9 @@ def main():
     print(f"절반 빠지는 시각 오차: 미리 {bt['half']['before']}분 → 감지 후 {bt['half']['live']}분 (15분 이내 {bt['half']['within15']:.0%})")
     print(f"90% 빠지는 시각 오차: 미리 {bt['most']['before']}분 → 감지 후 {bt['most']['live']}분 (15분 이내 {bt['most']['within15']:.0%})")
     print(f"감지 후 절반까지 {out['after']['half']}분, 90%까지 {out['after']['most']}분")
+    if entry:
+        print(f"입차: 관객 차 절반이 들어온 때 시작 {entry['half']['med']}분(보통 {entry['half']['p25']}~{entry['half']['p75']}), "
+              f"90% {entry['most']['med']}분(보통 {entry['most']['p25']}~{entry['most']['p75']}), 미리 예측 오차 절반 {entry_bt['half']['before']}분·90% {entry_bt['most']['before']}분")
     print(f"저장 → {OUT}")
 
 

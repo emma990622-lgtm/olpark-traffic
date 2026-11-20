@@ -234,8 +234,9 @@
     }, 700);
   });
 
-  // 출차 곡선(exit_curves.json): 시작 시각이 같은(없으면 가장 가까운) KSPO DOME 공연들의 중앙값·가운데 50%
-  // vs 같은 요일 유형(평일 / 주말·공휴일)의 큰 공연 없는 날 중앙값
+  // 출차 곡선(exit_curves.json): 시작 시각이 같은(없으면 가장 가까운) KSPO DOME 공연들의 출차·입차 중앙값(출차는 가운데 50% 띠)
+  // vs 같은 요일 유형(평일 / 주말·공휴일)의 큰 공연 없는 날 출차 중앙값.
+  // 세로선: 예상(이날 공연 시작 + 지난 공연 전체 중앙값, 점선 + 가운데 50% 띠) / 실제(같은 시작 시각 지난 공연 중앙값, 초록 실선)
   function drawCurves(big) {
     const C = curves, n = C.nSlots, s0 = toMin(C.slotStart);
     const d = $("date").value;
@@ -253,13 +254,16 @@
       gk = keys.find((k) => toMin(k) === s && C.groups[k].n >= 2) || near(many.length ? many : keys);
     }
     const G = gk ? C.groups[gk] : null;
-    const W = 560, H = 260, L = 40, R = 12, T = 16, B = 30;
-    const maxY = Math.max(10, ...(base ? base.med : [0]), ...(G ? G.p75 : [0])) * 1.12;
+    const myStart = big && big.times && big.times.length ? toMin(big.times[0]) : null;
+    const W = 560, H = 300, L = 40, R = 12, T = 16, B = 30;
+    const maxY = Math.max(10, ...(base ? base.med : [0]), ...(G ? G.p75 : [0]), ...(G && G.inMed ? G.inMed : [0])) * 1.12;
     const step = maxY > 600 ? 200 : 100;
     const X = (i) => L + (i / (n - 1)) * (W - L - R);
+    const XM = (clock) => X((clock - s0) / 15);                        // 시계 분 → x
+    const inView = (clock) => clock >= s0 && clock <= s0 + (n - 1) * 15;
     const Y = (v) => H - B - (v / maxY) * (H - T - B);
     const path = (arr) => arr.map((v, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1)).join("");
-    let g = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-size="11" role="img" aria-label="공연 후 15분 출차 곡선">`;
+    let g = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-size="11" role="img" aria-label="공연 전후 15분 입차·출차 곡선과 절반·90% 예상·실제 시각">`;
     for (let v = 0; v <= maxY; v += step) {
       g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/>
             <text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end" fill="var(--ink-2)">${v}</text>`;
@@ -267,29 +271,66 @@
     for (let i = 0; i < n; i += 8) {
       g += `<text x="${X(i)}" y="${H - 10}" text-anchor="middle" fill="var(--ink-2)">${toHHMM(s0 + i * 15)}</text>`;
     }
+    // 예상 띠·점선(이날 공연 시작 기준)
+    const P = C.predict || {};
+    const EXP = [["in50", "입차 절반 예상", "warn", 1], ["in90", "입차 90% 예상", "warn", 0],
+                 ["exit50", "출차 절반 예상", "accent", 1], ["exit90", "출차 90% 예상", "accent", 0]];
+    let expLines = "";                                                  // 띠를 모두 먼저 그리고 선·글자는 나중에(띠가 글자를 가리지 않게)
+    if (myStart != null) EXP.forEach(([k, lbl, c, row]) => {
+      const a = P[k];
+      if (!a) return;
+      const lo = myStart + a.p25, hi = myStart + a.p75, md = myStart + a.med;
+      if (!inView(md)) return;
+      const fill = c === "warn" ? "var(--warn-bg)" : "var(--accent-soft)", stroke = c === "warn" ? "var(--warn)" : "var(--accent)", ink = c === "warn" ? "var(--warn-ink)" : "var(--accent)";
+      g += `<rect x="${XM(Math.max(lo, s0))}" width="${Math.max(2, XM(Math.min(hi, s0 + (n - 1) * 15)) - XM(Math.max(lo, s0)))}" y="${T}" height="${H - T - B}" fill="${fill}"/>`;
+      expLines += `<line x1="${XM(md)}" x2="${XM(md)}" y1="${T}" y2="${H - B}" stroke="${stroke}" stroke-dasharray="2 3"/>
+            <text paint-order="stroke" stroke="var(--card)" stroke-width="3" stroke-linejoin="round" x="${XM(md) + 3}" y="${H - B - 6 - row * 14}" fill="${ink}" font-weight="700">${lbl}</text>`;
+    });
     if (base) g += `<path d="${path(base.med)}" fill="none" stroke="var(--none)" stroke-width="2" stroke-dasharray="4 3"/>`;
     if (G) {
       const band = path(G.p75) + G.p25.map((v, i) => [i, v]).reverse().map(([i, v]) => "L" + X(i).toFixed(1) + " " + Y(v).toFixed(1)).join("") + "Z";
       g += `<path d="${band}" fill="rgba(29, 78, 216, 0.12)"/>`;
+      if (G.inMed) g += `<path d="${path(G.inMed)}" fill="none" stroke="var(--warn)" stroke-width="2.2"/>`;
       g += `<path d="${path(G.med)}" fill="none" stroke="var(--accent)" stroke-width="2.6"/>`;
-      const si = (toMin(gk) - s0) / 15;
-      g += `<line x1="${X(si)}" x2="${X(si)}" y1="${T}" y2="${H - B}" stroke="var(--accent)" stroke-dasharray="4 4"/>
-            <text x="${X(si) + 5}" y="${T + 11}" fill="var(--accent)" font-weight="700">공연 시작 ${gk}</text>`;
+      // 곡선 이름을 곡선 옆에 글자로(색만으로 구분하지 않게)
+      const tag = (arr, txt, ink) => { const i = arr.indexOf(Math.max(...arr)); return `<text paint-order="stroke" stroke="var(--card)" stroke-width="3" stroke-linejoin="round" x="${X(i) - 4}" y="${Y(arr[i]) - 6}" text-anchor="end" fill="${ink}" font-weight="700">${txt}</text>`; };
+      g += tag(G.med, "출차", "var(--accent)") + (G.inMed ? tag(G.inMed, "입차", "var(--warn-ink)") : "");
+      const si = toMin(gk);
+      g += `<line x1="${XM(si)}" x2="${XM(si)}" y1="${T}" y2="${H - B}" stroke="var(--ink-3)" stroke-dasharray="4 4"/>
+            <text paint-order="stroke" stroke="var(--card)" stroke-width="3" stroke-linejoin="round" x="${XM(si) + 5}" y="${T + 11}" fill="var(--ink-2)" font-weight="700">공연 시작 ${gk}</text>`;
+      // 실제(같은 시작 시각 지난 공연 중앙값)
+      [["in50", "실제 입차 절반"], ["in90", "실제 입차 90%"], ["exit50", "실제 출차 절반"], ["exit90", "실제 출차 90%"]].forEach(([k, lbl], i) => {
+        const a = (G.actual || {})[k];
+        if (!a) return;
+        const m = si + a.med;
+        if (!inView(m)) return;
+        g += `<line x1="${XM(m)}" x2="${XM(m)}" y1="${T}" y2="${H - B}" stroke="var(--good-ink)" stroke-width="1.5"/>
+              <text paint-order="stroke" stroke="var(--card)" stroke-width="3" stroke-linejoin="round" x="${XM(m) + 3}" y="${T + 27 + (i % 2) * 14}" fill="var(--good-ink)">● ${lbl}</text>`;
+      });
     }
-    g += `</svg>`;
+    g += expLines + `</svg>`;
     $("chart").outerHTML = g.replace("<svg ", '<svg id="chart" style="width:100%;height:auto" ');
     const src = (b) => [b["2024"] ? `2024년 7월 ${b["2024"]}` : "", b["2025"] ? `2025년 ${b["2025"]}` : ""].filter(Boolean).join(" + ");
     const baseTxt = base
-      ? `<span style="color:var(--none);font-weight:700">┅</span> ${bk === "weekend" ? "주말·공휴일" : "평일"} 중 큰 공연 없는 날 ${base.n}일(${src(base.bySource)}일) 중앙값${bk !== kind ? " — 주말에 큰 공연 없는 날이 적어 평일로 비교" : ""}`
+      ? `<span style="color:var(--none);font-weight:700">┅</span> ${bk === "weekend" ? "주말·공휴일" : "평일"} 중 큰 공연 없는 날 ${base.n}일(${src(base.bySource)}일) 출차 중앙값${bk !== kind ? " — 주말에 큰 공연 없는 날이 적어 평일로 비교" : ""}`
       : "비교할 평소 날 자료가 없어요";
     const eg = G ? G.dates.slice(-3).map((x) => `${x.date} ${x.title.slice(0, 18)}(15분 최대 ${x.peak15}대, ${x.peakTime})`).join(", ") : "";
+    const hm = (m) => toHHMM(m);
+    const pred = (k) => P[k] && myStart != null ? `<b>${hm(myStart + P[k].med)}</b>(보통 ${hm(myStart + P[k].p25)}~${hm(myStart + P[k].p75)})` : "—";
+    const act = (k) => G && G.actual && G.actual[k] ? `${hm(toMin(gk) + G.actual[k].med)}` : "—";
+    const timeTxt = myStart != null && Object.keys(P).length
+      ? `<br><b>이날(${big.times[0]} 시작) 예상</b> 관객 차 절반 들어옴 ${pred("in50")} · 90% 들어옴 ${pred("in90")} · 절반 빠짐 ${pred("exit50")} · 90% 빠짐 ${pred("exit90")}.
+         <br><b>실제</b>(시작 ${gk} 지난 공연 중앙값) 입차 절반 ${act("in50")} · 90% ${act("in90")} · 출차 절반 ${act("exit50")} · 90% ${act("exit90")}.`
+      : "";
     $("chartNote").innerHTML = (G
-      ? `<span style="color:var(--accent);font-weight:700">━</span> 시작 <b>${gk}</b> KSPO DOME 공연 <b>${G.n}회</b>(${src(G.bySource)}회)${G.n > 1 ? " 중앙값" : " 곡선"}
-         ${toMin(gk) !== toMin(big.times[0]) ? ` — 이날 시작(${big.times[0]})과 같은 시각 공연이 적어 가장 가까운 시각으로 보여요` : ""}
-         ${G.n > 1 ? `&nbsp;·&nbsp; <span style="color:var(--accent);font-weight:700">▒</span> 가운데 50%(공연 4개 중 가운데 2개)${G.n < 4 ? "(공연이 적어 참고만)" : ""}` : ""}
-         &nbsp;·&nbsp; ${baseTxt}.<br>예: ${eg}.`
+      ? `<span style="color:var(--accent);font-weight:700">━</span> 출차 · <span style="color:var(--warn);font-weight:700">━</span> 입차: 시작 <b>${gk}</b> KSPO DOME 공연 <b>${G.n}회</b>(${src(G.bySource)}회)${G.n > 1 ? " 중앙값" : " 곡선"}
+         ${toMin(gk) !== myStart ? ` — 이날 시작(${big.times[0]})과 같은 시각 공연이 적어 가장 가까운 시각으로 보여요` : ""}
+         ${G.n > 1 ? `&nbsp;·&nbsp; <span style="color:var(--accent);font-weight:700">▒</span> 출차 가운데 50%(공연 4개 중 가운데 2개)${G.n < 4 ? "(공연이 적어 참고만)" : ""}` : ""}
+         &nbsp;·&nbsp; ${baseTxt}.
+         <br>세로선: <span style="color:var(--accent);font-weight:700">┊</span> 예상(이날 시작 + 지난 공연 전체 중앙값, 옅은 띠 = 가운데 50%) · <span style="color:var(--good-ink);font-weight:700">●│</span> 실제(같은 시작 시각 지난 공연 중앙값).${timeTxt}
+         <br>예: ${eg}.`
       : `KSPO DOME 공연이 없는 날이라 공연 곡선이 없어요. ${baseTxt}.`) +
-      `<br>출처: ${C.source}. 방법: ${C.method}.`;
+      `<br>출처: ${C.source}. 방법: ${C.method}.${C.timingMethod ? " " + C.timingMethod + "." : ""}`;
   }
 
   // 출차 곡선(예전 방식, exit_curves.json이 없을 때): 시작 시각이 가장 비슷한 2024-07 KSPO 공연일 vs 같은 시간대 평일 평균

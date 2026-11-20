@@ -1,7 +1,8 @@
-// 운영자 화면: 공연 당일 '실시간 출차 감지'
+// 운영자 화면: 공연 당일 '실시간 입출차 감지'
 // 실시간 주차 대수(/api/parking, 2분마다)를 이 브라우저에 쌓아 두고(localStorage),
+// 공연 전에는 관객 차 절반·90%가 들어오는 시각(과거 공연 중앙값)을 예상 선으로 보이고,
 // 공연 시작 뒤 대수가 갑자기 줄기 시작하면 "출차 시작"으로 보고 관객 차 절반·90%가 빠지는 시각을 안내한다.
-// 규칙과 '감지 뒤 걸린 시간'은 scripts/14_live_exit_calib.py가 과거 입출차 기록으로 맞춘 web/data/live_exit.json.
+// 규칙·'감지 뒤 걸린 시간'·입차 시각은 scripts/14_live_exit_calib.py가 과거 입출차 기록으로 맞춘 web/data/live_exit.json.
 (async function () {
   const $ = (id) => document.getElementById(id);
   if (!$("liveExit")) return;
@@ -17,7 +18,7 @@
     return;
   }
   await loadParkNight().catch(() => null);
-  const R = cfg.rule, A = cfg.after, BT = cfg.backtest;
+  const R = cfg.rule, A = cfg.after, BT = cfg.backtest, E = cfg.entry, EB = cfg.entryBacktest;   // E·EB: 입차(없을 수 있음)
 
   // ---------- 감지 (과거 맞춤 규칙과 같은 방식) ----------
   // pts: [{m: 공연 시작 기준 분, v: 대수}] (시간순). M = 시작 뒤 지금까지 최고 대수.
@@ -78,8 +79,8 @@
   const kpi = (label, value, cls = "") => `<div class="kpi ${cls}"><div class="l">${label}</div><div class="v">${value}</div></div>`;
 
   function drawChart(pts, det, startHHMM, truth) {
-    const W = 760, H = 230, L = 44, Rm = 12, T = 18, B = 30;
-    const maxM = Math.max(330, ...pts.map((p) => p.m)), minM = Math.min(-30, ...pts.map((p) => p.m));
+    const W = 760, H = 260, L = 44, Rm = 12, T = 18, B = 30;
+    const maxM = Math.max(330, ...pts.map((p) => p.m)), minM = Math.min(E ? -180 : -30, ...pts.map((p) => p.m));
     const vs = pts.map((p) => p.v), maxV = Math.max(100, ...vs) * 1.1;
     const X = (m) => L + ((m - minM) / (maxM - minM)) * (W - L - Rm);
     const Y = (v) => H - B - (v / maxV) * (H - T - B);
@@ -89,23 +90,28 @@
     const s0 = toMin(startHHMM);
     for (let m = Math.ceil((s0 + minM) / 60) * 60 - s0; m <= maxM; m += 60) g += `<text x="${X(m)}" y="${H - 10}" text-anchor="middle" fill="var(--ink-2)">${toHHMM(toMin(startHHMM) + m)}</text>`;
     g += `<line x1="${X(0)}" x2="${X(0)}" y1="${T}" y2="${H - B}" stroke="var(--ink-3)" stroke-dasharray="4 4"/><text x="${X(0) + 4}" y="${T + 10}" fill="var(--ink-2)">공연 시작</text>`;
+    // 예상 띠(가운데 50%) + 점선(중앙값). base = 기준 분(입차는 공연 시작, 출차는 감지 시각)
+    let marks = "";                                                     // 띠를 모두 먼저 그리고 선·글자는 나중에(띠가 글자를 가리지 않게)
+    const band = (base, a, lbl, fill, stroke, ink, row) => (marks += `
+        <line x1="${X(base + a.med)}" x2="${X(base + a.med)}" y1="${T}" y2="${H - B}" stroke="${stroke}" stroke-dasharray="2 3"/>
+        <text paint-order="stroke" stroke="var(--card)" stroke-width="3" stroke-linejoin="round" x="${X(base + a.med) + 3}" y="${H - B - 6 - row * 14}" fill="${ink}" font-weight="700">${lbl}</text>`,
+      `<rect x="${X(base + a.p25)}" width="${Math.max(2, X(base + a.p75) - X(base + a.p25))}" y="${T}" height="${H - T - B}" fill="${fill}"/>`);
+    if (E) g += band(0, E.half, "입차 절반 예상", "var(--warn-bg)", "var(--warn)", "var(--warn-ink)", 1) + band(0, E.most, "입차 90% 예상", "var(--warn-bg)", "var(--warn)", "var(--warn-ink)", 0);
     if (det && det.at) {
       const m = det.at.m;
-      const band = (a, lbl) => `<rect x="${X(m + a.p25)}" width="${Math.max(2, X(m + a.p75) - X(m + a.p25))}" y="${T}" height="${H - T - B}" fill="var(--accent-soft)"/>
-        <line x1="${X(m + a.med)}" x2="${X(m + a.med)}" y1="${T}" y2="${H - B}" stroke="var(--accent)" stroke-dasharray="2 3"/>
-        <text x="${X(m + a.med) + 3}" y="${H - B - 6}" fill="var(--accent)" font-weight="700">${lbl}</text>`;
-      g += band(A.most, "90% 예상") + band(A.half, "절반 예상");
-      g += `<line x1="${X(m)}" x2="${X(m)}" y1="${T}" y2="${H - B}" stroke="var(--bad)" stroke-width="2"/><text x="${X(m) + 4}" y="${T + 24}" fill="var(--bad-ink)" font-weight="700">▼ 출차 시작 감지</text>`;
+      g += band(m, A.half, "출차 절반 예상", "var(--accent-soft)", "var(--accent)", "var(--accent)", 1) + band(m, A.most, "출차 90% 예상", "var(--accent-soft)", "var(--accent)", "var(--accent)", 0);
+      g += `<line x1="${X(m)}" x2="${X(m)}" y1="${T}" y2="${H - B}" stroke="var(--bad)" stroke-width="2"/><text paint-order="stroke" stroke="var(--card)" stroke-width="3" stroke-linejoin="round" x="${X(m) + 4}" y="${T + 24}" fill="var(--bad-ink)" font-weight="700">▼ 출차 시작 감지</text>`;
     }
     if (truth) {
-      [["abs50", "실제 절반"], ["abs90", "실제 90%"]].forEach(([k, lbl], i) => {
-        g += `<line x1="${X(truth[k])}" x2="${X(truth[k])}" y1="${T}" y2="${H - B}" stroke="var(--good-ink)" stroke-width="1.5"/><text x="${X(truth[k]) + 3}" y="${T + 44 + i * 14}" fill="var(--good-ink)">● ${lbl}</text>`;
+      [["in50", "실제 입차 절반"], ["in90", "실제 입차 90%"], ["abs50", "실제 출차 절반"], ["abs90", "실제 출차 90%"]].forEach(([k, lbl], i) => {
+        if (truth[k] == null) return;
+        g += `<line x1="${X(truth[k])}" x2="${X(truth[k])}" y1="${T}" y2="${H - B}" stroke="var(--good-ink)" stroke-width="1.5"/><text paint-order="stroke" stroke="var(--card)" stroke-width="3" stroke-linejoin="round" x="${X(truth[k]) + 3}" y="${T + 44 + (i % 2) * 14}" fill="var(--good-ink)">● ${lbl}</text>`;
       });
     }
     const path = pts.map((p, i) => (i ? "L" : "M") + X(p.m).toFixed(1) + " " + Y(p.v).toFixed(1)).join("");
     if (pts.length) g += `<path d="${path}" fill="none" stroke="var(--ink)" stroke-width="2.2"/>`;
     if (pts.length === 1) g += `<circle cx="${X(pts[0].m)}" cy="${Y(pts[0].v)}" r="3" fill="var(--ink)"/>`;
-    g += `</svg>`;
+    g += marks + `</svg>`;
     $("leChart").innerHTML = g;
   }
 
@@ -130,7 +136,7 @@
       const lm = last ? last.m : null;
       const rd = pts.length ? recentDrop(pts) : null;
       status = lm == null ? `<span class="chip">○ 기록 시작 전</span> 실시간 주차 대수를 기다리는 중이에요.`
-        : lm < 0 ? `<span class="chip">○ 공연 전</span> 공연 시작(${startHHMM}) 전이에요. 기록은 계속 쌓여요.`
+        : lm < 0 ? `<span class="chip">○ 공연 전</span> 공연 시작(${startHHMM}) 전이에요.${E ? ` 지난 공연을 보면 관객 차 절반은 ${toHHMM(toMin(startHHMM) + E.half.med)}쯤, 90%는 ${toHHMM(toMin(startHHMM) + E.most.med)}쯤 들어와요.` : ""} 기록은 계속 쌓여요.`
         : lm < R.earliestMin ? `<span class="chip good">○ 공연 중</span> 시작 ${R.earliestMin}분 뒤부터 감지해요(늦게 오는 관객 차를 빼려고).`
         : `<span class="chip good">○ 감시 중</span> 아직 출차 시작 신호가 없어요. 최근 ${R.windowMin}분 변화 ${rd == null ? "—" : (rd >= 0 ? "−" : "+") + Math.abs(Math.round(rd)) + "대"} / 감지 기준 −${Math.round(R.ratio * (det.M || 0))}대.`;
       k1 = kpi("출차 시작 감지", "아직 ○");
@@ -140,7 +146,8 @@
       `${toHHMM(toMin(startHHMM) + f + a.med)} <span class="muted small">(보통 ${toHHMM(toMin(startHHMM) + f + a.p25)}~${toHHMM(toMin(startHHMM) + f + a.p75)})</span>`;
     const nowV = last ? `${Math.round(last.v).toLocaleString()}대` : "—";
     $("leStatus").innerHTML = status + (replay ? ` <span class="muted small">· 지난 공연(${replay.date}) 기록으로 다시 본 화면이에요.</span>` : "");
-    $("leKpis").innerHTML = k1 +
+    const inRange = (a) => `${toHHMM(toMin(startHHMM) + a.med)} <span class="muted small">(보통 ${toHHMM(toMin(startHHMM) + a.p25)}~${toHHMM(toMin(startHHMM) + a.p75)})</span>`;
+    $("leKpis").innerHTML = (E ? kpi("관객 차 절반이 들어오는 시각(예상)", inRange(E.half)) + kpi("관객 차 90%가 들어오는 시각(예상)", inRange(E.most)) : "") + k1 +
       kpi("관객 차 절반이 빠지는 시각(예상)", range(A.half)) +
       kpi("관객 차 90%가 빠지는 시각(예상)", range(A.most)) +
       kpi(replay ? "시작 뒤 최고 대수" : `지금 주차 대수(추정)${last && !replay ? ` · ${toHHMM(toMin(startHHMM) + last.m)}` : ""}`,
@@ -196,6 +203,7 @@
   });
   sel.addEventListener("change", render);
 
+  const rel = (m) => (m < 0 ? `시작 ${-m}분 전` : m === 0 ? "시작 때" : `시작 ${m}분 뒤`);
   const night = parkActual(0).night;
   $("leSrc").innerHTML =
     `출처: 한국체육산업개발 실시간 주차현황(parking_sum, 2분마다) − 출차 기록 없는 차(새벽 ${night.date} ${night.time} 값 ${night.sum.toLocaleString()}대 − ${PARK_NIGHT_TRUE}대). ` +
@@ -203,6 +211,8 @@
     `<br>맞춘 자료: 입출차 기록 KSPO DOME 공연 ${BT.found}회(${BT.period}${BT.bySource ? ", " + Object.entries(BT.bySource).map(([k, v]) => `${k}년 ${v}회`).join("·") : ""}), ${cfg.built} 계산. ` +
     `한 공연씩 빼고 되짚어 본 평균 오차: 절반 시각 <b>${BT.half.live}분</b>(미리 예측 ${BT.half.before}분), 90% 시각 <b>${BT.most.live}분</b>(미리 예측 ${BT.most.before}분). ` +
     `감지 뒤 걸린 시간: 절반 보통 ${A.half.p25}~${A.half.p75}분, 90% 보통 ${A.most.p25}~${A.most.p75}분. 30분 넘게 이른 감지 ${BT.early30}회.` +
+    (E && EB ? `<br>입차: ${cfg.entryMethod} 지난 공연 ${EB.shows}회 기준 절반은 ${rel(E.half.med)}(보통 ${rel(E.half.p25)}~${rel(E.half.p75)}), 90%는 ${rel(E.most.med)}(보통 ${rel(E.most.p25)}~${rel(E.most.p75)}). ` +
+      `한 공연씩 빼고 되짚어 본 평균 오차: 절반 ${EB.half.before}분, 90% ${EB.most.before}분.` : "") +
     `<br>주의: 다른 행사 차, 중간 휴식(인터미션), 큰 주차장 정산 지연으로 틀릴 수 있어요. 현장 확인과 함께 참고하세요.`;
   render();
 })();

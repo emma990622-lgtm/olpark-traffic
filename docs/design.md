@@ -62,7 +62,7 @@
 | 운영자 (`operator.js` · `showTime`) | `.timectl`, `.trow`, `.tlabel`, `.phase` | 3D 지도 시간대 슬라이더 컨트롤러 및 단계 배지 |
 | 운영자 (`operator.js` · `drawHeat`) | `.heat`, `.tick`, `.table-scroll` | 5분 단위 도로별 속도 히트맵 (첫 열 도로명 `position: sticky`) |
 | 운영자 (`operator.js` · `drawGates`) | `.share-cell`, `.share-bar`, `.nowrap` | 출구별 차량 비중 미니 바 및 출구명 줄바꿈 방지 |
-| 운영자 (`live_exit.js`) | `.le-head`, `.le-pick`, `.le-status`, `.le-chart`, `.le-field`, `.le-err` (+ 기존 `.kpis`/`.kpi`, `.chip.good`/`.warn`/`.bad`, `button.ghost` 재사용) | 공연 당일 실시간 출차 감지 카드. 상태는 기호+글자(`○ 감시 중`, `▲ 확인 중`, `▼ 출차 시작 감지`)로 함께 표시 |
+| 운영자 (`live_exit.js`) | `.le-head`, `.le-pick`, `.le-status`, `.le-chart`, `.le-field`, `.le-err` (+ 기존 `.kpis`/`.kpi`, `.chip.good`/`.warn`/`.bad`, `button.ghost` 재사용) | 공연 당일 실시간 입출차 감지 카드(11/20 이름 바꿈). 상태는 기호+글자(`○ 감시 중`, `▲ 확인 중`, `▼ 출차 시작 감지`)로 함께 표시. 그래프 세로선(이 카드와 '공연 후 출차 곡선' 공통): 예상 = 점선 + 옅은 띠(입차 `--warn`/`--warn-bg`, 출차 `--accent`/`--accent-soft`), 실제 = 초록 실선(`--good-ink`) + `●` 글자. 선 글자는 흰 테두리(`paint-order="stroke"`)로 겹쳐도 읽히게, 곡선 이름은 곡선 옆 글자로(색만으로 구분하지 않음) |
 | 운영자 (`audience_car.js`) | `.ac-grid`, `.ac-pick`, `.ac-result` (`.is-match`), `.ac-result-head`, `.ac-num`, `.ac-bar` (+ `.le-status`, `.le-chart`, `.legend`, `table.list` 재사용) | 관객 성향으로 본 자가용 예상 카드. 판단은 기호+글자(`● 뚜렷함`, `▲ 덜 뚜렷함`, `○ 뚜렷하지 않음`), 산점도는 주말 ●·금요일 ▲ 모양으로도 구분 |
 | 관객 (`audience.js` · `renderCar`) | 기존 `dl` 안 `dt`/`dd` 한 줄 추가('차로 오는 관객') | 같은 가수 지난 관객 구성이 있고 `audience_car.json`의 `meaningful`이 참일 때만 보임 |
 | 운영자 (`operator.js` · `drawBrief`) | `.brief-header-bar`, `.brief`, `.print-me`, `.no-print` | 유관기관 공유용 A4 한 장 인쇄 양식 |

@@ -255,3 +255,19 @@ def audience_cars(x, day, start):
     rout = (x.out_time - s).dt.total_seconds() / 60
     a = x[(rin >= -180) & (rin <= 20) & (rout >= 90) & (rout <= 420) & (rout - rin >= 120)]
     return float(a.w.sum(skipna=False)), int(len(a))
+
+
+ENTRY_FROM, ENTRY_TO = -360, 30              # 입차 분석에서 관객 차로 보는 입차 시간(공연 시작 기준 분)
+
+
+def entry_timing(x, s, lo=ENTRY_FROM, hi=ENTRY_TO):
+    """공연 관객 차가 들어온 시각: 시작 6시간 전~30분 뒤에 들어와 2시간 넘게 머물고 시작 1.5~7시간 사이에 나간 차.
+    (출차 분석의 관객 차는 3시간 전부터지만, 공연날 아침·낮에 미리 오는 차가 많아 입차는 6시간 전부터 본다)
+    돌려주는 값: {'in50': 절반이 들어온 때, 'in90': 90%가 들어온 때(시작 기준 분), 'n': 대수} 또는 None(150대 미만)"""
+    rin = ((x.in_time - s).dt.total_seconds() / 60).values
+    rout = ((x.out_time - s).dt.total_seconds() / 60).values
+    a = rin[(rin >= lo) & (rin <= hi) & (rout >= 90) & (rout <= 420) & (rout - rin >= 120)]
+    if len(a) < 150:
+        return None
+    return {"in50": int(round(float(np.percentile(a, 50)))), "in90": int(round(float(np.percentile(a, 90)))), "n": int(len(a))}
+
