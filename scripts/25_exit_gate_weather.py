@@ -140,7 +140,11 @@ def weather(A):
         for c in ["wet", "cold"]:
             i = list(Z.columns).index(c)
             res.setdefault(c, {})[y] = {"min": round(float(b[i]), 1), "lo": round(float(b[i] - 1.96 * se[i]), 1), "hi": round(float(b[i] + 1.96 * se[i]), 1)}
-    return {"shows": int(len(S)), "wetShows": int(S.wet.sum()), "coldShows": int(S.cold.sum()),
+    win = S[pd.to_datetime(S.date).dt.month.isin([12, 1, 2])]          # 추위는 겨울 공연(연말 공연 등)과 겹쳐서 겨울끼리도 비교
+    winter = {"shows": int(len(win)), "cold": int(win.cold.sum()),
+              "coldP50": round(float(win[win.cold].p50.median()), 0), "mildP50": round(float(win[~win.cold].p50.median()), 0),
+              "coldP90": round(float(win[win.cold].p90.median()), 0), "mildP90": round(float(win[~win.cold].p90.median()), 0)}
+    return {"shows": int(len(S)), "wetShows": int(S.wet.sum()), "coldShows": int(S.cold.sum()), "winter": winter,
             "period": f"{S.date.min()} ~ {S.date.max()}", "effect": res,
             "wetMedian": {"p50": round(float(S[S.wet].p50.median()), 0), "p90": round(float(S[S.wet].p90.median()), 0)},
             "dryMedian": {"p50": round(float(S[~S.wet].p50.median()), 0), "p90": round(float(S[~S.wet].p90.median()), 0)}}
