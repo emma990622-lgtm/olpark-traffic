@@ -7,7 +7,7 @@ PR을 올리기 전에 누구나(사람·AI 모두) 돌리는 기본 점검. 설
   1) JS 문법 (node --check)  — Node가 없으면 건너뜀
   2) 파이썬 문법 (scripts/)
   3) web/data/*.json·*.geojson 이 올바른 JSON인지
-  4) JS가 id로 찾는 화면 요소가 HTML에 있는지 (audience.js ↔ index.html, operator.js ↔ operator.html),
+  4) JS가 id로 찾는 화면 요소가 HTML에 있는지 (audience.js·exit_gate.js ↔ index.html),
      docs/design.md "절대 지우면 안 되는 id" 목록이 HTML에 그대로 있는지
   5) 인증키처럼 보이는 값이 코드에 직접 적혀 있지 않은지
 
@@ -59,7 +59,7 @@ for f in sorted((ROOT / "web" / "data").glob("*.json")) + sorted((ROOT / "web" /
 
 # 4) JS가 찾는 id ↔ HTML의 id
 ID_CALL = re.compile(r"""(?:getElementById|\$)\(\s*["']([A-Za-z][\w-]*)["']\s*\)""")
-for js, html in (("audience.js", "index.html"), ("operator.js", "operator.html")):
+for js, html in (("audience.js", "index.html"), ("exit_gate.js", "index.html")):
     jf, hf = ROOT / "web" / "assets" / js, ROOT / "web" / html
     if not (jf.exists() and hf.exists()):
         continue

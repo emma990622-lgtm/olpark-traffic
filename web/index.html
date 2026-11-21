@@ -6,7 +6,7 @@
 <title>올팍 공연 주차·귀가 안내</title>
 <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-<link rel="stylesheet" href="assets/style.css?v=4">
+<link rel="stylesheet" href="assets/style.css?v=5">
 </head>
 <body>
 <header class="top">
@@ -15,10 +15,6 @@
       <span class="brand-kicker">올림픽공원 공연 교통·주차 분산 안내</span>
       <h1>올팍 공연 주차·귀가 안내</h1>
     </div>
-    <nav aria-label="화면 전환">
-      <a class="on" href="index.html">관객 안내</a>
-      <a href="operator.html">운영자·기관</a>
-    </nav>
   </div>
 </header>
 
@@ -58,6 +54,18 @@
     <div class="notice info" id="stationTip" style="margin-top:12px"></div>
   </section>
 
+  <section class="card" id="exitGate">
+    <h2><span class="step">4</span>공연 끝나고 어느 문으로 나갈까요?</h2>
+    <p class="sec-sub">주차한 곳을 고르면, 지난 공연에서 같은 곳에 세운 차가 가장 빨리 빠진 출구를 알려 드려요.</p>
+    <div class="eg-zones" id="egZone" role="group" aria-label="주차한 곳"></div>
+    <div id="egResult" role="status" style="margin-top:12px"></div>
+    <h3 class="subhead">날씨에 따라 출차가 늦어지나요?</h3>
+    <div style="margin-bottom:8px;max-width:22em"><label class="field" for="egWx">날씨</label>
+      <select id="egWx"><option value="auto">공연 날 예보 사용(24시간 앞까지)</option><option value="dry">보통 날씨</option><option value="rain">비가 와요</option><option value="cold">추워요(체감 0도 미만)</option></select></div>
+    <div id="egWeather" role="status">불러오는 중…</div>
+    <p class="footnote" id="egSrc"></p>
+  </section>
+
   <section class="card" id="visitorCard">
     <h2>방문객 혼잡 예측 · 분산 안내</h2>
     <div class="muted small" style="margin-bottom:10px">공연·요일·날씨로 공원 일대가 시간대별로 얼마나 붐빌지 예상해요. 덜 붐비는 시간과 역을 골라 보세요.</div>
@@ -89,5 +97,6 @@
 <script src="assets/map3d.js"></script>
 <script src="assets/audience.js"></script>
 <script src="assets/visitor.js"></script>
+<script src="assets/exit_gate.js"></script>
 </body>
 </html>

@@ -1664,3 +1664,49 @@ details#flat[open] {
   }
 }
 
+
+/* ==========================================================================
+   관객: 공연 끝나고 어느 문으로 나갈까요? (exit_gate.js)
+   ========================================================================== */
+.eg-zones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.eg-zones button {
+  min-height: var(--tap-min);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.eg-zones button b { font-size: 15px; }
+.eg-zones button span { font-size: 12.5px; color: var(--ink-2); line-height: 1.35; }
+.eg-zones button.on {
+  border: 2px solid var(--accent);
+  background: var(--accent-soft);
+}
+.eg-zones button.on b::before { content: "✓ "; color: var(--accent); }
+@media (max-width: 380px) {
+  .eg-zones { grid-template-columns: 1fr; }
+}
+.eg-reco {
+  background: var(--good-bg);
+  border: 1px solid var(--good-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.eg-reco p { margin: 6px 0 0; font-size: 13.5px; color: var(--ink); }
+.eg-gate { font-size: 19px; }
+.eg-wx { font-size: 14px; line-height: 1.6; }
