@@ -77,7 +77,7 @@
   - `id`: `date`, `event`, `eventInfo`, `mode`, `carSection`, `reco`, `options`, `walkSrc`, `subwayNote`, `transitSection`, `stations`, `stationTip`, `map3d`, `legend3d`, `flat`, `map`, `legend`, `roadNote`
   - `data-*`: `#mode` 내부 버튼의 `data-v="car"`, `data-v="transit"` / `#options` 내부 환승 탭 버튼의 `data-tmode="go"`, `data-tmode="out"`
 - **`web/operator.html`**:
-  - `id`: `date`, `showMin`, `events`, `kpis`, `chart`, `chartNote`, `map3d`, `tPlay`, `tSlider`, `tNow`, `tLabel`, `tInfo`, `legend3d`, `flat`, `map`, `legend`, `roadNote`, `roadCheck`, `roadDayNote`, `roadChart`, `roadChartLegend`, `heat`, `slowTop`, `gateNote`, `gateTable`, `gateSrc`, `brief`, `liveExit`, `leReplay`, `leStatus`, `leKpis`, `leChart`, `leMark`, `leCsv`, `leMarks`, `leRec`, `leErr`, `leSrc`, `audCar`, `acStatus`, `acPreset`, `acDay`, `acPredict`, `acCoef`, `acChart`, `acLegend`, `acSrc`, `dataQuality`, `dqStatus`, `dqIssues`, `dqMonths`, `dqSkipped`, `dqSrc`
+  - `id`: `date`, `showMin`, `events`, `kpis`, `chart`, `chartNote`, `map3d`, `tPlay`, `tSlider`, `tNow`, `tLabel`, `tInfo`, `legend3d`, `flat`, `map`, `legend`, `roadNote`, `roadCheck`, `roadDayNote`, `roadChart`, `roadChartLegend`, `heat`, `slowTop`, `gateNote`, `gateTable`, `gateSrc`, `brief`, `liveExit`, `leReplay`, `leStatus`, `leKpis`, `leChart`, `leMark`, `leCsv`, `leMarks`, `leRec`, `leErr`, `leSrc`, `audCar`, `acStatus`, `acPreset`, `acDay`, `acPredict`, `acCoef`, `acChart`, `acLegend`, `acSrc`, `visitorCard`, `vfWx`, `vfStatus`, `vfHours`, `vfStations`, `vfDetail`, `vfSrc`, `dataQuality`, `dqStatus`, `dqIssues`, `dqMonths`, `dqSkipped`, `dqSrc`
 
 ---
 
@@ -93,3 +93,4 @@
 
 - 2026-11-20: 운영자 '공연 후 출차 곡선' 카드와 '주변 도로 (3D)' 카드는 `.grid2`(두 칸)에서 빼서 한 줄 전체 폭 카드로 둔다(실시간 입출차 감지 카드와 같은 폭). 출차 곡선 그래프 viewBox는 760×280.
 - 2026-11-20: `web/data-guide.html`(결과 데이터 설명서)은 JS 없는 정적 페이지. 운영자 화면과 같은 머리(`header.top`)·`card`·`table.list`를 쓴다. 운영자 '데이터 점검 결과' 카드(`data_quality.js`)는 새 class 없이 `.le-status`, `.chip.warn`, `table.list`, `.subhead` 재사용, 비고는 기호+글자(`●`/`▲`).
+- 2026-11-21: '방문객 혼잡 예측·분산 안내' 카드(`visitor.js`, 관객·운영자 공통, 운영자에서만 효과 표)는 새 class 없이 `.le-status`, `.chip`(여유 `good ●` / 보통 `●` / 붐빔 `warn ▲` / 매우 붐빔 `bad ■`), `table.list`, `.notice.info` 재사용. 막대는 inline style(장식, `aria-hidden`).

@@ -148,6 +148,18 @@
     <p class="footnote" id="acSrc"></p>
   </section>
 
+  <section class="card" id="visitorCard">
+    <h2>방문객 혼잡 예측 · 분산 안내</h2>
+    <div class="muted small" style="margin-bottom:10px">공연·요일·날씨로 공원 일대 방문객(생활인구)을 시간대별로 예상하고, 지하철 승객이 어느 역에 몰리는지 보여요. 위 날짜를 바꾸면 다시 계산해요.</div>
+    <div style="margin-bottom:10px;max-width:22em"><div><label class="field" for="vfWx">날씨</label>
+      <select id="vfWx"><option value="auto">예보 사용(16일 앞까지)</option><option value="dry">비가 안 온다고 가정</option><option value="rain">비가 온다고 가정</option></select></div></div>
+    <div id="vfStatus" class="le-status" role="status">불러오는 중…</div>
+    <div class="table-scroll" style="margin-top:10px"><table class="list" id="vfHours"></table></div>
+    <div id="vfStations"></div>
+    <div id="vfDetail"></div>
+    <p class="footnote" id="vfSrc"></p>
+  </section>
+
   <section class="card" id="dataQuality">
     <h2>데이터 점검 결과</h2>
     <div class="muted small" style="margin-bottom:10px">원본 공공데이터에서 찾은 문제와 처리 방법이에요. 이 화면의 숫자는 모두 아래 처리를 거친 값이에요.</div>
@@ -180,5 +192,6 @@
 <script src="assets/live_exit.js"></script>
 <script src="assets/audience_car.js"></script>
 <script src="assets/data_quality.js"></script>
+<script src="assets/visitor.js"></script>
 </body>
 </html>

@@ -58,6 +58,18 @@
     <div class="notice info" id="stationTip" style="margin-top:12px"></div>
   </section>
 
+  <section class="card" id="visitorCard">
+    <h2>방문객 혼잡 예측 · 분산 안내</h2>
+    <div class="muted small" style="margin-bottom:10px">공연·요일·날씨로 공원 일대가 시간대별로 얼마나 붐빌지 예상해요. 덜 붐비는 시간과 역을 골라 보세요.</div>
+    <div style="margin-bottom:10px;max-width:22em"><div><label class="field" for="vfWx">날씨</label>
+      <select id="vfWx"><option value="auto">예보 사용(16일 앞까지)</option><option value="dry">비가 안 온다고 가정</option><option value="rain">비가 온다고 가정</option></select></div></div>
+    <div id="vfStatus" class="le-status" role="status">불러오는 중…</div>
+    <div class="table-scroll" style="margin-top:10px"><table class="list" id="vfHours"></table></div>
+    <div id="vfStations"></div>
+    <div id="vfDetail"></div>
+    <p class="footnote" id="vfSrc"></p>
+  </section>
+
   <section class="card">
     <h2>지금 주변 도로와 걷는 길</h2>
     <p class="sec-sub">도로 색은 실시간 소통 상태이고, 점선은 고른 공연장까지 걸어가는 길이에요. 선을 누르면 자세한 정보가 나와요.</p>
@@ -76,5 +88,6 @@
 <script src="assets/common.js"></script>
 <script src="assets/map3d.js"></script>
 <script src="assets/audience.js"></script>
+<script src="assets/visitor.js"></script>
 </body>
 </html>
