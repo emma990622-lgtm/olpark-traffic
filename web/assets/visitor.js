@@ -30,20 +30,22 @@
     if (v < LV.p95) return { cls: "warn", sym: "▲", label: "붐빔" };
     return { cls: "bad", sym: "■", label: "매우 붐빔" };
   }
-  // 날씨 예보(Open-Meteo, 인증키 없음). 16일보다 먼 날·지난 날·실패 → null
+  // 날씨 예보: 서울시 실시간 도시데이터(/api/weather, 앞으로 24시간). 그 밖의 날·실패 → { none: 이유 }
+  let wxAll = null;
   async function forecast(d) {
     if (d in wxCache) return wxCache[d];
-    const days = (new Date(d + "T00:00:00") - new Date(new Date().toDateString())) / 86400000;
-    if (days < 0 || days > 15) return (wxCache[d] = { none: days < 0 ? "지난 날이라 예보가 없어서" : "날씨 예보는 16일 앞까지만 나와서" });
-    try {
-      const w = F.weatherApi;
-      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${w.lat}&longitude=${w.lon}&hourly=apparent_temperature,precipitation&timezone=Asia%2FSeoul&start_date=${d}&end_date=${d}`);
-      if (!r.ok) throw new Error(r.status);
-      const j = await r.json();
-      if (!j.hourly || j.hourly.time.length < 24) throw new Error("short");
-      wxCache[d] = { feels: j.hourly.apparent_temperature, precip: j.hourly.precipitation };
-    } catch (_) { wxCache[d] = { none: "날씨 예보를 불러오지 못해서" }; }
-    return wxCache[d];
+    if (!wxAll) {
+      try {
+        const j = await fetch("/api/weather").then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
+        if (!j || !Array.isArray(j.hours)) throw new Error("empty");
+        wxAll = j.hours;
+      } catch (_) { return { none: "날씨 예보를 불러오지 못해서" }; }   // 실패는 저장하지 않는다(다음에 다시 시도)
+    }
+    const hs = wxAll.filter((x) => x.date === d);
+    if (!hs.length) return (wxCache[d] = { none: "날씨 예보는 24시간 앞까지만 나와서" });
+    const precip = Array(24).fill(null), feels = Array(24).fill(null);
+    hs.forEach((x) => { precip[x.hour] = x.precip; feels[x.hour] = x.temp; });   // 체감온도 예보가 없어 기온으로 추위·더위를 본다
+    return (wxCache[d] = { precip, feels });
   }
   // 모형: ln(생활인구) = 요일 유형×시각 + 월 + 추세 + 공연(시작 기준 시간) + 다른 공연장 + 페스티벌 + 날씨
   function predict(d, h, ctx) {
@@ -58,7 +60,7 @@
     if (ctx.other) for (const k in H.other) { const [a, b] = k.split("-").map(Number); if (h >= a && h <= b) x += H.other[k]; }
     if (ctx.festival && h >= 10 && h <= 21) x += H.festival;
     if (h >= H.wxHours[0] && h <= H.wxHours[1]) {
-      const p = ctx.wx ? ctx.wx.precip[h] : ctx.rain ? 1 : 0, f = ctx.wx ? ctx.wx.feels[h] : null;
+      const p = ctx.wx ? (ctx.wx.precip[h] || 0) : ctx.rain ? 1 : 0, f = ctx.wx ? ctx.wx.feels[h] : null;   // 예보가 없는 시각은 비 없음으로 본다
       if (p >= 0.5) x += H.rain;
       if (p >= 3) x += H.heavy;
       if (f != null && f < 0) x += H.cold;
@@ -86,7 +88,7 @@
     for (let h = from; h <= to; h++) {
       const x = predict(d, h, ctx);
       const r = ctx.start != null ? H.residShow : H.resid;
-      rows.push({ h, v: Math.exp(x), lo: Math.exp(x + r.lo), hi: Math.exp(x + r.hi), rainy: wx && wx.precip[h] >= 0.5 });
+      rows.push({ h, v: Math.exp(x), lo: Math.exp(x + r.lo), hi: Math.exp(x + r.hi), rainy: wx && wx.precip[h] >= 0.5, known: wx && wx.precip[h] != null });
     }
     const peak = rows.reduce((a, b) => (b.v > a.v ? b : a));
     const pl = level(peak.v);
@@ -94,7 +96,8 @@
     // 분산 안내: 가장 붐비는 때보다 15% 넘게 덜 붐비는, 그 전의 가장 늦은 시각
     const early = rows.filter((r) => r.h < peak.h && r.v <= peak.v * 0.85).pop();
     const wxTxt = mode === "rain" ? "비가 온다고 가정" : mode === "dry" ? "비가 안 온다고 가정"
-      : wx ? (rows.some((r) => r.rainy) ? "예보: 이 시간대에 비 소식이 있어요" : "예보: 이 시간대에 비 소식이 없어요")
+      : wx ? (rows.some((r) => r.rainy) ? "서울시 예보: 이 시간대에 비 소식이 있어요" : "서울시 예보: 이 시간대에 비 소식이 없어요") +
+             (rows.some((r) => !r.known) ? " · 예보가 아직 없는 시각은 비가 안 온다고 가정" : "")
       : `${got && got.none ? got.none : "예보가 없어서"} 비가 안 온다고 가정`;
     $("vfStatus").innerHTML =
       `<span class="chip ${pl.cls}">${pl.sym} ${pl.label}</span> ` +

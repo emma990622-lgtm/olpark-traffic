@@ -182,7 +182,7 @@ def main():
            "method": "ln(생활인구)를 요일 유형×시각, 월, 공연 시작 기준 시간, 다른 공연장, 페스티벌, 비·추위·더위로 설명하는 회귀(최소제곱)",
            "hourly": hourly, "valid": valid, "levels": levels, "daily": daily, "stations": stations,
            "holidays": sorted(hol[hol.date >= "2026-01-01"].date.tolist()),
-           "weatherApi": {"lat": 37.5207, "lon": 127.1214, "note": "날씨 예보: Open-Meteo(open-meteo.com), 16일 앞까지"}}
+           "weatherApi": {"lat": 37.5207, "lon": 127.1214, "note": "날씨 예보: 서울시 실시간 도시데이터(올림픽공원), 24시간 앞까지. 추위·더위는 예보 기온으로 봄(체감온도 예보 없음)"}}
     OUT.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
     print(f"시간별 모형: {hourly['n']:,}시간({hourly['period']}), 검증 {valid['test']} 공연 시간대 오차 {valid['mapeShow']}% (기준 {valid['mapeShowBase']}%), "
           f"낮 전체 {valid['mapeAll']}% (기준 {valid['mapeAllBase']}%), 가장 붐비는 시각 ±1시간 적중 {valid['peakHourWithin1']} ({valid['showDays']}일), 추세 사용 {trend}")
