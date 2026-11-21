@@ -7,7 +7,8 @@
   주차 위치는 자료에 없어 '들어온 문'으로 대신한다(공식 주차 안내: 북2문 P4·P5 / 동2문 P1B·P2·P테·P그 / 남2문 P1A·P6·P7).
   출구 비교: 같은 공연·같은 입구 안에서 출구별 출차 시각 중앙값을 비교(공연마다 끝나는 시각이 달라 공연 안에서만 비교) → 공연들의 중앙값.
   날씨: 출차 시간대(시작 2.5~4.5시간 뒤) 비 합 1mm 이상 = 비 온 공연, 체감온도 평균 0도 미만 = 추운 공연.
-        출차 절반·90% 시각을 요일 유형·시작 시각·관객 차 대수를 함께 넣은 회귀로 비교.
+        출차 절반·90% 시각을 요일 유형·시작 시각·관객 차 대수를 함께 넣은 회귀로 비교(effect),
+        그리고 같은 공연(투어)끼리 비교(공연명 고정효과 + 막공 여부, effectTour) — 공연 길이가 날씨와 섞이는 것을 막는 쪽이 기본.
 """
 import glob
 import json
@@ -140,11 +141,35 @@ def weather(A):
         for c in ["wet", "cold"]:
             i = list(Z.columns).index(c)
             res.setdefault(c, {})[y] = {"min": round(float(b[i]), 1), "lo": round(float(b[i] - 1.96 * se[i]), 1), "hi": round(float(b[i] + 1.96 * se[i]), 1)}
+    # 같은 공연(투어)끼리 비교: 공연마다 길이가 달라(연말 공연이 김) 날씨와 섞이므로 공연명 고정효과 + 막공 여부
+    T = pd.get_dummies(S.title, drop_first=True).astype(float)
+    T["st"] = S.start.str[:2].astype(int).values
+    T["we"] = S.we.astype(float).values
+    for c in ["wet", "cold"]:
+        T[c] = S[c].astype(float).values
+    T["last"] = (S.groupby("title").date.transform("max") == S.date).astype(float).values
+    T["n100"] = S.n.values / 100
+    T.insert(0, "c", 1.0)
+    XT = T.values
+    tour = {}
+    for y in ["p50", "p90"]:
+        b = np.linalg.lstsq(XT, S[y].values, rcond=None)[0]
+        e = S[y].values - XT @ b
+        dof = len(e) - np.linalg.matrix_rank(XT)
+        se = np.sqrt(np.diag(e @ e / dof * np.linalg.pinv(XT.T @ XT)))
+        for c in ["wet", "cold"]:
+            i = list(T.columns).index(c)
+            tour.setdefault(c, {})[y] = {"min": round(float(b[i]), 1), "lo": round(float(b[i] - 1.96 * se[i]), 1), "hi": round(float(b[i] + 1.96 * se[i]), 1)}
+    multi = S.groupby("title").date.transform("size") > 1
+    for c in ["wet", "cold"]:
+        g = S[multi].groupby("title")[c].agg(["sum", "size"])
+        tour[c]["tours"] = int(((g["sum"] > 0) & (g["sum"] < g["size"])).sum())
+        tour[c]["shows"] = int(S[multi & S[c]].shape[0])
     win = S[pd.to_datetime(S.date).dt.month.isin([12, 1, 2])]          # 추위는 겨울 공연(연말 공연 등)과 겹쳐서 겨울끼리도 비교
     winter = {"shows": int(len(win)), "cold": int(win.cold.sum()),
               "coldP50": round(float(win[win.cold].p50.median()), 0), "mildP50": round(float(win[~win.cold].p50.median()), 0),
               "coldP90": round(float(win[win.cold].p90.median()), 0), "mildP90": round(float(win[~win.cold].p90.median()), 0)}
-    return {"shows": int(len(S)), "wetShows": int(S.wet.sum()), "coldShows": int(S.cold.sum()), "winter": winter,
+    return {"shows": int(len(S)), "wetShows": int(S.wet.sum()), "coldShows": int(S.cold.sum()), "winter": winter, "effectTour": tour,
             "period": f"{S.date.min()} ~ {S.date.max()}", "effect": res,
             "wetMedian": {"p50": round(float(S[S.wet].p50.median()), 0), "p90": round(float(S[S.wet].p90.median()), 0)},
             "dryMedian": {"p50": round(float(S[~S.wet].p50.median()), 0), "p90": round(float(S[~S.wet].p90.median()), 0)}}

@@ -120,22 +120,18 @@
         }
       }
     }
-    const e = W.effect;
-    // 판단은 95% 범위로: 범위가 모두 0보다 크면 '늦어져요', 0을 넘나들면 '근거 없음/확실하지 않음'
-    const verdict = (x) => x.lo > 0 ? `<span class="chip warn">▲ 늦어질 수 있어요</span>`
-      : x.hi < 0 ? `<span class="chip good">● 오히려 빨랐어요</span>` : `<span class="chip">○ 늦어진다는 근거 없음</span>`;
+    const e = W.effect, T = W.effectTour;
+    // 판단은 '같은 공연(투어)끼리' 비교의 95% 범위로(공연마다 길이가 달라 날씨와 섞이는 것을 막음).
+    // 절반 출차(p50)나 마지막 차들(p90) 중 하나라도 범위가 모두 0보다 크면 '늦어질 수 있어요'
+    const late = (x) => x.p50.lo > 0 || x.p90.lo > 0;
+    const verdict = (x) => late(x) ? `<span class="chip warn">▲ 늦어질 수 있어요</span>` : `<span class="chip">○ 늦어진다는 근거 없음</span>`;
     let txt;
-    if (rain) txt = `${verdict(e.wet.p50)} 비 온 공연 ${W.wetShows}회(출차 시간대 비 1mm 이상)에서 관객 차 절반이 빠진 때는 시작 후 ${hm(W.wetMedian.p50)},
-      비 안 온 공연은 ${hm(W.dryMedian.p50)}였어요. 요일·시작 시각·차 대수를 맞춰 비교하면 차이 ${span(e.wet.p50)}예요.
-      ${e.wet.p50.lo > 0 ? "" : `차이가 0을 사이에 두고 있어 비 때문에 늦어진다고 말할 수 없어요. `}비 온 공연이 ${W.wetShows}회뿐이라 확실하지는 않아요.`;
-    else if (cold) {
-      const w = W.winter;
-      txt = `${verdict(e.cold.p50)} 추운 공연 ${W.coldShows}회(출차 시간대 체감 0도 미만)는 관객 차 절반이 빠지는 때가 ${span(e.cold.p50)},
-        90%가 빠지는 때가 ${span(e.cold.p90)} 달랐어요(요일·시작 시각·차 대수를 맞춘 값).
-        다만 추운 날 공연은 대부분 12~2월 연말·겨울 공연이라 공연 길이 차이가 섞였을 수 있어요.
-        12~2월 공연 ${w.shows}회끼리만 보면 추운 날은 절반 출차 ${hm(w.coldP50)}·90% 출차 ${hm(w.coldP90)},
-        덜 추운 날은 ${hm(w.mildP50)}·${hm(w.mildP90)}였어요. ${e.cold.p50.lo > 0 ? "추운 날은 출차 시간을 넉넉히 잡으세요." : ""}`;
-    }
+    if (rain) txt = `${verdict(T.wet)} 비 온 공연 ${T.wet.shows}회를 같은 공연의 비 안 온 회차와 비교했어요(${T.wet.tours}개 공연).
+      관객 차 절반이 빠지는 때는 ${span(T.wet.p50)}, 마지막 10%가 남을 때까지(90% 출차)는 ${span(T.wet.p90)} 차이였어요.
+      ${T.wet.p90.lo > 0 ? "<b>비 오는 날은 마지막 차들이 빠지는 데 더 오래 걸렸어요.</b> 늦게 나올 생각이면 시간을 넉넉히 잡으세요. " : ""}비 온 공연이 ${T.wet.shows}회뿐이라 확실하지는 않아요.`;
+    else if (cold) txt = `${verdict(T.cold)} 추운 공연(출차 시간대 체감 0도 미만) ${T.cold.shows}회를 같은 공연의 덜 추운 회차와 비교하면(${T.cold.tours}개 공연)
+      절반 출차 ${span(T.cold.p50)}, 90% 출차 ${span(T.cold.p90)} 차이로 <b>추위 때문에 늦어진다는 근거는 없어요.</b>
+      공연을 가리지 않고 모든 추운 공연을 보면 절반 출차가 ${span(e.cold.p50)} 늦었는데, 추운 날 공연이 주로 길게 하는 연말 공연이라 생긴 차이로 보여요.`;
     else txt = `<span class="chip good">● 보통 날씨</span> 관객 차 절반이 빠지는 때는 보통 공연 시작 후 ${hm(W.dryMedian.p50)}, 90%는 ${hm(W.dryMedian.p90)}예요(지난 공연 중앙값).`;
     $("egWeather").innerHTML = (note ? `<p class="muted small" style="margin:0 0 6px">${note}</p>` : "") + `<div class="eg-wx">${txt}</div>`;
   }
