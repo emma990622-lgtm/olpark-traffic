@@ -1,7 +1,7 @@
 """
 관객용 '내 주차 위치 → 빠른 출구'와 '날씨에 따라 출차가 늦어지나' 분석.
   입력: data/raw/vhcle_use/*.csv  문화 빅데이터 플랫폼 '올림픽공원 차량 이용현황'(차마다 입구·출구·분 단위 시각, 주인 PC에만)
-        data/raw/visitor_weather/weather_hourly_openmeteo.csv  시간별 날씨(2024-06~)
+        data/raw/weather_asos_108.csv  기상청 ASOS 서울 시간자료(scripts/26, 있으면 우선) / 없으면 visitor_weather/weather_hourly_openmeteo.csv(2024-06~)
   출력: web/data/exit_gate.json, data/processed/exit_gate_pairs.csv, data/processed/exit_weather_shows.csv
   관객 차 = 시작 3시간 전~20분 뒤 입차, 2시간 넘게 머물고 시작 1.5~7시간 뒤 출차 (KSPO DOME 공연, 하루 한 회차인 날)
   주차 위치는 자료에 없어 '들어온 문'으로 대신한다(공식 주차 안내: 북2문 P4·P5 / 동2문 P1B·P2·P테·P그 / 남2문 P1A·P6·P7).
@@ -93,18 +93,33 @@ def gate_advice(A):
     return out, load_, other
 
 
+ASOS = ROOT / "data/raw/weather_asos_108.csv"
+
+
+def load_weather():
+    """기상청 ASOS 서울(108) 시간자료가 있으면 그것(공공데이터), 없으면 Open-Meteo 재분석. (표[rain, feels], 출처 문구)"""
+    if ASOS.exists():
+        W = pd.read_csv(ASOS, encoding="utf-8-sig")
+        W["t"] = pd.to_datetime(W.tm)
+        W = W.set_index("t").rename(columns={"rn": "rain"})
+        W["rain"] = W.rain.fillna(0)
+        return W[["rain", "feels"]], "기상청 지상관측(ASOS) 시간자료, 서울(108) 지점 — 공공데이터포털"
+    W = pd.read_csv(ROOT / "data/raw/visitor_weather/weather_hourly_openmeteo.csv")
+    W["t"] = pd.to_datetime(W.time)
+    W = W.set_index("t").drop(columns=["rain"]).rename(columns={"precipitation": "rain", "apparent_temperature": "feels"})
+    return W[["rain", "feels"]], "Open-Meteo 과거 기상(재분석, 올림픽공원 좌표) — 기상청 관측(ASOS)으로 바꿀 예정"
+
+
 def weather(A):
     M = A[A.gout.isin(MAIN)]
     S = M.groupby(["date", "start", "title"]).om.agg(n="size", p50="median", p90=lambda s: s.quantile(0.9)).reset_index()
-    W = pd.read_csv(ROOT / "data/raw/visitor_weather/weather_hourly_openmeteo.csv")
-    W["t"] = pd.to_datetime(W.time)
-    W = W.set_index("t")
+    W, _ = load_weather()
     rain, feels = [], []
     for _, r in S.iterrows():
         s = pd.Timestamp(f"{r.date} {r.start}")
         w = W.loc[s + pd.Timedelta(minutes=150): s + pd.Timedelta(minutes=270)]
-        rain.append(w.precipitation.sum() if len(w) else np.nan)
-        feels.append(w.apparent_temperature.mean() if len(w) else np.nan)
+        rain.append(w.rain.sum() if len(w) else np.nan)
+        feels.append(w.feels.mean() if len(w) else np.nan)
     S["rain"], S["feels"] = rain, feels
     S = S.dropna(subset=["rain"]).copy()
     S["wet"] = S.rain >= 1.0
@@ -143,7 +158,7 @@ def main():
            "method": "KSPO DOME 공연 관객 차(시작 3시간 전~20분 뒤 입차, 2시간 넘게 머물고 시작 1.5~7시간 뒤 출차). 주차 위치는 들어온 문으로 대신함. "
                      "같은 공연·같은 입구 안에서 출구별 출차 시각 중앙값을 비교한 뒤 공연들의 중앙값(공연마다 끝나는 시각이 달라서)",
            "byEntry": adv, "gateLoad": load_, "otherLots": other, "way": WAY,
-           "weather": wx, "weatherSource": "Open-Meteo 과거 기상(재분석, 올림픽공원 좌표) — 기상청 관측(ASOS)으로 바꿀 예정"}
+           "weather": wx, "weatherSource": load_weather()[1]}
     p = ROOT / "web/data/exit_gate.json"
     p.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
     print(json.dumps({k: out[k] for k in ["shows", "cars", "byEntry", "gateLoad", "otherLots", "weather"]}, ensure_ascii=False, indent=1))
