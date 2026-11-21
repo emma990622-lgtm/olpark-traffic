@@ -13,3 +13,6 @@ venv/
 Thumbs.db
 desktop.ini
 
+
+# 차량 이용현황 원본(문화 빅데이터 플랫폼, 한 달 30~70MB × 20여 개) — 주인 PC에만 둔다
+data/raw/vhcle_use/
