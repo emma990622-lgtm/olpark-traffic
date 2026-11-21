@@ -204,7 +204,7 @@
             <span class="muted"> · 주차된 차 약 <b>${pa.est.toLocaleString()}대</b> / ${park[0].cap.toLocaleString()}면</span>
           </div>
           <div class="occ-bar ${occCls === "good" ? "" : "is-" + occCls}"><span style="width:${occPct}%"></span></div>
-          <div class="muted small">한국체육산업개발 실시간 값 ${parkSum.toLocaleString()}대에서 출차 기록이 없는 장기 주차 약 ${pa.ghost.toLocaleString()}대를 뺀 보정값이에요.</div>
+          <div class="muted small">한국체육산업개발 실시간 값 ${parkSum.toLocaleString()}대에서 출차 기록이 안 닫혀 실제로는 없는 차 약 ${pa.ghost.toLocaleString()}대(새벽 값 − 새벽에 실제로 서 있는 약 225대)를 뺀 보정값이에요.</div>
         </div>`;
     }
 
