@@ -1,0 +1,59 @@
+{
+ "date": "2026-11-22",
+ "start": "17:00",
+ "title": "2026-27 로이킴 LIVE TOUR ［R:O:Y］ in SEOUL",
+ "built": "2026-11-22 14:06",
+ "points": 132,
+ "from": "12:32",
+ "to": "23:05",
+ "ghost": 939,
+ "gapsOver10min": 0,
+ "note": "근사 실제는 공원 주차장 전체 대수(실시간 값 − 장기 주차 보정)로 잰 값이라 관객 차만 센 입출차 기록과 정의가 달라요. 지난 공연 한 회(2025-03-01)로 시험했을 때 근사 실제가 입출차 기록 기준보다 출차는 30분쯤 이르게 나왔어요. 방향을 보는 참고값이에요.",
+ "entry": {
+  "base": 682,
+  "peak": 1706,
+  "rise": 1024,
+  "firstMin": -268,
+  "half": {
+   "pred": -120,
+   "predRange": [
+    -160,
+    -105
+   ],
+   "obs": -90,
+   "diff": 30
+  },
+  "most": {
+   "pred": -30,
+   "predRange": [
+    -41,
+    -21
+   ],
+   "obs": -35,
+   "diff": -5
+  }
+ },
+ "exit": {
+  "state": "found",
+  "peakAfterStart": 1659,
+  "detMin": 200,
+  "detTime": "20:20",
+  "low": 87,
+  "gone": 1572,
+  "lastMin": 365,
+  "half": {
+   "predLive": 206,
+   "predBefore": 208,
+   "obs": 210,
+   "diffLive": 4,
+   "diffBefore": 2
+  },
+  "most": {
+   "predLive": 248,
+   "predBefore": 252,
+   "obs": 250,
+   "diffLive": 2,
+   "diffBefore": -2
+  }
+ }
+}
