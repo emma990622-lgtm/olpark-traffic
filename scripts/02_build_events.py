@@ -72,6 +72,8 @@ def parse_times(tm, beginDt, extended=False):
     extended=True(매일 받는 일정·예매처 문구)면 '12.24(목)'·'12월 13()'·'오후 5' 같은 표기도 읽는다.
     옛 원본은 지난 분석 결과가 바뀌지 않게 예전 방식(extended=False) 그대로."""
     s = normalize(tm, extended)
+    if extended:  # '(월 공연없음)', '월요일 공연 없음'의 요일은 공연일이 아님
+        s = re.sub(r"\(?\s*[월화수목금토일](?:요일)?\s*(?:공연\s*)?(?:없음|휴관|휴연)\s*\)?", " ", s)
     date_mark = DATE_MARK if extended else OLD_MARK
     res = {}
     # 1) 날짜가 적힌 형식: '2024년 11월 15일(금) 20:00 / 11월 16일(토) 19:00'
@@ -107,10 +109,16 @@ def parse_times(tm, beginDt, extended=False):
     # 요일 표기: (금) 19:00 / 토 18시 ...
     parts = re.split(r"/|,(?=\s*\(?[월화수목금토일])", s)
     found_wd = False
+    carry = []  # '토, 일 오후 5시'처럼 쉼표로 나뉜 요일은 다음 조각의 시각을 같이 쓴다(매일 받는 일정만)
     for part in parts:
         wds = re.findall(r"\(?([월화수목금토일])\)?(?=[\s\d(,·~]|$)", part)
         times = [to_time(m) for m in re.finditer(TIME, part)]
         times = [t for t in times if "08:00" <= t <= "23:59"]
+        if extended:
+            if wds and not times:
+                carry += wds
+                continue
+            wds, carry = carry + wds, []
         if wds and times:
             found_wd = True
             for w in wds:
