@@ -231,11 +231,19 @@ def load_all():
     return d, cov, got_2025(cov)
 
 
+# 공원 공식 일정에는 남아 있으나 실제로는 공연이 없었던 날(사전 취소·휴연일 오표기)
+# - 2024-10-14(월): 오페라 투란도트 월요일 휴연('14일 공연 없음', 공원 페이지 '월~금 19:30' 오표기)
+# - 2025-01-05(일): 로드 투 킹덤 콘서트 사전 취소(2024-12-02 공식 취소 발표)
+NO_SHOW_DATES = {"2024-10-14", "2025-01-05"}
+
+
 def kspo_shows(min_year="2024-07"):
-    """KSPO DOME 공연일 중 시작 시각이 하루 한 번인 날 (날짜, 시작, 공연명). 하루 종일 하는 페스티벌은 뺀다."""
+    """KSPO DOME 공연일 중 시작 시각이 하루 한 번인 날 (날짜, 시작, 공연명). 하루 종일 하는 페스티벌·취소·휴연일은 뺀다."""
     ev = pd.read_csv(EVENTS, encoding="utf-8-sig")
     out = []
     for _, r in ev[ev["공연장"] == "KSPO DOME"].iterrows():
+        if r["날짜"] in NO_SHOW_DATES:
+            continue
         ts = str(r["시작시각들"]).split(";")
         if len(ts) != 1 or not re.match(r"^\d{1,2}:\d{2}$", ts[0]) or r["날짜"] < min_year:
             continue

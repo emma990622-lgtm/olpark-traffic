@@ -18,8 +18,6 @@ import unicodedata
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-import pandas as pd
-
 ROOT = Path(__file__).resolve().parent.parent
 DAYS = ROOT / "data" / "processed" / "event_days.csv"
 SRC = ROOT / "data" / "processed" / "show_official.csv"
@@ -37,19 +35,21 @@ def blank(v):
 
 
 def build():
-    ev = pd.read_csv(DAYS, encoding="utf-8-sig")
-    ev = ev[(ev["날짜"] >= TODAY) | (ev["날짜"].str.startswith("2024-07"))]  # 앞으로 공연 + 2024년 7월(지난 자료 비교용)
+    with open(DAYS, encoding="utf-8-sig", newline="") as f:
+        rows = [r for r in csv.DictReader(f) if r["날짜"] >= TODAY or r["날짜"].startswith("2024-07")]
     events = []
-    for _, r in ev.iterrows():
+    for r in rows:
+        seats_raw = str(r.get("좌석규모_참고") or "").strip()
+        long_raw = str(r.get("장기공연") or "").strip().lower()
         e = {
             "date": r["날짜"], "dow": r["요일"], "venue": r["공연장"],
-            "seats": None if pd.isna(r["좌석규모_참고"]) else int(r["좌석규모_참고"]),
+            "seats": None if blank(seats_raw) else int(float(seats_raw)),
             "title": r["공연명"], "times": [t for t in str(r["시작시각들"]).split(";") if t and t != "nan"],
-            "longRun": bool(r["장기공연"]),
+            "longRun": long_raw == "true",
         }
         if not blank(r.get("관람시간출처")):
             if not blank(r.get("관람시간분")):
-                e["runMin"] = int(r["관람시간분"])
+                e["runMin"] = int(float(r["관람시간분"]))
                 e["runText"] = str(r["관람시간원문"]).strip()
             e["runFrom"] = r["관람시간출처"]
             for k, c in (("runSeller", "예매처"), ("runUrl", "예매링크"), ("runChecked", "확인일")):

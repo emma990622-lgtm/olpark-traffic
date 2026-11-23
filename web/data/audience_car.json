@@ -960,18 +960,6 @@
    "why": "비교할 평소 같은 요일이 모자람"
   },
   {
-   "date": "2024-10-14",
-   "start": "19:30",
-   "title": "2024 오페라 투란도트 - 아레나 디 베로나 오리지널 <2024 Opera Turandot - Arena Di Verona Original>",
-   "dayType": "wk",
-   "baseDays": 33,
-   "baseWindowDays": 35,
-   "otherVenues": 0,
-   "excess": -966,
-   "ok": false,
-   "why": "늘어난 사람이 3,000명 미만"
-  },
-  {
    "date": "2024-10-18",
    "start": "19:30",
    "title": "2024 오페라 투란도트 - 아레나 디 베로나 오리지널 <2024 Opera Turandot - Arena Di Verona Original>",
@@ -1382,26 +1370,6 @@
     "50대 이상": 0.086
    },
    "meanAge": 31.7
-  },
-  {
-   "date": "2025-01-05",
-   "start": "13:00",
-   "title": "로드 투 킹덤 : ACE OF ACE 콘서트",
-   "dayType": "sun",
-   "baseDays": 5,
-   "baseWindowDays": 35,
-   "otherVenues": 1,
-   "excess": 4179,
-   "ok": true,
-   "female": 0.505,
-   "ages": {
-    "10대 이하": 0.226,
-    "20대": 0.163,
-    "30대": 0.112,
-    "40대": 0.208,
-    "50대 이상": 0.291
-   },
-   "meanAge": 37.7
   },
   {
    "date": "2025-01-10",

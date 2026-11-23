@@ -1,6 +1,6 @@
 """
 과거 KSPO DOME 공연의 실제 종료 시각(공연 시간) 대비 관객 차 50%·90% 출차 소요 시간 계산.
-  입력: data/processed/exit_weather_shows.csv  (scripts/25가 만든 공연 173회 출차 시각 요약)
+  입력: data/processed/exit_weather_shows.csv  (scripts/25가 만든 공연 171회 출차 시각 요약, 취소·휴연 제외)
         data/processed/show_runtime_known.csv  (언론 현장·성료 기사, 후기, 공식 공지로 확인한 공연 시간·특이사항)
   출력: data/processed/exit_after_end_shows.csv (종료 시각 확인 공연 회차별 종료 시각·출차 소요 분)
         web/data/exit_gate.json 안 weather.afterEnd 갱신 (외부 라이브러리 없이 표준 라이브러리만 사용)
@@ -8,7 +8,7 @@
 신뢰 기준:
   - confidence가 '기사', '기사(여러 회차 묶음)', '단일 후기'이고 actual_min 숫자가 있는 회차만 계산에 포함.
   - 예매처 예정 관람시간('공식(예정만)'), 회차 불명 간접 언급('기사(간접)'), 상한 없는 범위('기사(범위만)'),
-    녹화본 길이('대리값'), 취소('공식(취소)'), 시작 지연('공식(시작지연)')은 CSV에 기록하되 계산에서는 제외.
+    녹화본 길이('대리값'), 취소('공식(취소)'), 휴연('공식(휴연)'), 시작 지연('공식(시작지연)')은 CSV에 기록하되 계산에서는 제외.
 """
 import csv
 import json
