@@ -1,19 +1,66 @@
 date,start,title,scheduled_min,actual,actual_min,basis,source,confidence
-2024-03-02,18:00,2024 IU H.E.R.,,4시간 이상,240,서울 4회 공통 서술,https://www.fnnews.com/news/202403110010127351,기사(여러 회차 묶음)
-2024-03-03,17:00,2024 IU H.E.R.,,4시간 이상,240,서울 4회 공통 서술,https://www.fnnews.com/news/202403110010127351,기사(여러 회차 묶음)
-2024-03-09,18:00,2024 IU H.E.R.,,4시간 이상,240,서울 4회 공통 서술,https://www.fnnews.com/news/202403110010127351,기사(여러 회차 묶음)
-2024-03-10,17:00,2024 IU H.E.R.,,약 4시간,240,막공 기사,https://www.kmib.co.kr/article/view.asp?arcid=1710141367,기사
-2024-06-08,17:00,2024 이찬원 찬가,,약 200분,200,성료 기사(투어 단위),https://www.starnewskorea.com/music/2024/06/10/2024061010440380003,기사(여러 회차 묶음)
-2024-06-09,17:00,2024 이찬원 찬가,,약 200분,200,성료 기사(투어 단위),https://www.starnewskorea.com/music/2024/06/10/2024061010440380003,기사(여러 회차 묶음)
-2024-12-06,20:00,INFINITE LIMITED EDITION,150,약 5시간,300,이후 기사의 간접 언급(회차 불명),https://news.nate.com/view/20250414n26361,기사(간접)
-2024-12-07,18:00,INFINITE LIMITED EDITION,150,약 5시간,300,이후 기사의 간접 언급(회차 불명),https://news.nate.com/view/20250414n26361,기사(간접)
-2024-12-08,17:00,INFINITE LIMITED EDITION,150,약 5시간,300,이후 기사의 간접 언급(회차 불명),https://news.nate.com/view/20250414n26361,기사(간접)
-2024-12-13,19:00,서울 앵콜 이찬원 찬가,120,,,예매처 예정만,https://ticket.yes24.com/Perf/51168,공식(예정만)
-2024-12-20,20:00,CRUSH HOUR : O,120,약 180분,180,성료 기사(투어 단위),https://www.dispatch.co.kr/2314530,기사(여러 회차 묶음)
-2024-12-21,19:00,CRUSH HOUR : O,120,약 180분,180,성료 기사(투어 단위),https://www.dispatch.co.kr/2314530,기사(여러 회차 묶음)
-2024-12-22,18:00,CRUSH HOUR : O,120,약 180분,180,성료 기사(투어 단위),https://www.dispatch.co.kr/2314530,기사(여러 회차 묶음)
-2025-01-10,19:30,나훈아 라스트 콘서트,120,2시간 40분가량,160,현장 기사,https://www.mydaily.co.kr/page/view/2025011023394062461,기사
-2025-02-16,18:00,윤하 앵콜(막공),120(비공식),20:30 종료,150,커뮤니티 단일 후기,https://mania.kr/g2/bbs/board.php?bo_table=freetalk&wr_id=7036405,단일 후기
-2025-05-18,17:00,DAY6 FOREVER YOUNG FINALE,,3시간여,180,성료 기사,https://v.daum.net/v/20250518204106118,기사
-2025-11-30,17:00,임영웅 IM HERO 2025(막공),,녹화본 3시간 23분,203,생중계 다시보기 길이,https://v.daum.net/v/20251121000735535,대리값
-2025-12-13,18:00,이문세 The Best,120,,,예매처 예정만,https://nol.yanolja.com/ticket/places/25001083/products/25012678,공식(예정만)
+2024-03-02,18:00,2024 IU H．E．R．WORLD TOUR CONCERT IN SEOUL,,4시간 이상,240,서울 4회 공통 서술(회당 4시간 이상),https://www.fnnews.com/news/202403110010127351,기사(여러 회차 묶음)
+2024-03-03,17:00,2024 IU H．E．R．WORLD TOUR CONCERT IN SEOUL,,4시간 이상,240,서울 4회 공통 서술(회당 4시간 이상),https://www.fnnews.com/news/202403110010127351,기사(여러 회차 묶음)
+2024-03-09,18:00,2024 IU H．E．R．WORLD TOUR CONCERT IN SEOUL,,4시간 이상,240,서울 4회 공통 서술(회당 4시간 이상),https://www.fnnews.com/news/202403110010127351,기사(여러 회차 묶음)
+2024-03-10,17:00,2024 IU H．E．R．WORLD TOUR CONCERT IN SEOUL,,약 4시간,240,막공 현장 기사,https://www.kmib.co.kr/article/view.asp?arcid=1710141367,기사
+2024-05-03,19:00,TOMORROW X TOGETHER WORLD TOUR 〈ACT : PROMISE〉 IN SEOUL,,150분 이상,150,첫날 현장 기사(150분이 넘는 시간 동안 25곡 소화),https://news.mtn.co.kr/news-detail/2024050400335811217,기사
+2024-06-08,17:00,2024 이찬원 콘서트 ‘ 찬가（燦歌）’,,약 200분,200,성료 기사(200분간 특급 호흡),https://www.starnewskorea.com/music/2024/06/10/2024061010440380003,기사(여러 회차 묶음)
+2024-06-09,17:00,2024 이찬원 콘서트 ‘ 찬가（燦歌）’,,약 200분,200,성료 기사(200분간 특급 호흡),https://www.starnewskorea.com/music/2024/06/10/2024061010440380003,기사(여러 회차 묶음)
+2024-06-15,18:00,2024 AKMU 10th ANNIVERSARY CONCERT ［10VE］,,2시간 30분,150,성료 리뷰 기사(2시간 30분을 꽉 채워 28곡),https://biz.heraldcorp.com/article/3414320,기사(여러 회차 묶음)
+2024-06-16,17:00,2024 AKMU 10th ANNIVERSARY CONCERT ［10VE］,,2시간 30분,150,성료 리뷰 기사(2시간 30분을 꽉 채워 28곡),https://biz.heraldcorp.com/article/3414320,기사(여러 회차 묶음)
+2024-07-20,18:00,SG워너비 콘서트 : 우리의 노래 2024 앙코르,,180분간,180,성료 기사(1시간 넘는 앙코르 포함 180분간),https://www.fnnews.com/news/202407220857077480,기사(여러 회차 묶음)
+2024-07-21,17:00,SG워너비 콘서트 : 우리의 노래 2024 앙코르,,180분간,180,성료 기사(1시간 넘는 앙코르 포함 180분간),https://www.fnnews.com/news/202407220857077480,기사(여러 회차 묶음)
+2024-08-24,18:00,Stray Kids World Tour〈dominATE SEOUL〉,,약 3시간,180,성료 기사(약 세 시간 동안 32곡 세트리스트),https://pickcon.co.kr/site/data/html_dir/2024/09/02/2024090280062.html,기사(여러 회차 묶음)
+2024-08-25,17:00,Stray Kids World Tour〈dominATE SEOUL〉,,약 3시간,180,성료 기사(약 세 시간 동안 32곡 세트리스트),https://pickcon.co.kr/site/data/html_dir/2024/09/02/2024090280062.html,기사(여러 회차 묶음)
+2024-08-31,18:00,Stray Kids World Tour〈dominATE SEOUL〉,,약 3시간,180,성료 기사(약 세 시간 동안 32곡 세트리스트),https://pickcon.co.kr/site/data/html_dir/2024/09/02/2024090280062.html,기사(여러 회차 묶음)
+2024-09-01,17:00,Stray Kids World Tour〈dominATE SEOUL〉,,약 3시간,180,성료 기사(약 세 시간 동안 32곡 세트리스트),https://pickcon.co.kr/site/data/html_dir/2024/09/02/2024090280062.html,기사(여러 회차 묶음)
+2024-10-12,17:00,2024 오페라 투란도트 - 아레나 디 베로나 오리지널 <2024 Opera Turandot - Arena Di Verona Original>,120,,,공원 공식 일정 예정 시간만(인터미션 별도 미표기),https://www.ksponco.or.kr/olympicpark/eventInfoDetail.es?mid=a20301030200&evt_seq=1716,공식(예정만)
+2024-11-03,17:00,TOMORROW X TOGETHER WORLD TOUR 〈ACT : PROMISE〉 ENCORE IN SEOUL,,3시간 30여분(210분),210,막공 현장 기사(3시간 30여분간 공연·무한 앙코르 포함),https://v.daum.net/v/zW3cxFLKzG,기사
+2024-11-24,18:00,[20집 발매 기념 조용필&위대한탄생 Concert - 서울],130,2시간 10분(130분),130,현장·성료 기사(2시간 10분 동안 30여 곡),https://www.xportsnews.com/article/1935926,기사(여러 회차 묶음)
+2024-12-01,18:00,[20집 발매 기념 조용필&위대한탄생 Concert - 서울],130,2시간 10분(130분),130,현장·성료 기사(2시간 10분 동안 30여 곡),https://www.xportsnews.com/article/1935926,기사(여러 회차 묶음)
+2024-12-06,20:00,INFINITE 15TH ANNIVERSARY CONCERT : LIMITED EDITION,150,,,예매처 예정 150분(이후 기사의 '5시간'은 막공·4월 앙코르 기준이라 제외 — 이날 90% 출차 245분),https://www.xportsnews.com/article/1938695,공식(예정만)
+2024-12-07,18:00,INFINITE 15TH ANNIVERSARY CONCERT : LIMITED EDITION,150,,,예매처 예정 150분(이후 기사의 '5시간'은 막공·4월 앙코르 기준이라 제외 — 이날 90% 출차 248분),https://www.xportsnews.com/article/1938695,공식(예정만)
+2024-12-08,17:00,INFINITE 15TH ANNIVERSARY CONCERT : LIMITED EDITION,150,약 5시간(간접 언급),300,이후 기사 간접 언급(회차 불명·4월 인스파이어 앙코르 혼재 가능·12/8 막공 리앙코르 5곡 추가),https://news.nate.com/view/20250414n26361,기사(간접)
+2024-12-13,19:00,[서울 앵콜] 2024 이찬원 콘서트 ‘ 찬가（燦歌）’,120,,,예매처 예정만,https://ticket.yes24.com/Perf/51168,공식(예정만)
+2024-12-20,20:00,2024 CRUSH CONCERT ［CRUSH HOUR : O］,120,약 180분,180,성료 기사(투어 단위),https://www.dispatch.co.kr/2314530,기사(여러 회차 묶음)
+2024-12-21,19:00,2024 CRUSH CONCERT ［CRUSH HOUR : O］,120,약 180분,180,성료 기사(투어 단위),https://www.dispatch.co.kr/2314530,기사(여러 회차 묶음)
+2024-12-22,18:00,2024 CRUSH CONCERT ［CRUSH HOUR : O］,120,약 180분,180,성료 기사(투어 단위),https://www.dispatch.co.kr/2314530,기사(여러 회차 묶음)
+2025-01-05,13:00,로드 투 킹덤 : ACE OF ACE 콘서트,,공연 취소,,2024-12-02 주최 측 공식 취소 발표(n=88은 공원 일반 방문 차량),https://www.hankyung.com/article/202412028063H,공식(취소)
+2025-01-10,19:30,나훈아 ‘2024 고마웠습니다-라스트 콘서트(LAST CONCERT)’,120,2시간 40분가량,160,현장 기사,https://www.mydaily.co.kr/page/view/2025011023394062461,기사
+2025-02-16,18:00,2025 윤하 앵콜 콘서트 〈GROWTH THEORY : Final Edition〉,120(비공식),20:30 종료,150,커뮤니티 단일 후기,https://mania.kr/g2/bbs/board.php?bo_table=freetalk&wr_id=7036405,단일 후기
+2025-02-28,19:00,j-hope Tour ‘HOPE ON THE STAGE’ in SEOUL,,약 2시간 30분,150,현장 리뷰 기사(약 2시간 30분 동안 총 21곡),https://www.chosun.com/culture-life/culture_general/2025/03/04/VOLSOAWD3BFLXASZFBIACTHMNY/,기사(여러 회차 묶음)
+2025-03-01,18:00,j-hope Tour ‘HOPE ON THE STAGE’ in SEOUL,,약 2시간 30분,150,현장 리뷰 기사(약 2시간 30분 동안 총 21곡),https://www.chosun.com/culture-life/culture_general/2025/03/04/VOLSOAWD3BFLXASZFBIACTHMNY/,기사(여러 회차 묶음)
+2025-03-02,17:00,j-hope Tour ‘HOPE ON THE STAGE’ in SEOUL,,약 2시간 30분,150,마지막 날 현장 리뷰 기사(약 2시간 30분 동안 총 21곡),https://www.chosun.com/culture-life/culture_general/2025/03/04/VOLSOAWD3BFLXASZFBIACTHMNY/,기사
+2025-03-07,20:00,TAEYEON CONCERT - The TENSE,,2시간 초과,,성료 기사(2시간이 넘는 시간 동안 — 상한 미표기),https://m.newsen.com/news_view.php?uid=202503100932550310,기사(범위만)
+2025-03-08,18:00,TAEYEON CONCERT - The TENSE,,2시간 초과,,성료 기사(2시간이 넘는 시간 동안 — 상한 미표기),https://m.newsen.com/news_view.php?uid=202503100932550310,기사(범위만)
+2025-03-09,17:00,TAEYEON CONCERT - The TENSE,,2시간 초과,,성료 기사(2시간이 넘는 시간 동안 — 상한 미표기),https://m.newsen.com/news_view.php?uid=202503100932550310,기사(범위만)
+2025-03-15,18:00,2024-25 aespa LIVE TOUR－SYNK：PARALLEL LINE－ENCORE,,약 2시간 30분(150분),150,성료 기사(총 26곡으로 약 2시간 30분 진행·꽉 찬 150분),https://mhnse.com/news/articleView.html?idxno=377223,기사(여러 회차 묶음)
+2025-03-16,17:00,2024-25 aespa LIVE TOUR－SYNK：PARALLEL LINE－ENCORE,,약 2시간 30분(150분),150,성료 기사(총 26곡으로 약 2시간 30분 진행·꽉 찬 150분),https://mhnse.com/news/articleView.html?idxno=377223,기사(여러 회차 묶음)
+2025-03-22,17:00,2025 ATEEZ WORLD TOUR [TOWARDS THE LIGHT : WILL TO POWER] FINALE IN SEOUL,,약 3시간(180분),180,파이널 성료 기사(약 3시간·180분에 걸친 대서사시),https://news.tf.co.kr/read/entertain/2190003.htm,기사(여러 회차 묶음)
+2025-03-23,17:00,2025 ATEEZ WORLD TOUR [TOWARDS THE LIGHT : WILL TO POWER] FINALE IN SEOUL,,약 3시간(180분),180,막공 현장 기사(약 3시간·180분에 걸친 대서사시),https://news.tf.co.kr/read/entertain/2190003.htm,기사
+2025-04-05,18:00,2025 IVE THE 3RD FAN CONCERT 〈IVE SCOUT〉,120,,,공식 공지 예정만,https://cafe.daum.net/IVEstarship,공식(예정만)
+2025-05-03,18:00,YUURI ARENA LIVE 2025 at SEOUL,,꽉 찬 100분,100,첫날 현장 기사(앙코르 포함 꽉 찬 100분),https://mobile.newsis.com/view/NISX20250503_0003164060,기사
+2025-05-04,17:00,YUURI ARENA LIVE 2025 at SEOUL,,꽉 찬 100분,100,동일 투어 현장 기사(앙코르 포함 꽉 찬 100분),https://mobile.newsis.com/view/NISX20250503_0003164060,기사(여러 회차 묶음)
+2025-05-18,17:00,DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL,,3시간여,180,성료 기사,https://v.daum.net/v/20250518204106118,기사
+2025-07-04,20:00,2025 RIIZE CONCERT TOUR [RIIZING LOUD] IN SEOUL,,2시간 30분,150,성료 기사(2시간 30분 동안 24곡 소화),https://www.edaily.co.kr/News/Read?newsId=01941766642231896&mediaCodeNo=258,기사(여러 회차 묶음)
+2025-07-05,18:00,2025 RIIZE CONCERT TOUR [RIIZING LOUD] IN SEOUL,,2시간 30분,150,성료 기사(2시간 30분 동안 24곡 소화),https://www.edaily.co.kr/News/Read?newsId=01941766642231896&mediaCodeNo=258,기사(여러 회차 묶음)
+2025-07-06,16:00,2025 RIIZE CONCERT TOUR [RIIZING LOUD] IN SEOUL,,2시간 30분,150,성료 기사(2시간 30분 동안 24곡 소화),https://www.edaily.co.kr/News/Read?newsId=01941766642231896&mediaCodeNo=258,기사(여러 회차 묶음)
+2025-07-11,19:30,HIGHLIGHT LIVE 2025 [RIDE OR DIE],120,,,소속사 티켓 공지 예정만,https://www.aroundusent.com/artistNotice/detail/466,공식(예정만)
+2025-07-20,16:00,2025 MONSTA X CONNECT X,,약 3시간 10분,190,막공 현장 기사(약 3시간 10분 동안 전개된 공연),https://news.tf.co.kr/read/entertain/2225803.htm,기사
+2025-07-25,19:00,BOYNEXTDOOR TOUR ‘KNOCK ON Vol.1’ FINAL,,약 3시간,180,성료 기사(약 3시간 동안 25곡 이상),https://www.edaily.co.kr/News/Read?newsId=01190646642238784&mediaCodeNo=258,기사(여러 회차 묶음)
+2025-07-26,18:00,BOYNEXTDOOR TOUR ‘KNOCK ON Vol.1’ FINAL,,약 3시간,180,성료 기사(약 3시간 동안 25곡 이상),https://www.edaily.co.kr/News/Read?newsId=01190646642238784&mediaCodeNo=258,기사(여러 회차 묶음)
+2025-07-27,17:00,BOYNEXTDOOR TOUR ‘KNOCK ON Vol.1’ FINAL,,약 3시간,180,성료 기사(약 3시간 동안 25곡 이상),https://www.edaily.co.kr/News/Read?newsId=01190646642238784&mediaCodeNo=258,기사(여러 회차 묶음)
+2025-08-10,16:00,THE BOYZ〈THE BLAZE〉WORLD TOUR in SEOUL,,폭발물 신고 수색으로 약 2시간 지연 시작,,16시 예정이었으나 경찰 수색으로 18시 이후 시작(예정 시각 기준 p50=252분),https://www.sportsworldi.com/newsView/20250810508023,공식(시작지연)
+2025-10-03,19:30,2025 ZEROBASEONE WORLD TOUR ［HERE ＆ NOW］ IN SEOUL,150,,,예매처 예정만,https://nol.yanolja.com/ticket/products/25011665,공식(예정만)
+2025-10-24,19:00,ENHYPEN WORLD TOUR ‘WALK THE LINE’ : FINAL,,2시간 30분,150,파이널 리뷰(2시간 반 동안 쉼 없이 무대),https://www.incheon.go.kr/moo/MOO030101/3042663,기사(여러 회차 묶음)
+2025-10-25,18:00,ENHYPEN WORLD TOUR ‘WALK THE LINE’ : FINAL,,2시간 30분,150,파이널 리뷰(2시간 반 동안 쉼 없이 무대),https://www.incheon.go.kr/moo/MOO030101/3042663,기사(여러 회차 묶음)
+2025-10-26,17:00,ENHYPEN WORLD TOUR ‘WALK THE LINE’ : FINAL,,2시간 30분,150,파이널 리뷰(2시간 반 동안 쉼 없이 무대),https://www.incheon.go.kr/moo/MOO030101/3042663,기사(여러 회차 묶음)
+2025-11-08,17:00,2025 김동률 콘서트 ‘산책’,,2시간 30분 초과~3시간 미만,,리뷰 기사(2시간 30분이 넘는 시간·3시간에 가까운 이야기 — 분 미확정),http://www.hansbiz.co.kr/news/articleView.html?idxno=791919,기사(범위만)
+2025-11-09,17:00,2025 김동률 콘서트 ‘산책’,,2시간 30분 초과~3시간 미만,,리뷰 기사(2시간 30분이 넘는 시간·3시간에 가까운 이야기 — 분 미확정),http://www.hansbiz.co.kr/news/articleView.html?idxno=791919,기사(범위만)
+2025-11-10,19:30,2025 김동률 콘서트 ‘산책’,,2시간 30분 초과~3시간 미만,,리뷰 기사(2시간 30분이 넘는 시간·3시간에 가까운 이야기 — 분 미확정),http://www.hansbiz.co.kr/news/articleView.html?idxno=791919,기사(범위만)
+2025-11-13,19:30,2025 김동률 콘서트 ‘산책’,,2시간 30분 초과~3시간 미만,,리뷰 기사(2시간 30분이 넘는 시간·3시간에 가까운 이야기 — 분 미확정),http://www.hansbiz.co.kr/news/articleView.html?idxno=791919,기사(범위만)
+2025-11-14,19:30,2025 김동률 콘서트 ‘산책’,,2시간 30분 초과~3시간 미만,,리뷰 기사(2시간 30분이 넘는 시간·3시간에 가까운 이야기 — 분 미확정),http://www.hansbiz.co.kr/news/articleView.html?idxno=791919,기사(범위만)
+2025-11-15,17:00,2025 김동률 콘서트 ‘산책’,,2시간 30분 초과~3시간 미만,,리뷰 기사(2시간 30분이 넘는 시간·3시간에 가까운 이야기 — 분 미확정),http://www.hansbiz.co.kr/news/articleView.html?idxno=791919,기사(범위만)
+2025-11-16,17:00,2025 김동률 콘서트 ‘산책’,,2시간 30분 초과~3시간 미만,,리뷰 기사(2시간 30분이 넘는 시간·3시간에 가까운 이야기 — 분 미확정),http://www.hansbiz.co.kr/news/articleView.html?idxno=791919,기사(범위만)
+2025-11-30,17:00,임영웅 IM HERO TOUR 2025 - 서울,,녹화본 3시간 23분,203,생중계 다시보기 길이,https://v.daum.net/v/20251121000735535,대리값
+2025-12-13,18:00,2025 이문세 ‘The Best’,120,,,예매처 예정만,https://nol.yanolja.com/ticket/places/25001083/products/25012678,공식(예정만)

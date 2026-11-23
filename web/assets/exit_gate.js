@@ -1,4 +1,4 @@
-// 관객: '공연 끝나고 어느 문으로 나갈까요?' — scripts/25_exit_gate_weather.py가 만든 exit_gate.json
+// 관객: '공연 끝나고 어느 문으로 나갈까요?' — scripts/25_exit_gate_weather.py·30_exit_after_end.py가 만든 exit_gate.json
 // 주차한 곳(=들어온 문) 고르기 → 지난 공연에서 같은 곳에 주차한 관객 차가 가장 빨리 빠진 출구.
 // 날씨: 공연 날 출차 시간대 예보(/api/weather, 24시간 앞까지) 또는 직접 고르기 → 지난 공연에서 비·추위 때 출차가 늦어졌는지.
 (async function () {
@@ -244,7 +244,12 @@
   }
   const sg = (v) => { const r = Math.round(v); return (r > 0 ? "+" : r < 0 ? "−" : "") + Math.abs(r); };
   const span = (e) => `${sg(e.min)}분(95% 범위 ${sg(e.lo)}~${sg(e.hi)}분)`;
-  const hm = (m) => `${Math.floor(m / 60)}시간 ${Math.round(m % 60)}분`;
+  const dur = (m) => {
+    const r = Math.round(m);
+    if (r < 60) return `${r}분`;
+    const h = Math.floor(r / 60), mm = r % 60;
+    return mm ? `${h}시간 ${mm}분` : `${h}시간`;
+  };
   async function renderWx() {
     const W = J.weather, mine = ++wxSeq;
     const mode = $("egWx").value;
@@ -267,6 +272,7 @@
     // 절반 출차(p50)나 마지막 차들(p90) 중 하나라도 범위가 모두 0보다 크면 '늦어질 수 있어요'
     const late = (x) => x.p50.lo > 0 || x.p90.lo > 0;
     const verdict = (x) => late(x) ? `<span class="chip warn">▲ 늦어질 수 있어요</span>` : `<span class="chip">○ 늦어진다는 근거 없음</span>`;
+    const A = W.afterEnd && W.afterEnd.dry;
     let txt;
     if (rain) txt = `${verdict(T.wet)} 비 온 공연 ${T.wet.shows}회를 같은 공연의 비 안 온 회차와 비교했어요(${T.wet.tours}개 공연).
       관객 차 절반이 빠지는 때는 ${span(T.wet.p50)}, 마지막 10%가 남을 때까지(90% 출차)는 ${span(T.wet.p90)} 차이였어요.
@@ -274,7 +280,8 @@
     else if (cold) txt = `${verdict(T.cold)} 추운 공연(출차 시간대 체감 0도 미만) ${T.cold.shows}회를 같은 공연의 덜 추운 회차와 비교하면(${T.cold.tours}개 공연)
       절반 출차 ${span(T.cold.p50)}, 90% 출차 ${span(T.cold.p90)} 차이로 <b>추위 때문에 늦어진다는 근거는 없어요.</b>
       공연을 가리지 않고 모든 추운 공연을 보면 절반 출차가 ${span(e.cold.p50)} 늦었는데, 추운 날 공연이 주로 길게 하는 연말 공연이라 생긴 차이로 보여요.`;
-    else txt = `<span class="chip good">● 보통 날씨</span> 관객 차 절반이 빠지는 때는 보통 공연 시작 후 ${hm(W.dryMedian.p50)}, 90%는 ${hm(W.dryMedian.p90)}예요(지난 공연 중앙값).`;
+    else if (A) txt = `<span class="chip good">● 보통 날씨</span> 관객 차 절반이 빠지는 때는 보통 <b>공연 종료 후 약 ${dur(A.p50.med)}</b>(가운데 50% ${dur(A.p50.p25)}~${dur(A.p50.p75)}), 90%는 <b>종료 후 약 ${dur(A.p90.med)}</b>(${dur(A.p90.p25)}~${dur(A.p90.p75)})이에요(종료 시각이 확인된 지난 공연 ${A.shows}회 중앙값 · 전체 ${W.shows - W.wetShows}회 공연 시작 기준으로는 ${dur(W.dryMedian.p50)} / ${dur(W.dryMedian.p90)}).`;
+    else txt = `<span class="chip good">● 보통 날씨</span> 관객 차 절반이 빠지는 때는 보통 공연 시작 후 ${dur(W.dryMedian.p50)}, 90%는 ${dur(W.dryMedian.p90)}예요(지난 공연 중앙값).`;
     $("egWeather").innerHTML = (note ? `<p class="muted small" style="margin:0 0 6px">${note}</p>` : "") + `<div class="eg-wx">${txt}</div>`;
   }
   $("egWx").addEventListener("change", renderWx);
@@ -288,6 +295,7 @@
   $("egSrc").innerHTML = `출처: ${J.source}. 방법: ${J.method}. KSPO DOME 공연 ${J.shows}회, 관객 차 ${J.cars.toLocaleString()}대. ` +
     `주차한 곳은 기록에 없어 들어온 문으로 대신했어요(공식 주차 안내의 문별 주차 구역). ` +
     (D ? `가는 방면별 둘레 도로: ${D.source}(공연 ${D.shows.length}회 출차 시간대·5분 간격 ${D.snapshots}회 수집, 상용 길찾기 API 호출 없음). ` : "") +
+    (J.weather.afterEnd ? `공연 종료 후 출차 시간: ${J.weather.afterEnd.source}. ` : "") +
     `날씨: ${J.weatherSource}, 공연 ${J.weather.shows}회(${J.weather.period}). 계산일 ${J.built}. ` +
     `<a href="data-guide.html">데이터 설명 보기</a>`;
   renderGate();

@@ -169,10 +169,13 @@ def weather(A):
     winter = {"shows": int(len(win)), "cold": int(win.cold.sum()),
               "coldP50": round(float(win[win.cold].p50.median()), 0), "mildP50": round(float(win[~win.cold].p50.median()), 0),
               "coldP90": round(float(win[win.cold].p90.median()), 0), "mildP90": round(float(win[~win.cold].p90.median()), 0)}
+    import importlib
+    after_end = importlib.import_module("30_exit_after_end").compute_after_end(ROOT)
     return {"shows": int(len(S)), "wetShows": int(S.wet.sum()), "coldShows": int(S.cold.sum()), "winter": winter, "effectTour": tour,
             "period": f"{S.date.min()} ~ {S.date.max()}", "effect": res,
             "wetMedian": {"p50": round(float(S[S.wet].p50.median()), 0), "p90": round(float(S[S.wet].p90.median()), 0)},
-            "dryMedian": {"p50": round(float(S[~S.wet].p50.median()), 0), "p90": round(float(S[~S.wet].p90.median()), 0)}}
+            "dryMedian": {"p50": round(float(S[~S.wet].p50.median()), 0), "p90": round(float(S[~S.wet].p90.median()), 0)},
+            "afterEnd": after_end}
 
 
 def main():
