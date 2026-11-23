@@ -57,7 +57,6 @@
     if (venueChanged) showVenueOnMaps();
     const sameDay = byDate.get(dateSel.value);
     const seats = sameDay.reduce((s, e) => s + (e.seats || 0), 0);
-    const lv = levelOf(seats);
     const startMin = toMin(start);
     // 예정 종료 = 시작 + 예매처(공식 판매처) 관람시간
     const runMin = ev.runMin || null;
@@ -87,7 +86,6 @@
           <div class="title">${ev.title}</div>
           <div class="chips" style="margin-top:0">
             <span class="chip accent">${ev.venue}</span>
-            <span class="chip ${lv.cls}">${lv.sym} 혼잡 ${lv.label}</span>
           </div>
         </div>
         <div class="stat-strip">
