@@ -216,11 +216,11 @@ function openAt(hours, minOfDay) {
   return t >= a && t <= end;
 }
 
-// ---------- 공연 규모 → 대응 수준 (예측 모델 연결 전 규칙) ----------
+// ---------- 공연 규모 → 대응 수준 ----------
 function levelOf(totalSeats) {
-  if (totalSeats >= 10000) return { key: "focus", label: "집중", cls: "bad", sym: "●" };
+  if (totalSeats >= 10000) return { key: "focus", label: "집중", cls: "bad", sym: "■" };
   if (totalSeats >= 3000) return { key: "caution", label: "주의", cls: "warn", sym: "▲" };
-  return { key: "normal", label: "평소", cls: "good", sym: "○" };
+  return { key: "normal", label: "평소", cls: "good", sym: "●" };
 }
 
 // 호선 문자열("5·9호선", "8호선" 등) → 노선 색 배지 HTML

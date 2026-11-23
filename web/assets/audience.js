@@ -17,7 +17,7 @@
     if (d && evSel.value) { liveDrive = d; render(); }
   }).catch(() => {});
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
   const upcoming = events.filter((e) => e.date >= today && e.times.length);
   const byDate = groupByDate(upcoming);
   let live = null;
@@ -170,7 +170,7 @@
       return k ? live.lots[k] : null;
     };
 
-    // 귀가 혼잡 참고: KSPO DOME 공연은 2024-07·2025 실제 기록, 그 외는 아직 없음
+    // 귀가 혼잡 참고: KSPO DOME 공연은 2024-07·2025 실제 기록, 그 외 공연장은 별도 통계 없음
     const isBig = ev.venue === "KSPO DOME";
     const hasBigSameDay = sameDay.some((e) => e.venue === "KSPO DOME");
     const ep = exitProf && exitProf.summary;
@@ -181,9 +181,9 @@
            ? `: 2024년 7월 전체 기록 ${ep.bySource["2024"].shows}회는 절반 ${ep.bySource["2024"].t50}분, 2025년 일부 기록 ${ep.bySource["2025"].shows}회는 ${ep.bySource["2025"].t50}분` : ""})</span>`
       : isBig
         ? `공연 시작 약 ${durText(ref.lagMed)} 뒤(${toHHMM(startMin + ref.lagMed)} 무렵) 출차가 가장 몰려요. 15분에 ${ref.peakMin}~${ref.peakMax}대 <span class="muted small">(공원 주차장 전체 출차, 평소 방문 차 포함)</span>`
-        : "이 공연장의 출차 기록은 2025 데이터로 채울 예정이에요";
+        : `출차 소요 통계는 KSPO DOME 공연 기준으로만 있어요${hasBigSameDay ? " (오늘은 KSPO DOME 공연도 함께 열려 출차가 몰릴 수 있어요)" : ""}.`;
 
-    // 추천 (예측 모델 연결 전: 공연 규모 기반 분산 안내)
+    // 추천 (이날 공원 전체 공연 좌석 규모 기반 분산 안내)
     let reco, recoCls = "";
     if (lv.key === "focus") {
       reco = `오늘은 <b>큰 공연</b>이 있어요. 공원 주차장은 일찍 차고 공연 후 출차가 한꺼번에 몰려요.
@@ -199,7 +199,7 @@
     $("reco").innerHTML = `<div class="reco${recoCls}">
       <div class="reco-kicker">${lv.sym} 오늘의 주차 추천</div>
       <div>${reco}</div>
-      <div class="muted small" style="margin-top:6px">지금은 공연 규모 기준 안내예요. 2025년 입출차 데이터로 만든 예측이 연결되면 시간까지 계산해 드려요.</div>
+      <div class="muted small" style="margin-top:6px">이날 공원 전체 공연 좌석 규모 기준 안내예요. 지난 공연 기록으로 계산한 예상 만차·출차 소요 시간은 아래 선택지에서 함께 확인해 보세요.</div>
     </div>`;
 
     const notices = [];
@@ -253,7 +253,7 @@
       ? `${!isBig ? `<span class="muted small">(참고: KSPO DOME 저녁 공연 기준${hasBigSameDay ? " · 오늘 동시 공연 있음" : ""})</span> ` : ""}KSPO DOME 저녁 공연 날 ${cg.kspoEveningDays}일 중 <b>${cg.kspoDaysWithFull}일</b>은 일부 구역이 만차였어요.
          첫 만차는 보통 공연 시작 <b>약 ${cg.hoursBefore.med}시간 전</b>(${cg.hoursBefore.p25}~${cg.hoursBefore.p75}시간 전)${isBig ? `, 오늘이면 <b>${toHHMM(startMin - cg.hoursBefore.med * 60)} 무렵</b>` : ""}이에요.
          <span class="muted small">(구역 ${cg.zones}곳 중 보통 ${cg.fullZones.med}곳, 한국체육산업개발 주차장 혼잡도 기록 ${cg.period[0].slice(0, 7)}~${cg.period[1].slice(0, 7)})</span>`
-      : `만차 예상 시각 <span class="tag-pending">자료 준비 중</span>`;
+      : `만차 예상 시각 <span class="chip">○ 아직 없음</span>`;
 
     $("options").innerHTML = `
       ${notices.map((n) => `<div class="notice">${n}</div>`).join("")}
@@ -277,8 +277,8 @@
           </div>
           <div class="metric-card">
             <div class="mk">출차 50% 소요</div>
-            <div class="mv">${isBig && ep ? `약 ${ep.t50.med}분` : "준비 중"}</div>
-            <div class="ms">${isBig && ep ? `90% 약 ${ep.t90.med}분 · 과거 ${ep.shows}회` : "2025 데이터 예정"}</div>
+            <div class="mv">${isBig && ep ? `약 ${ep.t50.med}분` : "아직 없음"}</div>
+            <div class="ms">${isBig && ep ? `90% 약 ${ep.t90.med}분 · 과거 ${ep.shows}회` : "KSPO DOME만 계산"}</div>
           </div>
         </div>
         ${parkLiveBox}
@@ -312,7 +312,7 @@
           </div>
         </div>
         <dl>
-          <dt>귀가할 때</dt><dd>공원 내부 출구 정체 영향을 덜 받는지 <span class="tag-pending">공연일 실측으로 확인 예정</span></dd>
+          <dt>귀가할 때</dt><dd>동2·북2·남2문 안쪽 주차장과 길이 이어지지 않아 들어온 문으로 바로 나가요(출차 소요 시간은 아직 없음).</dd>
         </dl>
         <div class="lots">
           <div class="table-scroll">
@@ -434,7 +434,7 @@
     return `<p class="muted small" style="margin:0 0 8px">공연 종료 직후 역으로 관객이 몰리는 상황을 반영했어요. ${CROWD.source} 기준 KSPO DOME 공연 날 올림픽공원역 승차가 같은 요일 평소 대비 약 ${CROWD.riders.med.toLocaleString()}명 늘어요(9호선 71%, 5호선 29%). 공연 좌석 수에 비례해 계산했어요.</p>
       ${ep ? `<div class="notice info">비교 기준(공원 안 주차장): 차까지 도보 ${parkWalk}분 + 출차 대기(차량 절반이 빠져나가는 시간) 약 ${ep.t50.med}분 = <b>약 ${parkOut}분</b></div>` : ""}
       <div class="tlot-list">${rows}</div>
-      <p class="muted small" style="margin:10px 0 0">개찰구 처리량(분당 ${CROWD.gatePerMin}명), 열차 간격, 인파 속 보행 속도(30% 감속)는 가정값이며, 11/21·22 공연일 현장 실측으로 보정할 예정이에요.</p>`;
+      <p class="muted small" style="margin:10px 0 0">개찰구 처리량(분당 ${CROWD.gatePerMin}명), 열차 간격, 인파 속 보행 속도(30% 감속)는 가정값이라 실제 대기 시간과 다를 수 있어요.</p>`;
   }
 
   function renderTransit() {

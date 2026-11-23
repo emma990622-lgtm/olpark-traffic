@@ -6,7 +6,7 @@ Codex·Antigravity는 이 파일을 자동으로 읽고, Claude Code는 `CLAUDE.
 
 ## 프로젝트
 - KSPO DOME·올림픽공원 공연 전후 주차·교통 혼잡 안내 웹앱. 한국체육산업개발 2026 공공데이터 활용 경진대회 출품용(제출 12/1 18시).
-- 화면 두 개: 관객용 `web/index.html`(휴대폰), 운영자·기관용 `web/operator.html`(PC).
+- 화면: 관객용 `web/index.html`(휴대폰 360px 우선) + 결과 데이터 설명서 `web/data-guide.html` (이전 운영자·기관용 화면은 `archive/operator/`에 보관).
 - **`main`에 올라가면 1~2분 뒤 https://olpark-traffic.vercel.app 에 바로 반영된다.** 별도 승인(Merge) 단계는 없다.
 - 구조
   - `web/` 화면: `*.html`, `assets/*.js`(기능), `assets/style.css`(디자인), `data/*.json`(가공 데이터)

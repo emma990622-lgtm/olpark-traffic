@@ -1,7 +1,7 @@
 # Vercel에 올리기 (실시간 중계 서버 + 웹앱)
 
 ## 구조
-- `web/` 웹 화면 (관객 index.html, 운영자 operator.html)
+- `web/` 웹 화면 (관객 `index.html`, 데이터 설명서 `data-guide.html`)
 - `api/parking.js` → `/api/parking` : 올림픽공원 주차 합계 + 송파·강동 공영주차장 빈자리 (2분 공유)
 - `api/roads.js` → `/api/roads` : 도로 58구간, 근처 주차장, 지하철 도착, 날씨 (3분 공유)
 - `api/drive.js` → `/api/drive` : 출발지 → 주차장 운전 시간 (네이버, 선택. 1km 격자·15분 공유)

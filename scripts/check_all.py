@@ -59,7 +59,7 @@ for f in sorted((ROOT / "web" / "data").glob("*.json")) + sorted((ROOT / "web" /
 
 # 4) JS가 찾는 id ↔ HTML의 id
 ID_CALL = re.compile(r"""(?:getElementById|\$)\(\s*["']([A-Za-z][\w-]*)["']\s*\)""")
-for js, html in (("audience.js", "index.html"), ("exit_gate.js", "index.html")):
+for js, html in (("audience.js", "index.html"), ("exit_gate.js", "index.html"), ("visitor.js", "index.html")):
     jf, hf = ROOT / "web" / "assets" / js, ROOT / "web" / html
     if not (jf.exists() and hf.exists()):
         continue

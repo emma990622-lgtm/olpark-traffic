@@ -75,7 +75,7 @@
 `scripts/check_all.py`가 검사하는 필수 식별자다(없어지면 ❌, PR 자동 합치기도 멈춘다). 새로 꼭 필요한 `id`가 생기면 여기에 추가한다.
 
 - **`web/index.html`**:
-  - `id`: `date`, `event`, `eventInfo`, `mode`, `carSection`, `reco`, `options`, `walkSrc`, `subwayNote`, `transitSection`, `stations`, `stationTip`, `exitGate`, `egZone`, `egResult`, `egWx`, `egWeather`, `egSrc`, `map3d`, `legend3d`, `flat`, `map`, `legend`, `roadNote`
+  - `id`: `date`, `event`, `eventInfo`, `mode`, `carSection`, `reco`, `options`, `walkSrc`, `subwayNote`, `transitSection`, `stations`, `stationTip`, `exitGate`, `egZone`, `egResult`, `egWx`, `egWeather`, `egSrc`, `visitorCard`, `vfWx`, `vfStatus`, `vfHours`, `vfStations`, `vfDetail`, `vfSrc`, `map3d`, `legend3d`, `flat`, `map`, `legend`, `roadNote`
   - `data-*`: `#mode` 내부 버튼의 `data-v="car"`, `data-v="transit"` / `#options` 내부 환승 탭 버튼의 `data-tmode="go"`, `data-tmode="out"`
 - (운영자 화면 `web/operator.html`은 2026-11-21 사이트에서 내려 `archive/operator/`에 보관 — 다시 살리면 그때의 id 목록은 git 기록 참고)
 
