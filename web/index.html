@@ -6,7 +6,7 @@
 <title>올팍 공연 주차·귀가 안내</title>
 <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-<link rel="stylesheet" href="assets/style.css?v=6">
+<link rel="stylesheet" href="assets/style.css?v=7">
 </head>
 <body>
 <header class="top">
@@ -59,6 +59,8 @@
       <span class="muted small" id="egGpsNote" role="status">차 세운 곳에서 허용하면 가장 가까운 주차 구역을 골라 드려요(서버 전송 없음).</span>
     </div>
     <div class="eg-zones" id="egZone" role="group" aria-label="주차한 곳"></div>
+    <h3 class="subhead" style="margin-top:14px">어느 방면으로 가시나요? <span class="muted small" style="font-weight:500">(선택 · 저장된 실측값 사용)</span></h3>
+    <div class="eg-zones" id="egWay" role="group" aria-label="가는 방면"></div>
     <div id="egResult" role="status" style="margin-top:12px"></div>
     <h3 class="subhead">날씨에 따라 출차가 늦어지나요?</h3>
     <div style="margin-bottom:8px;max-width:22em"><label class="field" for="egWx">날씨</label>

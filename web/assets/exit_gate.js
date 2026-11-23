@@ -4,8 +4,13 @@
 (async function () {
   const $ = (id) => document.getElementById(id);
   if (!$("exitGate")) return;
-  let J = null;
-  try { J = await loadJSON("exit_gate.json"); } catch (_) {}
+  let J = null, D = null;
+  try {
+    [J, D] = await Promise.all([
+      loadJSON("exit_gate.json"),
+      loadJSON("gate_directions.json").catch(() => null),
+    ]);
+  } catch (_) {}
   if (!J || !J.byEntry) {
     $("egResult").innerHTML = `<span class="chip">○ 아직 없음</span> 출구 비교 자료를 불러오지 못했어요.`;
     return;
@@ -17,6 +22,7 @@
     "남2": "핸드볼경기장·우리금융아트홀 쪽",
   };
   let pick = null;
+  let wayPick = "none";
 
   // 문별 주차 구역 기준점 (좌표 출처: walk_tmap.json TMAP POI, places.json, links.json 서울시 도로 노드)
   const PARK_ZONE_REFS = [
@@ -44,6 +50,35 @@
   box.innerHTML =
     ["북2", "동2", "남2"].map((g) => btn(g, J.byEntry[g].zones.join("·"), `${ZONE[g]} · ${GATE(g)}으로 들어옴`)).join("") +
     btn("other", "그 밖의 주차장", "서1·서2·남3·남4문 주차장");
+
+  // 가는 방면 빠른 버튼 (북서·북동 / 남서·남동 방위 순서로 배치, 외부 길찾기 API 호출 없음)
+  const wayBox = $("egWay");
+  const dirByKey = {};
+  ((D && D.directions) || []).forEach((d) => { dirByKey[d.key] = d; });
+  if (wayBox) {
+    const order = ["nw", "ne", "sw", "se"].filter((k) => dirByKey[k]);
+    if (order.length) {
+      wayBox.innerHTML =
+        `<button type="button" data-w="none" class="on span-all" aria-pressed="true"><b>방면 선택 안 함</b><span>공원 출구를 지날 때까지만 비교해요</span></button>` +
+        order.map((k) => {
+          const d = dirByKey[k];
+          return `<button type="button" data-w="${d.key}" aria-pressed="false"><b>${d.label}</b><span>${d.sub}</span></button>`;
+        }).join("");
+      wayBox.addEventListener("click", (e) => {
+        const b = e.target.closest("button[data-w]");
+        if (!b) return;
+        wayPick = b.dataset.w;
+        wayBox.querySelectorAll("button").forEach((x) => {
+          const on = x === b;
+          x.classList.toggle("on", on);
+          x.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+        renderGate();
+      });
+    } else {
+      wayBox.innerHTML = `<span class="muted small">방면별 둘레 도로 자료가 아직 없어요.</span>`;
+    }
+  }
 
   function selectZone(g) {
     pick = g;
@@ -97,18 +132,67 @@
 
   function renderGate() {
     const out = $("egResult");
+    const dir = wayPick !== "none" ? dirByKey[wayPick] : null;
     if (!pick) {
-      out.innerHTML = `<span class="muted small">주차한 곳을 고르면 가장 빨리 빠진 출구를 알려 드려요.</span>`;
+      out.innerHTML = `<span class="muted small">${dir
+        ? `위에서 주차한 곳을 고르면 ‘${dir.label}’ 방면 둘레 도로까지 합쳐 가장 빠른 출구를 계산해 드려요.`
+        : "주차한 곳을 고르면 가장 빨리 빠진 출구를 알려 드려요."}</span>`;
       return;
     }
     if (pick === "other") {
       const o = J.otherLots;
       out.innerHTML = `<div class="eg-reco"><span class="chip accent">▶ 들어온 문으로 나가세요</span>
         <p>서1·서2·남3·남4문 주차장은 공원 안쪽 길로 다른 문과 이어지지 않아요. 지난 공연에서 이 주차장에 세운 관객 차는
-        ${Object.keys(o).map((g) => `${GATE(g)} ${Math.round(o[g].sameGate * 1000) / 10}%`).join(", ")}가 들어온 문으로 나갔어요.</p></div>`;
+        ${Object.keys(o).map((g) => `${GATE(g)} ${Math.round(o[g].sameGate * 1000) / 10}%`).join(", ")}가 들어온 문으로 나갔어요.${dir
+          ? ` <b>${dir.label}</b> 방면이어도 들어온 문으로 먼저 나간 뒤 바깥 큰길을 이용해야 해요.` : ""}</p></div>`;
       return;
     }
     const E = J.byEntry[pick];
+    const L = J.gateLoad;
+
+    // 가는 방면을 골랐을 때: 공원 안 출차 차이 + 출구→방면 합류 교차로 둘레 도로 시간 합산 비교
+    if (dir && dir.byGate) {
+      const comb = E.options.map((o) => {
+        const inLate = o.gate === E.best ? 0 : o.vs[E.best].min;
+        const road = dir.byGate[o.gate];
+        const tot = +(inLate + road.roadMin).toFixed(1);
+        return { gate: o.gate, inLate, road, tot };
+      }).sort((a, b) => a.tot - b.tot);
+      const g0 = comb[0], g1 = comb[1], g2 = comb[2];
+      const gap1 = +(g1.tot - g0.tot).toFixed(1), gap2 = +(g2.tot - g0.tot).toFixed(1);
+      let head, body;
+      if (gap1 < 1.0) {
+        head = `<span class="chip good">● 거의 비슷해요</span> <b>${dir.label}</b> 방면은 <b class="eg-gate">${GATE(g0.gate)}</b>·<b class="eg-gate">${GATE(g1.gate)}</b>이 비슷해요 (약 ${gap1}분 차이)`;
+        body = `${E.zones.join("·")}에서 출구까지 걸리는 차이와 출구 밖에서 <b>${dir.hub}</b>까지 가는 시간을 합치면 ${GATE(g0.gate)}이 조금 이르지만, ${GATE(g1.gate)}과 약 ${gap1}분 차이라 교차로 신호 한 번이면 바뀔 수 있어요(${GATE(g2.gate)}은 약 ${gap2}분 더 걸려요).`;
+      } else if (g0.gate !== E.best) {
+        head = `<span class="chip good">● 가장 빠름</span> <b>${dir.label}</b> 방면은 <b class="eg-gate">${GATE(g0.gate)}</b>으로 나가세요`;
+        body = `공원 안만 보면 ${GATE(E.best)}이 빠르지만, 출구 밖에서 <b>${dir.hub}</b>까지 돌아가는 시간을 합치면 <b>${GATE(g0.gate)}</b>이 ${GATE(g1.gate)}보다 약 <b>${gap1}분</b>, ${GATE(g2.gate)}보다 약 <b>${gap2}분</b> 빨라요.`;
+      } else {
+        head = `<span class="chip good">● 가장 빠름</span> <b>${dir.label}</b> 방면도 <b class="eg-gate">${GATE(g0.gate)}</b>으로 나가세요`;
+        body = `출구 밖에서 합류 지점(<b>${dir.hub}</b>)까지 공원 둘레 도로를 도는 시간을 합쳐도 <b>${GATE(g0.gate)}</b>이 ${GATE(g1.gate)}보다 약 <b>${gap1}분</b>, ${GATE(g2.gate)}보다 약 <b>${gap2}분</b> 빨라요. 공원 안에서 다른 문으로 가로지르며 기다리는 것보다 바로 나가 바깥 큰길을 타는 편이 빨라요.`;
+      }
+      out.innerHTML =
+        `<div class="eg-reco">${head}<p>${body}</p></div>
+        <div class="table-scroll"><table class="list">
+          <tr><th>출구 · 둘레 경로</th><th>공원 안</th><th>합류점까지</th><th>합계 비교</th></tr>` +
+        comb.map((r, idx) => {
+          const diff = +(r.tot - g0.tot).toFixed(1);
+          const badge = idx === 0
+            ? ` <span class="chip good">● 추천</span>`
+            : (idx === 1 && gap1 < 1.0 ? ` <span class="chip">비슷함</span>` : "");
+          return `<tr>
+            <td><b>${GATE(r.gate)}</b>${badge}<br><span class="muted small">${r.road.via} (${(r.road.meters / 1000).toFixed(1)}km)</span></td>
+            <td class="nowrap">${r.inLate === 0 ? "기준" : `+${r.inLate}분`}</td>
+            <td class="nowrap">약 ${r.road.roadMin}분</td>
+            <td class="nowrap">${idx === 0 ? "<b>가장 빠름</b>" : `▲ +${diff}분`}</td>
+          </tr>`;
+        }).join("") +
+        `</table></div>
+        <p class="muted small" style="margin:8px 0 0">합류 지점(<b>${dir.hub}</b>) 이후 목적지까지 걸리는 시간은 어느 문으로 나가든 같은 길이라 똑같아요.
+        둘레 도로 시간은 KSPO DOME 공연 종료 시간대 실측 중앙값(${D.shows.length}회 공연·5분 간격 ${D.snapshots}회 수집, 서울시 실시간 도시데이터)이며 교차로 신호 대기 1~2분은 상황에 따라 달라질 수 있어요.</p>`;
+      return;
+    }
+
     const best = E.options.find((o) => o.gate === E.best);
     const rows = E.options.map((o) => {
       const v = o.gate === E.best ? null : o.vs[E.best];
@@ -116,7 +200,6 @@
     }).sort((a, b) => a.late - b.late);
     const worst = rows[rows.length - 1];
     const wv = best.vs[worst.o.gate];
-    const L = J.gateLoad;
     out.innerHTML =
       `<div class="eg-reco"><span class="chip good">● 가장 빠름</span> <b class="eg-gate">${GATE(E.best)}</b>으로 나가세요
         <p>지난 KSPO DOME 공연 ${wv.n}회에서 ${E.zones.join("·")}에 세운 차(${GATE(pick)}으로 들어온 차)를 비교했어요.
@@ -127,7 +210,7 @@
 </tr>`).join("") +
       `</table></div>
       <p class="muted small" style="margin:8px 0 0">공연 한 번에 관객 차가 동2문 약 ${L["동2"].carsPerShow}대, 북2문 약 ${L["북2"].carsPerShow}대, 남2문 약 ${L["남2"].carsPerShow}대 나가요.
-      집 방향이 출구와 다르면 공원 밖에서 돌아가는 시간이 더 들 수 있어요(이 비교는 공원 출구를 지나는 때까지예요).</p>`;
+      이 비교는 공원 출구를 지날 때까지이며, 위에서 <b>가는 방면</b>을 고르면 공원 밖 둘레 도로 시간까지 합쳐 볼 수 있어요.</p>`;
   }
 
   // 날씨
@@ -203,7 +286,9 @@
   if (activeMode) $("exitGate").hidden = activeMode.dataset.v !== "car";
 
   $("egSrc").innerHTML = `출처: ${J.source}. 방법: ${J.method}. KSPO DOME 공연 ${J.shows}회, 관객 차 ${J.cars.toLocaleString()}대. ` +
-    `주차한 곳은 기록에 없어 들어온 문으로 대신했어요(공식 주차 안내의 문별 주차 구역). 날씨: ${J.weatherSource}, 공연 ${J.weather.shows}회(${J.weather.period}). 계산일 ${J.built}. ` +
+    `주차한 곳은 기록에 없어 들어온 문으로 대신했어요(공식 주차 안내의 문별 주차 구역). ` +
+    (D ? `가는 방면별 둘레 도로: ${D.source}(공연 ${D.shows.length}회 출차 시간대·5분 간격 ${D.snapshots}회 수집, 상용 길찾기 API 호출 없음). ` : "") +
+    `날씨: ${J.weatherSource}, 공연 ${J.weather.shows}회(${J.weather.period}). 계산일 ${J.built}. ` +
     `<a href="data-guide.html">데이터 설명 보기</a>`;
   renderGate();
   let tries = 0;
