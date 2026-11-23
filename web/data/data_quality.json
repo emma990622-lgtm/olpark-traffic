@@ -44,10 +44,10 @@
  ],
  "check": {
   "total": 2411225,
-  "received": 2128000,
-  "duplicates": 269324,
-  "usable": 1858676,
-  "usableShare": 0.7708,
+  "received": 2411135,
+  "duplicates": 327684,
+  "usable": 2083451,
+  "usableShare": 0.8641,
   "spanShare": 0.9999
  },
  "months": [
@@ -95,9 +95,9 @@
   },
   {
    "month": "2025-07",
-   "got": 199092,
+   "got": 270615,
    "span": 297554,
-   "ratio": 0.6691,
+   "ratio": 0.9095,
    "note": ""
   },
   {
@@ -116,9 +116,9 @@
   },
   {
    "month": "2025-10",
-   "got": 109758,
+   "got": 263010,
    "span": 278632,
-   "ratio": 0.3939,
+   "ratio": 0.9439,
    "note": "입차 시각 순서로 저장"
   },
   {
