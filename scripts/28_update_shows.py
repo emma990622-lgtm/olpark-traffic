@@ -128,12 +128,13 @@ def read_nol(h, gid):
 
 
 def read_yes24(h, _):
+    """PC(ticket.yes24.com)·모바일(m.ticket.yes24.com) 둘 다: 상세정보 '관람시간: …', '공연시간 (안내)'"""
     meta = re.search(r'<meta name="description" content="([^"]*)"', h)
-    if not meta or "rn-product-area3" not in h:
+    pt = re.search(r"<dt>\s*공연시간(?:\s*안내)?\s*</dt>\s*<dd>(.*?)</dd>", h, re.S)
+    if not meta or "상세정보" not in meta.group(1) or not pt:
         return None
     rt = re.search(r"관람시간\s*:\s*(.*?)\s+(?:장소|출연|등급)\s*:", html.unescape(meta.group(1)) + " 장소:")
-    pt = re.search(r"<dt>\s*공연시간 안내\s*</dt>\s*<dd>(.*?)</dd>", h, re.S)
-    return (rt.group(1).strip() if rt else ""), (clean(pt.group(1)) if pt else "")
+    return (rt.group(1).strip() if rt else ""), clean(pt.group(1))
 
 
 def read_melon(h, _):
@@ -165,12 +166,20 @@ def fetch_sellers(events):
         row = {"evtSeq": key, "title": e["title"].strip(), "seller": name, "url": url, "ok": "0",
                "run_min": "", "run_text": "", "time_text": "", "checked": ""}
         if kind:
-            try:
-                got = READERS[kind[0]](get(url), kind[1])
-            except Exception as ex:
-                got = None
-                print(f"! {name} {url} 실패: {type(ex).__name__}")
-            time.sleep(1)
+            got = None
+            tries = [url] + ([url.replace("://ticket.", "://m.ticket.")] if kind[0] == "yes24" else [])
+            for u in tries:  # YES24는 PC 페이지를 못 읽으면 모바일 페이지로
+                try:
+                    h = get(u)
+                    got = READERS[kind[0]](h, kind[1])
+                    if got is None:
+                        t = re.search(r"<title[^>]*>(.*?)</title>", h, re.S)
+                        print(f"! {name} {u} 모양이 달라 못 읽음: 길이 {len(h)}, 제목 {clean(t.group(1))[:40] if t else '-'}")
+                except Exception as ex:
+                    print(f"! {name} {u} 실패: {type(ex).__name__} {str(ex)[:80]}")
+                time.sleep(1)
+                if got is not None:
+                    break
             if got is not None:
                 rt, tt = got
                 m = run_minutes(rt)
