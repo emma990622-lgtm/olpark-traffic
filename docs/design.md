@@ -54,6 +54,7 @@
 | 관객 (`common.js`, `audience.js`, `exit_gate.js`) | `.gps-bar`, `button.ghost.gps-off` (`[data-gps-off]`) | 이용자 위치 권한(GPS) 동의 버튼 바 및 `위치 끄기` 버튼(최소 높이 44px, 기호+글자 상태 병기) |
 | 관객 (`audience.js` · `render`) | `.event-summary`, `.event-head`, `.stat-strip`, `.stat-item` (`.sk`, `.sv`) | Step 1 선택 공연 제목·공연장 배지(`.chip.accent`)·3열 핵심 시간/좌석 요약 |
 | 관객 (`exit_gate.js`) | `.eg-zones` (안의 `button.on` + `button.span-all` + `aria-pressed`), `.eg-reco`, `.eg-gate`, `.eg-wx` (+ `.chip.good`/`.warn`/`.accent`, `table.list`, `.subhead`, `.footnote` 재사용) | 3단계 '공연 끝나고 어느 문으로 나갈까요?' 카드(주차 구역 `#egZone` + 가는 방면 빠른 버튼 `#egWay`). 고른 버튼은 테두리+`✓` 글자로도 표시, 판단은 기호+글자(`● 가장 빠름`, `● 거의 비슷해요`, `▲ +n분`). 차로 오는 관객(`#mode`가 `car`일 때)에게만 보임 |
+| 관객 (`visitor.js`) | `.arr-chart-wrap`, `.arr-chart-box`, `.arr-chart-head`, `.arr-chart-title`, `.arr-chart-legend`, `.arr-bars`, `.arr-col` (`.is-good`, `.is-warn`, `.is-bad`), `.arr-val`, `.arr-track`, `.arr-fill`, `.arr-lbl`, `.arr-clock`, `.arr-rel`, `.arr-start-row`, `.arr-start-pill` (+ `.le-status`, `.notice.info`, `.chip.bad` 재사용) | '주로 공연장에 도착하는 시간' 카드. 1단계에서 고른 공연(날짜·시작 시각·공연장) 기준 시작 6시간 전~시작 6구간 예상 도착 비중(%) 세로 막대그래프(막대마다 `●`/`▲`/`■` 기호 + 퍼센트 동시 표기) |
 | (삭제·CSS 보관) 옛 주차 선택지 (`style.css`) | `.reco`, `.opt`, `.opt-metrics`, `.metric-card`, `.live-lot-box`, `.occ-bar`, `.tlot-list`, `.tlot`, `.route-steps`, `.step-pill` | 2026-11-23 '어디에 주차할까요?'(`#carSection`) 삭제에 따라 화면에서 제거 |
 | (보관) 운영자 (`operator.js` · `roadCheck`) | `.verify-box`, `.verify-title`, `.verify-list` | TOPIS·TMAP 실시간 도로 자료 교차검증 결과 박스 (`<ol>` 자동 번호) |
 | 운영자 (`operator.js` · `render`) | `.kpis`, `.kpi` (`.is-bad`, `.is-warn`, `.is-good`), `.v`, `.l` | 상단 핵심 대응 지표 4종 카드 |
@@ -71,7 +72,7 @@
 `scripts/check_all.py`가 검사하는 필수 식별자다(없어지면 ❌, PR 자동 합치기도 멈춘다). 새로 꼭 필요한 `id`가 생기면 여기에 추가한다.
 
 - **`web/index.html`**:
-  - `id`: `date`, `event`, `eventInfo`, `mode`, `transitSection`, `stGpsBtn`, `stGpsNote`, `stations`, `stationTip`, `walkSrc`, `exitGate`, `egGpsBtn`, `egGpsNote`, `egZone`, `egWay`, `egResult`, `egWx`, `egWeather`, `egSrc`, `visitorCard`, `vfWx`, `vfStatus`, `vfHours`, `vfStations`, `vfDetail`, `vfSrc`, `mapGpsBtn`, `mapGpsNote`, `map3d`, `legend3d`, `flat`, `map`, `legend`, `roadNote`
+  - `id`: `date`, `event`, `eventInfo`, `mode`, `transitSection`, `stGpsBtn`, `stGpsNote`, `stations`, `stationTip`, `walkSrc`, `exitGate`, `egGpsBtn`, `egGpsNote`, `egZone`, `egWay`, `egResult`, `egWx`, `egWeather`, `egSrc`, `visitorCard`, `vfStatus`, `vfChart`, `vfNote`, `vfSrc`, `mapGpsBtn`, `mapGpsNote`, `map3d`, `legend3d`, `flat`, `map`, `legend`, `roadNote`
   - `data-*`: `#mode` 내부 버튼의 `data-v="car"`, `data-v="transit"` / `#egZone` 버튼의 `data-g` / `#egWay` 버튼의 `data-w` / `.gps-bar` 내부 끄기 버튼의 `data-gps-off`
 - (운영자 화면 `web/operator.html`은 2026-11-21 사이트에서 내려 `archive/operator/`에 보관 — 다시 살리면 그때의 id 목록은 git 기록 참고)
 
@@ -89,4 +90,4 @@
 
 - 2026-11-20: 운영자 '공연 후 출차 곡선' 카드와 '주변 도로 (3D)' 카드는 `.grid2`(두 칸)에서 빼서 한 줄 전체 폭 카드로 둔다(실시간 입출차 감지 카드와 같은 폭). 출차 곡선 그래프 viewBox는 760×280.
 - 2026-11-20: `web/data-guide.html`(결과 데이터 설명서)은 JS 없는 정적 페이지. 운영자 화면과 같은 머리(`header.top`)·`card`·`table.list`를 쓴다. 운영자 '데이터 점검 결과' 카드(`data_quality.js`)는 새 class 없이 `.le-status`, `.chip.warn`, `table.list`, `.subhead` 재사용, 비고는 기호+글자(`●`/`▲`).
-- 2026-11-21: '방문객 혼잡 예측·분산 안내' 카드(`visitor.js`, 관객·운영자 공통, 운영자에서만 효과 표)는 새 class 없이 `.le-status`, `.chip`(여유 `good ●` / 보통 `●` / 붐빔 `warn ▲` / 매우 붐빔 `bad ■`), `table.list`, `.notice.info` 재사용. 막대는 inline style(장식, `aria-hidden`).
+- 2026-11-24: 기존 '방문객 혼잡 예측·분산 안내' 카드(`#visitorCard`, `visitor.js`)를 **'주로 공연장에 도착하는 시간'** 세로 막대그래프(`.arr-chart-*`)로 개편(1단계에서 고른 공연의 시작 시각·요일 유형에 연동, 막대마다 `●`/`▲`/`■` + `%` 표시).
