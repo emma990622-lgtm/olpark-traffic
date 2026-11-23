@@ -139,11 +139,9 @@
   $("date").addEventListener("change", () => setTimeout(renderWx, 0));
   $("event").addEventListener("change", renderWx);
 
-  // 차로 오는 관객에게만 보임
-  const car = $("carSection");
-  const sync = () => { $("exitGate").hidden = car.hidden; };
-  new MutationObserver(sync).observe(car, { attributes: true, attributeFilter: ["hidden"] });
-  sync();
+  // 차로 오는 관객에게만 보임 (이동 수단 토글은 audience.js에서 전환)
+  const activeMode = document.querySelector("#mode button.on");
+  if (activeMode) $("exitGate").hidden = activeMode.dataset.v !== "car";
 
   $("egSrc").innerHTML = `출처: ${J.source}. 방법: ${J.method}. KSPO DOME 공연 ${J.shows}회, 관객 차 ${J.cars.toLocaleString()}대. ` +
     `주차한 곳은 기록에 없어 들어온 문으로 대신했어요(공식 주차 안내의 문별 주차 구역). 날씨: ${J.weatherSource}, 공연 ${J.weather.shows}회(${J.weather.period}). 계산일 ${J.built}. ` +

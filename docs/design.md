@@ -52,12 +52,8 @@
 | 공통 (`common.js` · `lineBadgesHTML`) | `.line-badge`, `.l2`, `.l5`, `.l8`, `.l9` | 호선 번호별 색상 알약 배지 |
 | 공통/3D지도 (`common.js`, `map3d.js`) | `.legend`, `.m3d`, `.m3d.lot`, `.m3d.st`, `.m3d.venue`, `.m3d.dome` | 범례 및 3D 지도 HTML 캡슐 마커 (`map3d.failed` 시 평면 지도 자동 펼침) |
 | 관객 (`audience.js` · `render`) | `.event-summary`, `.event-head`, `.stat-strip`, `.stat-item` (`.sk`, `.sv`) | Step 1 선택 공연 제목·배지·3열 핵심 시간/좌석 요약 |
-| 관객 (`audience.js` · `renderCar`) | `.reco`, `.reco.is-caution`, `.reco.is-normal`, `.reco-kicker` | Step 3 상단 오늘의 주차 추천 배너 (혼잡도별 배경 분기) |
-| 관객 (`audience.js` · `renderCar`) | `.opt`, `.opt.recommended`, `.opt-top`, `.kind`, `.reco-pill` | 주차 선택지 카드 3종 및 추천 강조 테두리/배지 |
-| 관객 (`audience.js` · `renderCar`) | `.opt-metrics`, `.metric-card` (`.mk`, `.mv`, `.ms`) | 각 주차 선택지 상단 3열 핵심 지표 요약 |
-| 관객 (`audience.js` · `renderCar`) | `.live-lot-box`, `.live-lot-head`, `.live-badge`, `.live-lot-nums`, `.free-num`, `.occ-bar` (`.is-warn`, `.is-bad`) | 공원 주차장 실시간 보정 대수(`parkActual`) 및 점유율 게이지 바 |
-| 관객 (`audience.js` · `transferGo`, `transferOutHTML`) | `.tlot-list`, `.tlot`, `.tlot.skip`, `.tlot-head`, `.tname`, `.tlot-meta`, `.tlot-route-desc`, `.ttotal`, `.route-steps`, `.step-pill` (`.is-subway`, `.is-crowd`), `.step-arrow`, `.tlot-compare`, `.warnline` | 환승주차 카드, 단계별 이동 알약 칩, 운전/출차 비교 영역, 비추천 경고 |
-| 관객 (`exit_gate.js`) | `.eg-zones` (안의 `button.on` + `aria-pressed`), `.eg-reco`, `.eg-gate`, `.eg-wx` (+ `.chip.good`/`.warn`/`.accent`, `table.list`, `.subhead`, `.footnote` 재사용) | 4단계 '공연 끝나고 어느 문으로 나갈까요?' 카드. 고른 구역은 테두리+`✓` 글자로도 표시, 판단은 기호+글자(`● 가장 빠름`, `▲ n분 늦음`, `○ 늦어진다는 근거 없음`). 차로 오는 관객(`#carSection`이 보일 때)에게만 보임 |
+| 관객 (`exit_gate.js`) | `.eg-zones` (안의 `button.on` + `aria-pressed`), `.eg-reco`, `.eg-gate`, `.eg-wx` (+ `.chip.good`/`.warn`/`.accent`, `table.list`, `.subhead`, `.footnote` 재사용) | 3단계 '공연 끝나고 어느 문으로 나갈까요?' 카드. 고른 구역은 테두리+`✓` 글자로도 표시, 판단은 기호+글자(`● 가장 빠름`, `▲ n분 늦음`, `○ 늦어진다는 근거 없음`). 차로 오는 관객(`#mode`가 `car`일 때)에게만 보임 |
+| (삭제·CSS 보관) 옛 주차 선택지 (`style.css`) | `.reco`, `.opt`, `.opt-metrics`, `.metric-card`, `.live-lot-box`, `.occ-bar`, `.tlot-list`, `.tlot`, `.route-steps`, `.step-pill` | 2026-11-23 '어디에 주차할까요?'(`#carSection`) 삭제에 따라 화면에서 제거 |
 | (보관) 운영자 (`operator.js` · `roadCheck`) | `.verify-box`, `.verify-title`, `.verify-list` | TOPIS·TMAP 실시간 도로 자료 교차검증 결과 박스 (`<ol>` 자동 번호) |
 | 운영자 (`operator.js` · `render`) | `.kpis`, `.kpi` (`.is-bad`, `.is-warn`, `.is-good`), `.v`, `.l` | 상단 핵심 대응 지표 4종 카드 |
 | 운영자 (`operator.js` · `showTime`) | `.timectl`, `.trow`, `.tlabel`, `.phase` | 3D 지도 시간대 슬라이더 컨트롤러 및 단계 배지 |
@@ -65,7 +61,6 @@
 | 운영자 (`operator.js` · `drawGates`) | `.share-cell`, `.share-bar`, `.nowrap` | 출구별 차량 비중 미니 바 및 출구명 줄바꿈 방지 |
 | 운영자 (`live_exit.js`) | `.le-head`, `.le-pick`, `.le-status`, `.le-chart`, `.le-field`, `.le-err` (+ 기존 `.kpis`/`.kpi`, `.chip.good`/`.warn`/`.bad`, `button.ghost` 재사용) | 공연 당일 실시간 입출차 감지 카드(11/20 이름 바꿈). 상태는 기호+글자(`○ 감시 중`, `▲ 확인 중`, `▼ 출차 시작 감지`)로 함께 표시. 그래프 세로선(이 카드와 '공연 후 출차 곡선' 공통): 예상 = 점선 + 옅은 띠(입차 `--warn`/`--warn-bg`, 출차 `--accent`/`--accent-soft`), 실제 = 초록 실선(`--good-ink`) + `●` 글자. 선 글자는 흰 테두리(`paint-order="stroke"`)로 겹쳐도 읽히게, 곡선 이름은 곡선 옆 글자로(색만으로 구분하지 않음) |
 | 운영자 (`audience_car.js`) | `.ac-grid`, `.ac-pick`, `.ac-result` (`.is-match`), `.ac-result-head`, `.ac-num`, `.ac-bar` (+ `.le-status`, `.le-chart`, `.legend`, `table.list` 재사용) | 관객 성향으로 본 자가용 예상 카드. 판단은 기호+글자(`● 뚜렷함`, `▲ 덜 뚜렷함`, `○ 뚜렷하지 않음`), 산점도는 주말 ●·금요일 ▲ 모양으로도 구분 |
-| 관객 (`audience.js` · `renderCar`) | 기존 `dl` 안 `dt`/`dd` 한 줄 추가('차로 오는 관객') | 같은 가수 지난 관객 구성이 있고 `audience_car.json`의 `meaningful`이 참일 때만 보임 |
 | 운영자 (`operator.js` · `drawBrief`) | `.brief-header-bar`, `.brief`, `.print-me`, `.no-print` | 유관기관 공유용 A4 한 장 인쇄 양식 |
 
 ---
@@ -75,8 +70,8 @@
 `scripts/check_all.py`가 검사하는 필수 식별자다(없어지면 ❌, PR 자동 합치기도 멈춘다). 새로 꼭 필요한 `id`가 생기면 여기에 추가한다.
 
 - **`web/index.html`**:
-  - `id`: `date`, `event`, `eventInfo`, `mode`, `carSection`, `reco`, `options`, `walkSrc`, `subwayNote`, `transitSection`, `stations`, `stationTip`, `exitGate`, `egZone`, `egResult`, `egWx`, `egWeather`, `egSrc`, `visitorCard`, `vfWx`, `vfStatus`, `vfHours`, `vfStations`, `vfDetail`, `vfSrc`, `map3d`, `legend3d`, `flat`, `map`, `legend`, `roadNote`
-  - `data-*`: `#mode` 내부 버튼의 `data-v="car"`, `data-v="transit"` / `#options` 내부 환승 탭 버튼의 `data-tmode="go"`, `data-tmode="out"`
+  - `id`: `date`, `event`, `eventInfo`, `mode`, `transitSection`, `stations`, `stationTip`, `walkSrc`, `exitGate`, `egZone`, `egResult`, `egWx`, `egWeather`, `egSrc`, `visitorCard`, `vfWx`, `vfStatus`, `vfHours`, `vfStations`, `vfDetail`, `vfSrc`, `map3d`, `legend3d`, `flat`, `map`, `legend`, `roadNote`
+  - `data-*`: `#mode` 내부 버튼의 `data-v="car"`, `data-v="transit"`
 - (운영자 화면 `web/operator.html`은 2026-11-21 사이트에서 내려 `archive/operator/`에 보관 — 다시 살리면 그때의 id 목록은 git 기록 참고)
 
 ---
