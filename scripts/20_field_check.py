@@ -7,7 +7,7 @@
 
 입력
   <수집기>/data/<날짜>_*/summary.csv   수집시각, 주차합계_parking_sum (그날 폴더 여러 개를 이어 붙임)
-  <수집기>/data/parking_night.csv       새벽 주차 합계(출차 기록 없는 장기 차량 보정용, 화면의 parkActual과 같게: 새벽 값 − 60대를 뺌)
+  <수집기>/data/parking_night.csv       새벽 주차 합계(출차 기록이 안 닫힌 차 보정용, 화면의 parkActual과 같게: 새벽 값 − 225대를 뺌)
   web/data/live_exit.json               출차 감지 규칙, 감지 뒤 걸린 시간, 입차 예상
   web/data/exit_curves.json             공연 시작 기준 출차 절반·90% 예상
 출력
@@ -28,7 +28,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / "web" / "data"
-NIGHT_TRUE = 60                      # 새벽 실제 주차 약 60대(web/assets/common.js PARK_NIGHT_TRUE와 같게)
+NIGHT_TRUE = 225                     # 새벽 실제 주차 약 225대(차량 이용현황 2025-10~12, web/assets/common.js PARK_NIGHT_TRUE와 같게)
 
 
 def hhmm(start_min, m):
@@ -110,11 +110,11 @@ def main():
     out = {"date": a.day, "start": start, "title": title, "built": datetime.now().strftime("%Y-%m-%d %H:%M"),
            "points": len(pts), "from": pts[0]["t"], "to": pts[-1]["t"], "ghost": ghost,
            "gapsOver10min": sum(1 for x, y in zip(pts, pts[1:]) if y["m"] - x["m"] > 10),
-           "note": "근사 실제는 공원 주차장 전체 대수(실시간 값 − 장기 주차 보정)로 잰 값이라 관객 차만 센 입출차 기록과 정의가 달라요. "
+           "note": "근사 실제는 공원 주차장 전체 대수(실시간 값 − 안 닫힌 출차 기록 보정)로 잰 값이라 관객 차만 센 입출차 기록과 정의가 달라요. "
                    "지난 공연 한 회(2025-03-01)로 시험했을 때 근사 실제가 입출차 기록 기준보다 출차는 30분쯤 이르게 나왔어요. 방향을 보는 참고값이에요."}
     lines = [f"# 현장 검증(자동) {a.day} {title}".strip(), "",
              f"- 공연 시작 {start}, 수집 {out['from']}~{out['to']} ({len(pts)}개 값, 10분 넘는 빈칸 {out['gapsOver10min']}곳)",
-             f"- 실시간 주차 합계에서 장기 주차 보정 {ghost:,}대를 뺀 값으로 계산", ""]
+             f"- 실시간 주차 합계에서 출차 기록이 안 닫힌 차 보정 {ghost:,}대를 뺀 값으로 계산", ""]
 
     # ---- 입차 ----
     pre = [p for p in pts if p["m"] <= 30]

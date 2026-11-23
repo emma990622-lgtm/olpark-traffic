@@ -89,7 +89,16 @@
     const seats = sameDay.reduce((s, e) => s + (e.seats || 0), 0);
     const lv = levelOf(seats);
     const startMin = toMin(start);
-    const endMin = startMin + DEFAULT_SHOW_MIN;
+    // 예정 종료 = 시작 + 예매처(공식 판매처) 관람시간. 안내가 없으면 아래 계산에만 150분을 가정한다.
+    const runMin = ev.runMin || null;
+    const endMin = startMin + (runMin || DEFAULT_SHOW_MIN);
+    const runLink = ev.runSeller ? `<a href="${ev.runUrl}" target="_blank" rel="noopener">${ev.runSeller} 예매 페이지</a>` : "";
+    const runSrc = !ev.runSeller ? "예매처 관람시간은 아직 확인 전이에요"
+      : runMin ? `출처: ${runLink} 관람시간 '${ev.runText}' (${ev.runChecked} 확인)`
+      : `${runLink}에 관람시간 안내가 없어요 (${ev.runChecked} 확인)`;
+    const runNote = runMin
+      ? `${runSrc}. 앙코르 등으로 실제로는 더 늦게 끝날 때가 많아요.`
+      : `${runSrc}. 아래 주차·출차 계산은 공연 시간을 ${DEFAULT_SHOW_MIN}분으로 가정했어요.`;
 
     $("eventInfo").innerHTML = `
       <div class="event-summary">
@@ -106,14 +115,15 @@
             <div class="sv">${start}</div>
           </div>
           <div class="stat-item">
-            <div class="sk">예상 종료 (참고)</div>
-            <div class="sv">${toHHMM(endMin)}</div>
+            <div class="sk">예정 종료${runMin ? ` (관람시간 ${runMin}분)` : ""}</div>
+            <div class="sv">${runMin ? toHHMM(endMin) : "예매처 안내 없음"}</div>
           </div>
           <div class="stat-item">
             <div class="sk">이날 공원 전체 규모</div>
             <div class="sv">공연 ${sameDay.length}개 · 약 ${seats.toLocaleString()}석</div>
           </div>
         </div>
+        <p class="muted small" style="margin:8px 0 0">${runNote}</p>
       </div>`;
 
     renderCar(ev, startMin, endMin, seats, lv, sameDay);

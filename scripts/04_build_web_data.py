@@ -51,6 +51,9 @@ for _, r in ev.iterrows():
         "title": r["공연명"], "times": times, "longRun": bool(r["장기공연"]),
     })
 dump("events.json", events)
+# 예매처 공식 회차·관람시간으로 바로잡기 (data/processed/show_official.csv)
+import runpy  # noqa: E402
+runpy.run_path(str(ROOT / "scripts" / "27_official_shows.py"), run_name="__main__")
 
 # 2) 도로 58구간 ------------------------------------------------------------
 lk = pd.read_csv(RAW / "olpark_links_58.csv", encoding="utf-8-sig")

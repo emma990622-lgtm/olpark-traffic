@@ -365,3 +365,35 @@ class Audience:
             return None
         return {"net": int(round(r[0].sum())), "raw": int(round(r[2])), "bg": int(round(r[3]))}
 
+# ---------- 차량 이용현황(문화 빅데이터 플랫폼 '올림픽공원 차량 이용현황', 7개 문, 차량 식별값) ----------
+# 원본은 주인 PC data/raw/vhcle_use/ 에만 있다(용량이 커서 저장소에는 안 올림).
+# 파일 이름과 들어 있는 달이 다르고, 같은 달이 두 파일에 있기도 해서 달마다 줄이 가장 많은 파일 하나만 쓴다.
+VHCLE_DIR = ROOT / "data" / "raw" / "vhcle_use"
+VHCLE_GATE = {"동2": "동2문", "남2": "남2문", "북2": "북2문"}
+
+
+def has_vhcle():
+    return any(VHCLE_DIR.glob("*VHCLE*.csv"))
+
+
+def load_vhcle(days=None):
+    """days(YYYY-MM-DD 집합)를 주면 그날 입차·출차 기록만. 칸: in_time, out_time, gin, gout, igate(동2문 등), vid, w(=1), src(연도)"""
+    best = {}
+    for f in sorted(VHCLE_DIR.glob("*VHCLE*.csv")):
+        x = pd.read_csv(f, encoding="utf-8-sig")
+        x.columns = ["dd", "vid", "in_time", "gin", "out_time", "gout"]
+        if days is not None:
+            x = x[x.dd.isin(days) | x.out_time.astype(str).str[:10].isin(days)]
+        for m, g in x.groupby(x.dd.str[:7]):
+            if m not in best or len(g) > len(best[m]):
+                best[m] = g
+    if not best:
+        return pd.DataFrame(columns=["in_time", "out_time", "gin", "gout", "igate", "vid", "w", "src"]), []
+    d = pd.concat([g.drop_duplicates() for g in best.values()], ignore_index=True).drop(columns="dd")
+    d["in_time"] = pd.to_datetime(d.in_time, errors="coerce")
+    d["out_time"] = pd.to_datetime(d.out_time, errors="coerce")
+    d = d.dropna(subset=["in_time", "out_time"])
+    d["igate"] = d.gin.map(VHCLE_GATE).fillna(d.gin)
+    d["w"] = 1.0
+    d["src"] = d.in_time.dt.year.astype(str)
+    return d, sorted(best)
