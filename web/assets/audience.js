@@ -92,10 +92,21 @@
     // 예정 종료 = 시작 + 예매처(공식 판매처) 관람시간. 안내가 없으면 아래 계산에만 150분을 가정한다.
     const runMin = ev.runMin || null;
     const endMin = startMin + (runMin || DEFAULT_SHOW_MIN);
-    const runLink = ev.runSeller ? `<a href="${ev.runUrl}" target="_blank" rel="noopener">${ev.runSeller} 예매 페이지</a>` : "";
-    const runSrc = !ev.runSeller ? "예매처 관람시간은 아직 확인 전이에요"
-      : runMin ? `출처: ${runLink} 관람시간 '${ev.runText}' (${ev.runChecked} 확인)`
-      : `${runLink}에 관람시간 안내가 없어요 (${ev.runChecked} 확인)`;
+    // runFrom: seller = 예매처 페이지에서 읽음, park = 올림픽공원 공식 일정의 관람시간 칸 (scripts/28이 매일 갱신)
+    const runLink = ev.runSeller
+      ? (ev.runUrl ? `<a href="${ev.runUrl}" target="_blank" rel="noopener">${ev.runSeller} 예매 페이지</a>` : `${ev.runSeller} 예매 페이지`) : "";
+    const checked = ev.runChecked ? ` (${ev.runChecked} 확인)` : "";
+    let runSrc;
+    if (ev.runFrom === "park") {
+      runSrc = (runMin ? `출처: 올림픽공원 공식 공연 일정의 관람시간 '${ev.runText}'${checked}`
+        : `올림픽공원 공식 공연 일정에 관람시간 안내가 없어요${checked}`)
+        + (runLink ? ` · 예매처: ${runLink}` : "");
+    } else if (ev.runSeller) {
+      runSrc = runMin ? `출처: ${runLink} 관람시간 '${ev.runText}'${checked}`
+        : `${runLink}에 관람시간 안내가 없어요${checked}`;
+    } else {
+      runSrc = "예매처 관람시간은 아직 확인 전이에요";
+    }
     const runNote = runMin
       ? `${runSrc}. 앙코르 등으로 실제로는 더 늦게 끝날 때가 많아요.`
       : `${runSrc}. 아래 주차·출차 계산은 공연 시간을 ${DEFAULT_SHOW_MIN}분으로 가정했어요.`;
@@ -116,7 +127,7 @@
           </div>
           <div class="stat-item">
             <div class="sk">예정 종료${runMin ? ` (관람시간 ${runMin}분)` : ""}</div>
-            <div class="sv">${runMin ? toHHMM(endMin) : "예매처 안내 없음"}</div>
+            <div class="sv">${runMin ? toHHMM(endMin) : "관람시간 안내 없음"}</div>
           </div>
           <div class="stat-item">
             <div class="sk">이날 공원 전체 규모</div>

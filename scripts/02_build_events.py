@@ -1,12 +1,16 @@
 """올림픽공원 공식 공연 일정(2023~2026)을 '날짜×공연장' 표로 펼치고 시작 시각을 뽑는다.
 
 입력: data/raw/olpark_events_2023_2026.json  (올림픽공원 홈페이지 일정안내 AJAX에서 받은 원본)
+      data/raw/olpark_events_live.json       (scripts/28이 매일 새로 받는 같은 일정 — 같은 evtSeq면 이쪽이 우선)
+      data/processed/show_seller.csv         (scripts/28이 예매처 페이지에서 읽은 공연 시각·관람시간, 있으면 우선)
 출력: data/processed/event_days.csv          (날짜별 공연 1행)
 """
-import json, re, datetime as dt
+import csv, json, os, re, datetime as dt
 import pandas as pd
 
 SRC = "data/raw/olpark_events_2023_2026.json"
+LIVE = "data/raw/olpark_events_live.json"
+SELLER = "data/processed/show_seller.csv"
 OUT = "data/processed/event_days.csv"
 
 # 공연장 이름 통일 (홈페이지 표기가 제각각)
@@ -27,6 +31,11 @@ def venue(plc):
 CAPACITY = {"KSPO DOME": 15000, "핸드볼경기장": 5000, "올림픽홀": 3000, "우리금융아트홀": 1200,
             "88잔디마당": None, "88호수수변무대": None, "뮤즈라이브": 300, "K-아트홀": None, "기타": None}
 
+# 날짜 표기: '2026년 12월 13일', '12월 13()'(일 빠짐), '2026.12.18.', '12.24(목)', '12.19 SAT'
+DATE_MARK = (r"(?:(\d{4})\s*년\s*)?(\d{1,2})\s*월\s*(\d{1,2})\s*(?:일|(?=\s*\())"
+             r"|(\d{4})\.(\d{1,2})\.(\d{1,2})\.?"
+             r"|(?<![\d.:])(\d{1,2})\.(\d{1,2})(?=\.?\s*(?:\(|[A-Za-z]{3}\b|[월화수목금토일]))")
+OLD_MARK = r"(?:(\d{4})\s*년\s*)?(\d{1,2})\s*월\s*(\d{1,2})\s*일|(\d{4})\.(\d{1,2})\.(\d{1,2})\.?|(?!)(\d)(\d)"  # 예전 방식(7·8번 칸은 자리만)
 WD = {"월": 0, "화": 1, "수": 2, "목": 3, "금": 4, "토": 5, "일": 6}
 TIME = r"(\d{1,2})\s*(?::|;|시)\s*(\d{2})?|(\d{1,2})\s*(PM|AM|pm|am)"
 
@@ -43,7 +52,7 @@ def to_time(m):
     return f"{h:02d}:{mi:02d}"
 
 
-def normalize(tm):
+def normalize(tm, extended=False):
     """'오후 7시 30분', '7PM', '07:00:00PM' 같은 표기를 'HH:MM'으로 바꾼다."""
     s = tm or ""
     pm = lambda h: h + 12 if h < 12 else h
@@ -51,18 +60,23 @@ def normalize(tm):
     s = re.sub(r"오후\s*(\d{1,2})\s*시\s*(\d{1,2})\s*분", lambda m: f"{pm(int(m.group(1))):02d}:{int(m.group(2)):02d}", s)
     s = re.sub(r"오후\s*(\d{1,2})\s*시(?:\s*반)?", lambda m: f"{pm(int(m.group(1))):02d}:{'30' if '반' in m.group(0) else '00'}", s)
     s = re.sub(r"오후\s*(\d{1,2}):(\d{2})", lambda m: f"{pm(int(m.group(1))):02d}:{m.group(2)}", s)
+    if extended:
+        s = re.sub(r"오후\s*(\d{1,2})(?![\d:시])", lambda m: f"{pm(int(m.group(1))):02d}:00", s)  # '오후 5'(시 빠짐)
     s = re.sub(r"(\d{1,2})\s*:\s*(\d{2})\s*PM", lambda m: f"{pm(int(m.group(1))):02d}:{m.group(2)}", s, flags=re.I)
     s = re.sub(r"(\d{1,2})\s*PM", lambda m: f"{pm(int(m.group(1))):02d}:00", s, flags=re.I)
     return s
 
 
-def parse_times(tm, beginDt):
-    """시간 문자열 → {날짜문자열 또는 요일번호: [시작시각...]} 또는 {'*': [...]} (모든 날 공통)"""
-    s = normalize(tm)
+def parse_times(tm, beginDt, extended=False):
+    """시간 문자열 → {날짜문자열 또는 요일번호: [시작시각...]} 또는 {'*': [...]} (모든 날 공통)
+    extended=True(매일 받는 일정·예매처 문구)면 '12.24(목)'·'12월 13()'·'오후 5' 같은 표기도 읽는다.
+    옛 원본은 지난 분석 결과가 바뀌지 않게 예전 방식(extended=False) 그대로."""
+    s = normalize(tm, extended)
+    date_mark = DATE_MARK if extended else OLD_MARK
     res = {}
     # 1) 날짜가 적힌 형식: '2024년 11월 15일(금) 20:00 / 11월 16일(토) 19:00'
     year = int(beginDt[:4]); first_month = int(beginDt[5:7])
-    marks = list(re.finditer(r"(?:(\d{4})\s*년\s*)?(\d{1,2})\s*월\s*(\d{1,2})\s*일|(\d{4})\.(\d{1,2})\.(\d{1,2})\.?", s))
+    marks = list(re.finditer(date_mark, s))
     if marks:
         for i, m in enumerate(marks):
             seg = s[m.end(): marks[i + 1].start() if i + 1 < len(marks) else len(s)]
@@ -72,6 +86,9 @@ def parse_times(tm, beginDt):
                 continue
             if m.group(4):  # 2026.11.21. 형식
                 y, mo, da = int(m.group(4)), int(m.group(5)), int(m.group(6))
+            elif m.group(7):  # 12.24(목) · 12.19 SAT 형식(연도 없음)
+                mo, da = int(m.group(7)), int(m.group(8))
+                y = year + 1 if mo < first_month else year
             else:
                 mo, da = int(m.group(2)), int(m.group(3))
                 y = int(m.group(1)) if m.group(1) else (year + 1 if mo < first_month else year)
@@ -85,7 +102,8 @@ def parse_times(tm, beginDt):
         if res and (len(res) >= 2 or len(marks) == 1):
             return res
         res = {}
-        s = re.sub(r"(?:\d{4}\s*년\s*)?\d{1,2}\s*월\s*\d{1,2}\s*일\s*(\([월화수목금토일]\))?|\d{4}\.\d{1,2}\.\d{1,2}\.?\s*(\([A-Za-z월화수목금토일]+\))?", " ", s)
+        s = re.sub(r"(?:(?:" + date_mark + r")\s*(\([A-Za-z월화수목금토일]*\))?)" if extended else
+                   r"(?:\d{4}\s*년\s*)?\d{1,2}\s*월\s*\d{1,2}\s*일\s*(\([월화수목금토일]\))?|\d{4}\.\d{1,2}\.\d{1,2}\.?\s*(\([A-Za-z월화수목금토일]+\))?", " ", s)
     # 요일 표기: (금) 19:00 / 토 18시 ...
     parts = re.split(r"/|,(?=\s*\(?[월화수목금토일])", s)
     found_wd = False
@@ -105,11 +123,61 @@ def parse_times(tm, beginDt):
     return res
 
 
+def run_minutes(text):
+    """'총 120분', '약 120분 (인터미션 20분)', '2시간 30분' → 분. 못 읽거나 '-'면 None"""
+    t = str(text or "")
+    m = re.search(r"(\d+)\s*시간(?:\s*(\d+)\s*분)?", t)
+    v = int(m.group(1)) * 60 + int(m.group(2) or 0) if m else None
+    if v is None:
+        m = re.search(r"(\d{2,3})\s*분", t)
+        v = int(m.group(1)) if m else None
+    return v if v and 30 <= v <= 400 else None
+
+
+def load_events():
+    """기존 원본 + 매일 받는 일정(같은 evtSeq면 새것). 매일 받는 쪽에만 관람시간(ndTm)·예매처 링크가 있다."""
+    ev = {e["evtSeq"]: e for e in json.load(open(SRC, encoding="utf-8"))}
+    if os.path.exists(LIVE):
+        for e in json.load(open(LIVE, encoding="utf-8")):
+            ev[e["evtSeq"]] = e
+    return list(ev.values())
+
+
+def load_seller():
+    if not os.path.exists(SELLER):
+        return {}
+    return {int(r["evtSeq"]): r for r in csv.DictReader(open(SELLER, encoding="utf-8-sig"))}
+
+
+def run_info(e, sel):
+    """관람시간: 예매처 페이지 > 올림픽공원 공식 일정. (분, 원문, 출처, 예매처, 링크, 확인일)"""
+    ok = sel and sel.get("ok") == "1"
+    seller, url = (sel or {}).get("seller", ""), (sel or {}).get("url", "")
+    if ok and sel.get("run_min"):
+        return int(sel["run_min"]), sel["run_text"], "seller", seller, url, sel["checked"]
+    if "ndTm" not in e:  # 옛 원본에만 있는 공연(관람시간 칸이 없음)
+        return None, "", "", seller, url, ""
+    park = (e.get("ndTm") or "").strip()
+    if run_minutes(park):
+        return run_minutes(park), park, "park", seller, url, e.get("_fetched", "")
+    if ok:  # 예매처 페이지를 읽었는데 관람시간이 비어 있음
+        return None, "", "seller", seller, url, sel["checked"]
+    return None, "", "park", seller, url, e.get("_fetched", "")
+
+
+SELLERS = load_seller()
 rows = []
-for e in json.load(open(SRC, encoding="utf-8")):
+for e in load_events():
     b = dt.date.fromisoformat(e["beginDt"]); en = dt.date.fromisoformat(e["endDt"])
     span = (en - b).days + 1
-    times = parse_times(e["tm"], e["beginDt"])
+    sel = SELLERS.get(int(e["evtSeq"]))
+    live = "ndTm" in e  # 매일 받는 일정에서 온 공연
+    times, time_src = {}, "park"
+    if sel and sel.get("ok") == "1" and sel.get("time_text"):
+        times, time_src = parse_times(sel["time_text"], e["beginDt"], True), "seller"
+    if not times:  # 예매처 시각을 못 읽었으면 공식 일정 문구로
+        times, time_src = parse_times(e["tm"], e["beginDt"], live), "park"
+    run = run_info(e, sel)
     long_run = span > 7  # 몇 주씩 이어지는 뮤지컬·어린이 공연
     for v in venue(e["plc"]):
         d = b
@@ -132,6 +200,9 @@ for e in json.load(open(SRC, encoding="utf-8")):
                 "시작시각들": ";".join(sorted(set(t))) if t else "",
                 "마지막회차시작": max(t) if t else "",
                 "장기공연": long_run, "시간원문": (e["tm"] or "").strip(),
+                "시각출처": time_src if t else "",
+                "관람시간분": run[0], "관람시간원문": run[1], "관람시간출처": run[2],
+                "예매처": run[3], "예매링크": run[4], "확인일": run[5],
             })
             d += dt.timedelta(days=1)
 

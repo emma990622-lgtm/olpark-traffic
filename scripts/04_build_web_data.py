@@ -51,7 +51,7 @@ for _, r in ev.iterrows():
         "title": r["공연명"], "times": times, "longRun": bool(r["장기공연"]),
     })
 dump("events.json", events)
-# 예매처 공식 회차·관람시간으로 바로잡기 (data/processed/show_official.csv)
+# 위 events.json을 27이 다시 만든다: 관람시간(예매처·공원 공식 일정)과 손으로 적은 값(show_official.csv)까지 반영
 import runpy  # noqa: E402
 runpy.run_path(str(ROOT / "scripts" / "27_official_shows.py"), run_name="__main__")
 
