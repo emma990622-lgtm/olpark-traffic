@@ -1,0 +1,4 @@
+- 누가: antigravity-주인
+- 시작 시각: 2026-11-23 14:11 KST
+- 할 일: 이용자 위치 권한(GPS) 허용 시 주차 구역 자동 추천·가까운 역 거리·지도 내 위치 표시 추가
+- 만질 파일: web/index.html, web/assets/common.js, web/assets/audience.js, web/assets/exit_gate.js, web/assets/map3d.js, web/assets/style.css, docs/design.md, docs/context.md
