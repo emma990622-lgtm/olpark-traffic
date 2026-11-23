@@ -3,7 +3,7 @@
 인증키가 필요 없다. 원본은 읽기만 한다.
 
 왜 필요한가
-  - 2025 대수(몇 대가 왔나)는 전체 줄 수(TOTAL_2025)의 80% 이상을 '쓸 수 있는 줄'로 받았을 때만 쓴다(inout_common.enough_2025).
+  - 2025 대수(몇 대가 왔나)는 아예 못 받은 번호 덩어리가 없을 때(덩어리 번호 폭 합 ≥ 전체 줄 수의 99%)만 쓴다(inout_common.enough_2025).
   - 받은 줄(offset)은 88%인데 쓸 수 있는 줄이 80%에 못 미치면, 겹친 줄·형식이 다른 줄이 얼마나 되는지 알아야 한다.
 
 결과: data/processed/kcisa_2025_check.json (줄 수, 겹친 줄, 형식이 안 맞는 줄, 달별 받은 비율, 형식이 안 맞는 예 몇 개)
@@ -94,7 +94,7 @@ def main():
         "badNumber": bad_num,
         "usable": used,
         "usableShare": round(used / ic.TOTAL_2025, 4),
-        "enough2025": ic.enough_2025(used),
+        "enough2025": ic.enough_2025(cov),
         "idPrefix": dict(prefix.most_common(10)),
         "monthLines": dict(sorted(month_lines.items())),
         "coverage": cov,
@@ -107,7 +107,7 @@ def main():
     print(f"  겹친 줄: 내용까지 같음 {dup_same:,} · 번호만 같고 내용 다름 {dup_diff:,}")
     print(f"  형식 안 맞음 {no_pat:,} · 번호 못 읽음 {bad_num:,} · JSON 깨짐 {bad_json:,}")
     print(f"계산에 쓸 수 있는 줄 {used:,} = 전체 {ic.TOTAL_2025:,}의 {used / ic.TOTAL_2025:.1%}"
-          f" → 2025 대수 사용 {'가능' if ic.enough_2025(used) else '불가(80% 미만)'}")
+          f" → 2025 대수 사용 {'가능' if ic.enough_2025(cov) else '불가(못 받은 번호 덩어리 있음)'}")
     for m, v in cov.items():
         print(f"  {m}: 받은 {v['got']:,} / 번호 폭 {v['span']:,} = {v['ratio']:.0%} (덩어리 {v['blocks']})")
     print(f"저장: {OUT.relative_to(ic.ROOT)}")
