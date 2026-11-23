@@ -50,7 +50,8 @@
 |---|---|---|
 | 공통 (`common.js` · `levelOf`) | `.chip.good`, `.chip.warn`, `.chip.bad`, `.chip.accent` | 혼잡 수준(`평소`/`주의`/`집중`) 및 강조 배지 (`lv.sym` 기호 포함) |
 | 공통 (`common.js` · `lineBadgesHTML`) | `.line-badge`, `.l2`, `.l5`, `.l8`, `.l9` | 호선 번호별 색상 알약 배지 |
-| 공통/3D지도 (`common.js`, `map3d.js`) | `.legend`, `.m3d`, `.m3d.lot`, `.m3d.st`, `.m3d.venue`, `.m3d.dome` | 범례 및 3D 지도 HTML 캡슐 마커 (`map3d.failed` 시 평면 지도 자동 펼침) |
+| 공통/3D지도 (`common.js`, `map3d.js`) | `.legend`, `.m3d`, `.m3d.lot`, `.m3d.st`, `.m3d.venue`, `.m3d.dome`, `.m3d.me` | 범례 및 3D 지도 HTML 캡슐 마커 (`.m3d.me`는 GPS 허용 시 `● 내 위치` 표시, `map3d.failed` 시 평면 지도 자동 펼침) |
+| 관객 (`common.js`, `audience.js`, `exit_gate.js`) | `.gps-bar`, `button.ghost.gps-off` (`[data-gps-off]`) | 이용자 위치 권한(GPS) 동의 버튼 바 및 `위치 끄기` 버튼(최소 높이 44px, 기호+글자 상태 병기) |
 | 관객 (`audience.js` · `render`) | `.event-summary`, `.event-head`, `.stat-strip`, `.stat-item` (`.sk`, `.sv`) | Step 1 선택 공연 제목·배지·3열 핵심 시간/좌석 요약 |
 | 관객 (`exit_gate.js`) | `.eg-zones` (안의 `button.on` + `aria-pressed`), `.eg-reco`, `.eg-gate`, `.eg-wx` (+ `.chip.good`/`.warn`/`.accent`, `table.list`, `.subhead`, `.footnote` 재사용) | 3단계 '공연 끝나고 어느 문으로 나갈까요?' 카드. 고른 구역은 테두리+`✓` 글자로도 표시, 판단은 기호+글자(`● 가장 빠름`, `▲ n분 늦음`, `○ 늦어진다는 근거 없음`). 차로 오는 관객(`#mode`가 `car`일 때)에게만 보임 |
 | (삭제·CSS 보관) 옛 주차 선택지 (`style.css`) | `.reco`, `.opt`, `.opt-metrics`, `.metric-card`, `.live-lot-box`, `.occ-bar`, `.tlot-list`, `.tlot`, `.route-steps`, `.step-pill` | 2026-11-23 '어디에 주차할까요?'(`#carSection`) 삭제에 따라 화면에서 제거 |
@@ -70,8 +71,8 @@
 `scripts/check_all.py`가 검사하는 필수 식별자다(없어지면 ❌, PR 자동 합치기도 멈춘다). 새로 꼭 필요한 `id`가 생기면 여기에 추가한다.
 
 - **`web/index.html`**:
-  - `id`: `date`, `event`, `eventInfo`, `mode`, `transitSection`, `stations`, `stationTip`, `walkSrc`, `exitGate`, `egZone`, `egResult`, `egWx`, `egWeather`, `egSrc`, `visitorCard`, `vfWx`, `vfStatus`, `vfHours`, `vfStations`, `vfDetail`, `vfSrc`, `map3d`, `legend3d`, `flat`, `map`, `legend`, `roadNote`
-  - `data-*`: `#mode` 내부 버튼의 `data-v="car"`, `data-v="transit"`
+  - `id`: `date`, `event`, `eventInfo`, `mode`, `transitSection`, `stGpsBtn`, `stGpsNote`, `stations`, `stationTip`, `walkSrc`, `exitGate`, `egGpsBtn`, `egGpsNote`, `egZone`, `egResult`, `egWx`, `egWeather`, `egSrc`, `visitorCard`, `vfWx`, `vfStatus`, `vfHours`, `vfStations`, `vfDetail`, `vfSrc`, `mapGpsBtn`, `mapGpsNote`, `map3d`, `legend3d`, `flat`, `map`, `legend`, `roadNote`
+  - `data-*`: `#mode` 내부 버튼의 `data-v="car"`, `data-v="transit"` / `.gps-bar` 내부 끄기 버튼의 `data-gps-off`
 - (운영자 화면 `web/operator.html`은 2026-11-21 사이트에서 내려 `archive/operator/`에 보관 — 다시 살리면 그때의 id 목록은 git 기록 참고)
 
 ---

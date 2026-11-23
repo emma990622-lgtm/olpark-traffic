@@ -18,6 +18,25 @@
   };
   let pick = null;
 
+  // 문별 주차 구역 기준점 (좌표 출처: walk_tmap.json TMAP POI, places.json, links.json 서울시 도로 노드)
+  const PARK_ZONE_REFS = [
+    { gate: "북2", label: "P5·KSPO DOME 옆", lat: 37.51916, lng: 127.127514 },
+    { gate: "북2", label: "P4·올림픽수영장 쪽", lat: 37.520531, lng: 127.128183 },
+    { gate: "북2", label: "북2문 입출구", lat: 37.523691, lng: 127.128594 },
+    { gate: "동2", label: "P2·올림픽홀 옆", lat: 37.514685, lng: 127.127509 },
+    { gate: "동2", label: "P그·올림픽공원역 앞", lat: 37.516201, lng: 127.130923 },
+    { gate: "동2", label: "동2문 교차로 쪽", lat: 37.515852, lng: 127.13068 },
+    { gate: "동2", label: "P테·테니스장 쪽", lat: 37.51748, lng: 127.128132 },
+    { gate: "남2", label: "P6·핸드볼경기장 옆", lat: 37.517379, lng: 127.126315 },
+    { gate: "남2", label: "P7·우리금융아트홀 옆", lat: 37.516713, lng: 127.124981 },
+    { gate: "남2", label: "P1A·남2문 쪽", lat: 37.513758, lng: 127.12307 },
+    { gate: "other", label: "서1문·올림픽회관 주차장", lat: 37.518439, lng: 127.116172 },
+    { gate: "other", label: "서2문·올림픽파크텔 쪽", lat: 37.520017, lng: 127.114123 },
+    { gate: "other", label: "남3문 주차장", lat: 37.516121, lng: 127.118498 },
+    { gate: "other", label: "남4문 주차장 쪽", lat: 37.516329, lng: 127.115835 },
+    { gate: "other", label: "한성백제박물관 주차장", lat: 37.515347, lng: 127.120798 },
+  ];
+
   // 주차한 곳 버튼
   const box = $("egZone");
   const btn = (g, label, sub) =>
@@ -25,15 +44,55 @@
   box.innerHTML =
     ["북2", "동2", "남2"].map((g) => btn(g, J.byEntry[g].zones.join("·"), `${ZONE[g]} · ${GATE(g)}으로 들어옴`)).join("") +
     btn("other", "그 밖의 주차장", "서1·서2·남3·남4문 주차장");
+
+  function selectZone(g) {
+    pick = g;
+    box.querySelectorAll("button").forEach((x) => {
+      const on = x.dataset.g === g;
+      x.classList.toggle("on", on);
+      x.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    renderGate();
+  }
+
   box.addEventListener("click", (e) => {
     const b = e.target.closest("button[data-g]");
     if (!b) return;
-    pick = b.dataset.g;
-    box.querySelectorAll("button").forEach((x) => {
-      x.classList.toggle("on", x === b);
-      x.setAttribute("aria-pressed", x === b ? "true" : "false");
-    });
-    renderGate();
+    selectZone(b.dataset.g);
+  });
+
+  if ($("egGpsBtn")) {
+    $("egGpsBtn").addEventListener("click", () => requestUserGPS({ trigger: "exitGate" }));
+  }
+  onUserGPS((g) => {
+    const gpsBtn = $("egGpsBtn"), gpsNote = $("egGpsNote");
+    if (!gpsBtn || !gpsNote) return;
+    gpsBtn.disabled = g.status === "loading";
+    if (g.status === "loading") {
+      gpsBtn.textContent = "위치 확인 중…";
+      gpsNote.textContent = "현재 위치를 확인하고 있어요…";
+    } else if (g.status === "ok" && g.loc) {
+      gpsBtn.textContent = "내 위치로 다시 찾기";
+      const nearest = PARK_ZONE_REFS
+        .map((r) => ({ ...r, dist: distMeters(g.loc.lat, g.loc.lng, r.lat, r.lng) }))
+        .sort((a, b) => a.dist - b.dist)[0];
+      if (nearest.dist <= 1200) {
+        if (g.source === "exitGate" || pick === null) selectZone(nearest.gate);
+        const zoneLabel = nearest.gate === "other" ? "그 밖의 주차장" : `${GATE(nearest.gate)} 구역(${J.byEntry[nearest.gate].zones.join("·")})`;
+        gpsNote.innerHTML =
+          `<span class="chip good">● GPS 반영</span> 현재 위치${g.loc.acc ? `(오차 약 ±${g.loc.acc}m)` : ""}에서 <b>${nearest.label}</b>(직선 약 ${Math.round(nearest.dist)}m)이 가장 가까워 <b>${zoneLabel}</b>을 골랐어요. ` +
+          `공연장 안에서 누르셨거나 실제 주차한 곳이 다르면 아래 버튼을 직접 눌러 바꿔 주세요(기준 좌표: TMAP·서울시 도시데이터).`;
+      } else {
+        gpsNote.innerHTML =
+          `<span class="chip">○ 공원 밖</span> 현재 위치가 올림픽공원에서 약 ${(nearest.dist / 1000).toFixed(1)}km 떨어져 있어 주차 구역을 자동으로 고르지 않았어요. 공원 주차장에서 누르거나 아래에서 직접 골라 주세요.`;
+      }
+    } else if (g.status === "off") {
+      gpsBtn.textContent = "현재 위치(GPS)로 주차한 곳 찾기";
+      gpsNote.textContent = "내 위치 표시를 껐어요. 아래에서 직접 고르거나 다시 버튼을 눌러 주세요.";
+    } else if (g.status === "denied" || g.status === "error" || g.status === "unsupported") {
+      gpsBtn.textContent = "현재 위치(GPS) 다시 확인";
+      gpsNote.innerHTML = `<span class="chip warn">▲ 확인 안 됨</span> ${g.msg}`;
+    }
   });
 
   function renderGate() {

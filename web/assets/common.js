@@ -383,6 +383,10 @@ function drawRoadMap(svg, links, places, roads) {
   places.lots.filter((x) => x.lat && x.kind !== "transfer").forEach((x) => dot(x.lng, x.lat, "var(--ink-2)", 5, x.kind === "park" ? "공원 주차장" : x.name.replace(" 주차장", "").replace("올림픽공원 ", ""), 16));
   places.stations.forEach((s) => dot(s.lng, s.lat, "#7b4fd6", 6, s.name));
   dot(places.dome.lng, places.dome.lat, "var(--accent)", 9, places.dome.name || "KSPO DOME");
+  const me = USER_GPS.loc;
+  if (me && me.lng >= minX && me.lng <= maxX && me.lat >= minY && me.lat <= maxY) {
+    dot(me.lng, me.lat, "var(--good-ink)", 8, "● 내 위치", -11);
+  }
 }
 
 function legendHTML() {
@@ -399,4 +403,100 @@ function groupByDate(events) {
   const m = new Map();
   events.forEach((e) => { if (!m.has(e.date)) m.set(e.date, []); m.get(e.date).push(e); });
   return m;
+}
+
+// ---------- 이용자 허가 기반 현재 위치(GPS, 브라우저 안에서만 계산·서버 전송 없음) ----------
+function distMeters(lat1, lng1, lat2, lng2) {
+  const k = Math.cos(((lat1 + lat2) / 2) * Math.PI / 180);
+  return Math.hypot((lng1 - lng2) * 111320 * k, (lat1 - lat2) * 110540);
+}
+
+const USER_GPS = { loc: null, status: "idle", msg: "", source: null };
+const _gpsListeners = [];
+
+function onUserGPS(fn) {
+  _gpsListeners.push(fn);
+  if (USER_GPS.status !== "idle") fn(USER_GPS);
+}
+
+function _emitGPS() {
+  if (typeof document !== "undefined") {
+    document.querySelectorAll("[data-gps-off]").forEach((b) => { b.hidden = !USER_GPS.loc; });
+  }
+  _gpsListeners.forEach((fn) => { try { fn(USER_GPS); } catch (_) {} });
+}
+
+function requestUserGPS(opts = {}) {
+  const { silent = false, trigger = "button" } = opts;
+  if (!navigator.geolocation) {
+    if (!silent) {
+      USER_GPS.status = "unsupported";
+      USER_GPS.msg = "이 브라우저에서는 현재 위치(GPS) 기능을 지원하지 않아요.";
+      USER_GPS.source = trigger;
+      _emitGPS();
+    }
+    return;
+  }
+  if (!silent) {
+    USER_GPS.status = "loading";
+    USER_GPS.msg = "";
+    USER_GPS.source = trigger;
+    _emitGPS();
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      USER_GPS.loc = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        acc: Math.round(pos.coords.accuracy || 0),
+        time: new Date(),
+      };
+      USER_GPS.status = "ok";
+      USER_GPS.msg = "";
+      USER_GPS.source = trigger;
+      _emitGPS();
+    },
+    (err) => {
+      if (silent) return;
+      USER_GPS.status = err && err.code === 1 ? "denied" : "error";
+      USER_GPS.msg = err && err.code === 1
+        ? "위치 권한이 허용되지 않았어요. 브라우저 주소창에서 위치 권한을 허용하거나 직접 골라 주세요."
+        : "현재 위치를 확인하지 못했어요(신호 약함·시간 초과). 잠시 뒤 다시 누르거나 직접 골라 주세요.";
+      USER_GPS.source = trigger;
+      _emitGPS();
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: silent ? 30000 : 0 }
+  );
+}
+
+function clearUserGPS() {
+  USER_GPS.loc = null;
+  USER_GPS.status = "off";
+  USER_GPS.msg = "";
+  USER_GPS.source = "off";
+  _emitGPS();
+}
+
+// 이미 이용자가 이 사이트에 위치 권한을 허용(granted)해 둔 경우에만 조용히 현재 위치를 읽는다.
+// 아직 묻지 않은 상태(prompt)에서는 버튼을 눌렀을 때만 브라우저 권한 창을 띄운다.
+if (typeof navigator !== "undefined" && navigator.permissions && navigator.permissions.query) {
+  navigator.permissions.query({ name: "geolocation" }).then((p) => {
+    if (p.state === "granted") requestUserGPS({ silent: true, trigger: "auto" });
+    p.onchange = () => {
+      if (p.state === "granted" && !USER_GPS.loc && USER_GPS.status !== "off") {
+        requestUserGPS({ silent: true, trigger: "auto" });
+      } else if (p.state === "denied") {
+        USER_GPS.loc = null;
+        USER_GPS.status = "denied";
+        USER_GPS.msg = "위치 권한이 꺼져 있어요. 직접 골라 이용하실 수 있어요.";
+        _emitGPS();
+      }
+    };
+  }).catch(() => {});
+}
+
+if (typeof document !== "undefined") {
+  document.addEventListener("click", (e) => {
+    if (e.target && e.target.closest("[data-gps-off]")) clearUserGPS();
+  });
 }

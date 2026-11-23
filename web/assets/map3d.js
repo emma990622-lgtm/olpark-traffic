@@ -139,9 +139,21 @@ async function initMap3D(el, { links, places, live, venues }) {
     map.on("mouseleave", id, () => { map.getCanvas().style.cursor = ""; });
   });
 
+  let meMarker = null;
+  const setUserLocation = (loc, opts = {}) => {
+    if (meMarker) { meMarker.remove(); meMarker = null; }
+    if (!loc) return;
+    meMarker = mark(loc.lng, loc.lat, "● 내 위치", "me");
+    if (opts.fly && distMeters(loc.lat, loc.lng, dome.lat, dome.lng) <= 3000) {
+      map.easeTo({ center: [loc.lng, loc.lat], duration: 700 });
+    }
+  };
+  if (typeof USER_GPS !== "undefined" && USER_GPS.loc) setUserLocation(USER_GPS.loc);
+
   return {
     map, buildingSrc,
     update(newLive) { const s = map.getSource("roads"); if (s) s.setData(roadsGeoJSON(links, newLive, shapes)); },
+    setUserLocation,
     // 고른 공연장으로 바꾸기: 표식·걷는 길·지도 중심
     setVenue(pl) {
       drawMarkers(pl);

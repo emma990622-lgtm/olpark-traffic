@@ -1710,3 +1710,43 @@ details#flat[open] {
 .eg-reco p { margin: 6px 0 0; font-size: 13.5px; color: var(--ink); }
 .eg-gate { font-size: 19px; }
 .eg-wx { font-size: 14px; line-height: 1.6; }
+
+/* 이용자 허가 기반 현재 위치(GPS) 바 및 지도 내 위치 표식 */
+.gps-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.gps-bar button.ghost {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+.gps-bar button.ghost:hover {
+  border-color: var(--accent);
+}
+.gps-bar button.ghost:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+.gps-bar button.ghost.gps-off {
+  color: var(--ink-2);
+  border-color: var(--line-strong);
+  background: var(--card);
+  font-weight: 600;
+}
+.gps-bar > span {
+  flex: 1 1 200px;
+}
+.m3d.me span {
+  background: var(--good-ink);
+  color: #ffffff;
+  border-color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 3px 10px rgba(8, 93, 58, 0.38);
+}

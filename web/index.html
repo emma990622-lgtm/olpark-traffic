@@ -6,7 +6,7 @@
 <title>올팍 공연 주차·귀가 안내</title>
 <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-<link rel="stylesheet" href="assets/style.css?v=5">
+<link rel="stylesheet" href="assets/style.css?v=6">
 </head>
 <body>
 <header class="top">
@@ -38,6 +38,11 @@
 
   <section class="card" id="transitSection" hidden>
     <h2><span class="step">3</span>가까운 역</h2>
+    <div class="gps-bar">
+      <button type="button" class="ghost" id="stGpsBtn">현재 위치(GPS)에서 역까지 거리 보기</button>
+      <button type="button" class="ghost gps-off" data-gps-off="1" hidden>위치 끄기</button>
+      <span class="muted small" id="stGpsNote" role="status">허용 시 지금 계신 곳에서 가까운 역 순으로 보여 드려요(브라우저 안에서만 계산).</span>
+    </div>
     <div class="table-scroll">
       <table class="list" id="stations"></table>
     </div>
@@ -48,6 +53,11 @@
   <section class="card" id="exitGate">
     <h2><span class="step">3</span>공연 끝나고 어느 문으로 나갈까요?</h2>
     <p class="sec-sub">주차한 곳을 고르면, 지난 공연에서 같은 곳에 세운 차가 가장 빨리 빠진 출구를 알려 드려요.</p>
+    <div class="gps-bar">
+      <button type="button" class="ghost" id="egGpsBtn">현재 위치(GPS)로 주차한 곳 찾기</button>
+      <button type="button" class="ghost gps-off" data-gps-off="1" hidden>위치 끄기</button>
+      <span class="muted small" id="egGpsNote" role="status">차 세운 곳에서 허용하면 가장 가까운 주차 구역을 골라 드려요(서버 전송 없음).</span>
+    </div>
     <div class="eg-zones" id="egZone" role="group" aria-label="주차한 곳"></div>
     <div id="egResult" role="status" style="margin-top:12px"></div>
     <h3 class="subhead">날씨에 따라 출차가 늦어지나요?</h3>
@@ -72,6 +82,11 @@
   <section class="card">
     <h2>지금 주변 도로와 걷는 길</h2>
     <p class="sec-sub">도로 색은 실시간 소통 상태이고, 점선은 고른 공연장까지 걸어가는 길이에요. 선을 누르면 자세한 정보가 나와요.</p>
+    <div class="gps-bar">
+      <button type="button" class="ghost" id="mapGpsBtn">내 현재 위치(GPS) 지도에 표시</button>
+      <button type="button" class="ghost gps-off" data-gps-off="1" hidden>위치 끄기</button>
+      <span class="muted small" id="mapGpsNote" role="status">위치 권한을 허용하면 지도에 내 위치를 함께 표시해요.</span>
+    </div>
     <div id="map3d" class="map3d"></div>
     <div id="legend3d"></div>
     <details id="flat"><summary class="muted small">평면 지도로 보기 (데이터 절약·기본 지도)</summary>
