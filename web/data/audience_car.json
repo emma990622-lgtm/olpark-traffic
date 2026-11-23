@@ -1,10 +1,10 @@
 {
- "built": "2026-11-20 20:20",
+ "built": "2026-11-23 21:19",
  "meaningful": true,
  "sources": {
   "population": "서울시 행정동 단위 생활인구(내국인), 서울 열린데이터광장 OA-14991 · 올림픽공원이 있는 행정동(코드 11710566) · KT 통신 자료 기반 추정",
   "populationPeriod": "2024-06 ~ 2025-12",
-  "cars": "입출차 원본에서 직접 셈(같은 기준에 걸리는 평소 방문 차는 뺌). 2025 자료 77% 받음(겹친 줄 뺀 값), 받은 비율로 보정. 8·9월은 원본이 한 달 65,535줄로 잘려 대수에서 뺌. 10·11·12월은 공연 시간대 기록을 90% 넘게 받은 공연만(11·12월은 원본이 잘려 앞쪽 며칠만 있음)",
+  "cars": "입출차 원본에서 직접 셈(같은 기준에 걸리는 평소 방문 차는 뺌). 2025 자료 86% 받음(겹친 줄 뺀 값), 받은 비율로 보정. 8·9월은 원본이 한 달 65,535줄로 잘려 대수에서 뺌. 10·11·12월은 공연 시간대 기록을 90% 넘게 받은 공연만(11·12월은 원본이 잘려 앞쪽 며칠만 있음)",
   "events": "올림픽공원 공식 행사 일정"
  },
  "method": {
@@ -16,80 +16,80 @@
   "limits": "공연별 관객 수를 몰라 '관객 1명이 차로 올 확률'은 직접 구하지 못했고, 같은 조건에서 관객 차가 몇 % 늘고 주는지로 해석함. 생활인구는 통신 자료로 추정한 값이라 같은 날 다른 공연장 관객도 섞일 수 있음. 주차장이 차면(2,120면) 더 오는 차는 세지 못함."
  },
  "model": {
-  "n": 38,
-  "artists": 28,
-  "r2": 0.47,
-  "looRmse": 0.467,
-  "nullRmse": 0.604,
-  "improve": 0.226,
-  "looMedianErrPct": 25,
+  "n": 41,
+  "artists": 29,
+  "r2": 0.417,
+  "looRmse": 0.502,
+  "nullRmse": 0.624,
+  "improve": 0.195,
+  "looMedianErrPct": 30,
   "b": [
-   6.83054,
-   0.23186,
-   -1.48687,
-   -0.45073
+   6.39549,
+   0.26303,
+   -1.11214,
+   -0.49726
   ],
-  "s2": 0.2046,
+  "s2": 0.23925,
   "XtXi": [
    [
-    2.996001,
-    -0.301742,
-    -2.593304,
-    0.18647
+    2.937778,
+    -0.296682,
+    -2.544896,
+    0.172084
    ],
    [
-    -0.301742,
-    0.056902,
-    0.16331,
-    -0.010729
+    -0.296682,
+    0.056402,
+    0.158858,
+    -0.008876
    ],
    [
-    -2.593304,
-    0.16331,
-    2.666609,
-    -0.244611
+    -2.544896,
+    0.158858,
+    2.625357,
+    -0.230281
    ],
    [
-    0.18647,
-    -0.010729,
-    -0.244611,
-    0.144619
+    0.172084,
+    -0.008876,
+    -0.230281,
+    0.133383
    ]
   ],
-  "t80": 1.307,
+  "t80": 1.3049,
   "coef": {
    "age10": {
     "label": "관객 평균 나이 10살 많을 때",
-    "b": 0.2319,
-    "se": 0.1079,
-    "p": 0.0389,
-    "bootLo": 0.1019,
-    "bootHi": 0.4693,
-    "pct": 26,
-    "pctLo": 11,
-    "pctHi": 60
+    "b": 0.263,
+    "se": 0.1162,
+    "p": 0.0295,
+    "bootLo": 0.1192,
+    "bootHi": 0.5187,
+    "pct": 30,
+    "pctLo": 13,
+    "pctHi": 68
    },
    "female": {
     "label": "여성 비율 10%p 높을 때",
-    "b": -1.4869,
-    "se": 0.7386,
-    "p": 0.0521,
-    "bootLo": -3.183,
-    "bootHi": -0.0093,
-    "pct": -14,
-    "pctLo": -27,
-    "pctHi": 0
+    "b": -1.1121,
+    "se": 0.7925,
+    "p": 0.1689,
+    "bootLo": -2.8774,
+    "bootHi": 0.5399,
+    "pct": -11,
+    "pctLo": -25,
+    "pctHi": 6
    },
    "fri": {
     "label": "금요일 공연(주말 대비)",
-    "b": -0.4507,
-    "se": 0.172,
-    "p": 0.013,
-    "bootLo": -0.7387,
-    "bootHi": -0.1197,
-    "pct": -36,
-    "pctLo": -52,
-    "pctHi": -11
+    "b": -0.4973,
+    "se": 0.1786,
+    "p": 0.0084,
+    "bootLo": -0.7746,
+    "bootHi": -0.1783,
+    "pct": -39,
+    "pctLo": -54,
+    "pctHi": -16
    }
   }
  },
@@ -99,14 +99,14 @@
    "meanAge": 25,
    "female": 0.92,
    "sun": {
-    "pred": 421,
-    "lo": 228,
-    "hi": 778
+    "pred": 416,
+    "lo": 214,
+    "hi": 806
    },
    "fri": {
-    "pred": 268,
-    "lo": 145,
-    "hi": 498
+    "pred": 253,
+    "lo": 130,
+    "hi": 492
    }
   },
   {
@@ -114,14 +114,14 @@
    "meanAge": 30,
    "female": 0.7,
    "sun": {
-    "pred": 655,
-    "lo": 357,
-    "hi": 1205
+    "pred": 606,
+    "lo": 314,
+    "hi": 1167
    },
    "fri": {
-    "pred": 418,
-    "lo": 220,
-    "hi": 792
+    "pred": 368,
+    "lo": 185,
+    "hi": 732
    }
   },
   {
@@ -129,14 +129,14 @@
    "meanAge": 38,
    "female": 0.75,
    "sun": {
-    "pred": 732,
-    "lo": 398,
-    "hi": 1348
+    "pred": 707,
+    "lo": 366,
+    "hi": 1365
    },
    "fri": {
-    "pred": 467,
-    "lo": 249,
-    "hi": 876
+    "pred": 430,
+    "lo": 218,
+    "hi": 847
    }
   },
   {
@@ -144,28 +144,18 @@
    "meanAge": 55,
    "female": 0.8,
    "sun": {
-    "pred": 1009,
-    "lo": 502,
-    "hi": 2026
+    "pred": 1046,
+    "lo": 493,
+    "hi": 2217
    },
    "fri": {
-    "pred": 643,
-    "lo": 319,
-    "hi": 1294
+    "pred": 636,
+    "lo": 299,
+    "hi": 1353
    }
   }
  ],
  "upcoming": [
-  {
-   "date": "2026-11-21",
-   "title": "2026-27 로이킴 LIVE TOUR ［R:O:Y］ in SEOUL",
-   "match": []
-  },
-  {
-   "date": "2026-11-22",
-   "title": "2026-27 로이킴 LIVE TOUR ［R:O:Y］ in SEOUL",
-   "match": []
-  },
   {
    "date": "2026-11-27",
    "title": "[서울] 2026 조용필 ＆ 위대한탄생 콘서트",
@@ -189,9 +179,9 @@
     "40대": 0.088,
     "50대 이상": 0.558
    },
-   "pred": 622,
-   "lo": 322,
-   "hi": 1202
+   "pred": 578,
+   "lo": 284,
+   "hi": 1174
   },
   {
    "date": "2026-11-28",
@@ -216,9 +206,9 @@
     "40대": 0.088,
     "50대 이상": 0.558
    },
-   "pred": 976,
-   "lo": 515,
-   "hi": 1848
+   "pred": 950,
+   "lo": 477,
+   "hi": 1890
   },
   {
    "date": "2026-11-29",
@@ -243,9 +233,9 @@
     "40대": 0.088,
     "50대 이상": 0.558
    },
-   "pred": 976,
-   "lo": 515,
-   "hi": 1848
+   "pred": 950,
+   "lo": 477,
+   "hi": 1890
   },
   {
    "date": "2026-12-04",
@@ -281,9 +271,32 @@
     "40대": 0.083,
     "50대 이상": 0.085
    },
-   "pred": 698,
-   "lo": 380,
-   "hi": 1284
+   "pred": 645,
+   "lo": 334,
+   "hi": 1243
+  },
+  {
+   "date": "2026-12-13",
+   "title": "2026 DAVICHI CONCERT 〈IN OUR SCENES〉",
+   "dayType": "sun",
+   "match": [
+    {
+     "date": "2025-01-19",
+     "title": "2025 DAVICHI CONCERT 〈A Stitch in Time〉"
+    }
+   ],
+   "meanAge": 31.7,
+   "female": 0.684,
+   "ages": {
+    "10대 이하": 0.122,
+    "20대": 0.385,
+    "30대": 0.325,
+    "40대": 0.083,
+    "50대 이상": 0.085
+   },
+   "pred": 645,
+   "lo": 334,
+   "hi": 1243
   },
   {
    "date": "2026-12-18",
@@ -316,9 +329,219 @@
     "40대": 0.066,
     "50대 이상": 0.027
    },
-   "pred": 290,
-   "lo": 157,
-   "hi": 538
+   "pred": 277,
+   "lo": 143,
+   "hi": 539
+  },
+  {
+   "date": "2026-12-19",
+   "title": "2026 DAY6 Special Concert ‘The Present’",
+   "dayType": "sat",
+   "match": [
+    {
+     "date": "2025-05-16",
+     "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL"
+    },
+    {
+     "date": "2025-05-18",
+     "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL"
+    },
+    {
+     "date": "2025-12-19",
+     "title": "2025 DAY6 Special Concert ‘The Present’"
+    },
+    {
+     "date": "2025-12-21",
+     "title": "2025 DAY6 Special Concert ‘The Present’"
+    }
+   ],
+   "meanAge": 28.7,
+   "female": 0.924,
+   "ages": {
+    "10대 이하": 0.127,
+    "20대": 0.511,
+    "30대": 0.268,
+    "40대": 0.066,
+    "50대 이상": 0.027
+   },
+   "pred": 456,
+   "lo": 235,
+   "hi": 886
+  },
+  {
+   "date": "2026-12-20",
+   "title": "2026 DAY6 Special Concert ‘The Present’",
+   "dayType": "sun",
+   "match": [
+    {
+     "date": "2025-05-16",
+     "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL"
+    },
+    {
+     "date": "2025-05-18",
+     "title": "DAY6 3RD WORLD TOUR〈FOREVER YOUNG〉FINALE in SEOUL"
+    },
+    {
+     "date": "2025-12-19",
+     "title": "2025 DAY6 Special Concert ‘The Present’"
+    },
+    {
+     "date": "2025-12-21",
+     "title": "2025 DAY6 Special Concert ‘The Present’"
+    }
+   ],
+   "meanAge": 28.7,
+   "female": 0.924,
+   "ages": {
+    "10대 이하": 0.127,
+    "20대": 0.511,
+    "30대": 0.268,
+    "40대": 0.066,
+    "50대 이상": 0.027
+   },
+   "pred": 456,
+   "lo": 235,
+   "hi": 886
+  },
+  {
+   "date": "2026-12-24",
+   "title": "2026 THE BOYZ CONCERT : ZENERATION III",
+   "dayType": "wk",
+   "match": [
+    {
+     "date": "2025-01-31",
+     "title": "THE BOYZ FAN-CON 〈THE B LAND〉"
+    },
+    {
+     "date": "2025-02-02",
+     "title": "THE BOYZ FAN-CON 〈THE B LAND〉"
+    },
+    {
+     "date": "2025-08-08",
+     "title": "THE BOYZ〈THE BLAZE〉WORLD TOUR in SEOUL"
+    },
+    {
+     "date": "2025-08-10",
+     "title": "THE BOYZ〈THE BLAZE〉WORLD TOUR in SEOUL"
+    }
+   ],
+   "meanAge": 26.1,
+   "female": 0.923,
+   "ages": {
+    "10대 이하": 0.274,
+    "20대": 0.485,
+    "30대": 0.151,
+    "40대": 0.049,
+    "50대 이상": 0.041
+   },
+   "pred": 260,
+   "lo": 134,
+   "hi": 504
+  },
+  {
+   "date": "2026-12-25",
+   "title": "2026 THE BOYZ CONCERT : ZENERATION III",
+   "dayType": "fri",
+   "match": [
+    {
+     "date": "2025-01-31",
+     "title": "THE BOYZ FAN-CON 〈THE B LAND〉"
+    },
+    {
+     "date": "2025-02-02",
+     "title": "THE BOYZ FAN-CON 〈THE B LAND〉"
+    },
+    {
+     "date": "2025-08-08",
+     "title": "THE BOYZ〈THE BLAZE〉WORLD TOUR in SEOUL"
+    },
+    {
+     "date": "2025-08-10",
+     "title": "THE BOYZ〈THE BLAZE〉WORLD TOUR in SEOUL"
+    }
+   ],
+   "meanAge": 26.1,
+   "female": 0.923,
+   "ages": {
+    "10대 이하": 0.274,
+    "20대": 0.485,
+    "30대": 0.151,
+    "40대": 0.049,
+    "50대 이상": 0.041
+   },
+   "pred": 260,
+   "lo": 134,
+   "hi": 504
+  },
+  {
+   "date": "2026-12-26",
+   "title": "2026 THE BOYZ CONCERT : ZENERATION III",
+   "dayType": "sat",
+   "match": [
+    {
+     "date": "2025-01-31",
+     "title": "THE BOYZ FAN-CON 〈THE B LAND〉"
+    },
+    {
+     "date": "2025-02-02",
+     "title": "THE BOYZ FAN-CON 〈THE B LAND〉"
+    },
+    {
+     "date": "2025-08-08",
+     "title": "THE BOYZ〈THE BLAZE〉WORLD TOUR in SEOUL"
+    },
+    {
+     "date": "2025-08-10",
+     "title": "THE BOYZ〈THE BLAZE〉WORLD TOUR in SEOUL"
+    }
+   ],
+   "meanAge": 26.1,
+   "female": 0.923,
+   "ages": {
+    "10대 이하": 0.274,
+    "20대": 0.485,
+    "30대": 0.151,
+    "40대": 0.049,
+    "50대 이상": 0.041
+   },
+   "pred": 427,
+   "lo": 220,
+   "hi": 828
+  },
+  {
+   "date": "2026-12-27",
+   "title": "2026 THE BOYZ CONCERT : ZENERATION III",
+   "dayType": "sun",
+   "match": [
+    {
+     "date": "2025-01-31",
+     "title": "THE BOYZ FAN-CON 〈THE B LAND〉"
+    },
+    {
+     "date": "2025-02-02",
+     "title": "THE BOYZ FAN-CON 〈THE B LAND〉"
+    },
+    {
+     "date": "2025-08-08",
+     "title": "THE BOYZ〈THE BLAZE〉WORLD TOUR in SEOUL"
+    },
+    {
+     "date": "2025-08-10",
+     "title": "THE BOYZ〈THE BLAZE〉WORLD TOUR in SEOUL"
+    }
+   ],
+   "meanAge": 26.1,
+   "female": 0.923,
+   "ages": {
+    "10대 이하": 0.274,
+    "20대": 0.485,
+    "30대": 0.151,
+    "40대": 0.049,
+    "50대 이상": 0.041
+   },
+   "pred": 427,
+   "lo": 220,
+   "hi": 828
   },
   {
    "date": "2026-12-31",
@@ -338,6 +561,107 @@
   {
    "date": "2027-01-03",
    "title": "2026 성시경 연말 콘서트 〈성시경〉",
+   "match": []
+  },
+  {
+   "date": "2027-01-15",
+   "title": "TAEYEON CONCERT - F.L.Y. in Seoul",
+   "dayType": "fri",
+   "match": [
+    {
+     "date": "2025-03-07",
+     "title": "TAEYEON CONCERT - The TENSE"
+    },
+    {
+     "date": "2025-03-09",
+     "title": "TAEYEON CONCERT - The TENSE"
+    }
+   ],
+   "meanAge": 30.1,
+   "female": 0.692,
+   "ages": {
+    "10대 이하": 0.085,
+    "20대": 0.54,
+    "30대": 0.244,
+    "40대": 0.07,
+    "50대 이상": 0.062
+   },
+   "pred": 373,
+   "lo": 187,
+   "hi": 742
+  },
+  {
+   "date": "2027-01-16",
+   "title": "TAEYEON CONCERT - F.L.Y. in Seoul",
+   "dayType": "sat",
+   "match": [
+    {
+     "date": "2025-03-07",
+     "title": "TAEYEON CONCERT - The TENSE"
+    },
+    {
+     "date": "2025-03-09",
+     "title": "TAEYEON CONCERT - The TENSE"
+    }
+   ],
+   "meanAge": 30.1,
+   "female": 0.692,
+   "ages": {
+    "10대 이하": 0.085,
+    "20대": 0.54,
+    "30대": 0.244,
+    "40대": 0.07,
+    "50대 이상": 0.062
+   },
+   "pred": 613,
+   "lo": 318,
+   "hi": 1182
+  },
+  {
+   "date": "2027-01-17",
+   "title": "TAEYEON CONCERT - F.L.Y. in Seoul",
+   "dayType": "sun",
+   "match": [
+    {
+     "date": "2025-03-07",
+     "title": "TAEYEON CONCERT - The TENSE"
+    },
+    {
+     "date": "2025-03-09",
+     "title": "TAEYEON CONCERT - The TENSE"
+    }
+   ],
+   "meanAge": 30.1,
+   "female": 0.692,
+   "ages": {
+    "10대 이하": 0.085,
+    "20대": 0.54,
+    "30대": 0.244,
+    "40대": 0.07,
+    "50대 이상": 0.062
+   },
+   "pred": 613,
+   "lo": 318,
+   "hi": 1182
+  },
+  {
+   "date": "2027-01-22",
+   "title": "2027 에픽하이 콘서트",
+   "match": []
+  },
+  {
+   "date": "2027-01-23",
+   "title": "2027 에픽하이 콘서트",
+   "match": []
+  },
+  {
+   "date": "2027-01-24",
+   "title": "2027 에픽하이 콘서트",
+   "match": []
+  },
+  {
+   "date": "2027-02-04",
+   "title": "캣츠아이 첫 단독 내한공연",
    "match": []
   }
  ],
@@ -1098,7 +1422,7 @@
     "50대 이상": 0.842
    },
    "meanAge": 61.0,
-   "cars": 742,
+   "cars": 740,
    "carsSrc": "raw-net"
   },
   {
@@ -1111,7 +1435,7 @@
    "otherVenues": 2,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 1007,
+   "cars": 1009,
    "carsSrc": "raw-net"
   },
   {
@@ -1133,7 +1457,7 @@
     "50대 이상": 0.085
    },
    "meanAge": 31.7,
-   "cars": 1100,
+   "cars": 1101,
    "carsSrc": "raw-net"
   },
   {
@@ -1146,7 +1470,7 @@
    "otherVenues": 2,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 691,
+   "cars": 692,
    "carsSrc": "raw-net"
   },
   {
@@ -1168,7 +1492,7 @@
     "50대 이상": 0.083
    },
    "meanAge": 27.8,
-   "cars": 741,
+   "cars": 742,
    "carsSrc": "raw-net"
   },
   {
@@ -1201,7 +1525,7 @@
    "otherVenues": 0,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 238,
+   "cars": 239,
    "carsSrc": "raw-net"
   },
   {
@@ -1223,7 +1547,7 @@
     "50대 이상": 0.108
    },
    "meanAge": 28.9,
-   "cars": 171,
+   "cars": 170,
    "carsSrc": "raw-net"
   },
   {
@@ -1236,7 +1560,7 @@
    "otherVenues": 2,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 732,
+   "cars": 733,
    "carsSrc": "raw-net"
   },
   {
@@ -1258,7 +1582,7 @@
     "50대 이상": 0.437
    },
    "meanAge": 44.7,
-   "cars": 821,
+   "cars": 822,
    "carsSrc": "raw-net"
   },
   {
@@ -1280,7 +1604,7 @@
     "50대 이상": 0.038
    },
    "meanAge": 27.2,
-   "cars": 410,
+   "cars": 409,
    "carsSrc": "raw-net"
   },
   {
@@ -1293,7 +1617,7 @@
    "otherVenues": 2,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 646,
+   "cars": 643,
    "carsSrc": "raw-net"
   },
   {
@@ -1315,7 +1639,7 @@
     "50대 이상": 0.164
    },
    "meanAge": 33.3,
-   "cars": 757,
+   "cars": 760,
    "carsSrc": "raw-net"
   },
   {
@@ -1328,7 +1652,7 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 741,
+   "cars": 722,
    "carsSrc": "raw-net"
   },
   {
@@ -1350,7 +1674,7 @@
     "50대 이상": 0.499
    },
    "meanAge": 47.4,
-   "cars": 713,
+   "cars": 693,
    "carsSrc": "raw-net"
   },
   {
@@ -1383,7 +1707,7 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 433,
+   "cars": 435,
    "carsSrc": "raw-net"
   },
   {
@@ -1405,7 +1729,7 @@
     "50대 이상": 0.121
    },
    "meanAge": 33.9,
-   "cars": 301,
+   "cars": 302,
    "carsSrc": "raw-net"
   },
   {
@@ -1427,7 +1751,7 @@
     "50대 이상": 0.019
    },
    "meanAge": 28.4,
-   "cars": 365,
+   "cars": 363,
    "carsSrc": "raw-net"
   },
   {
@@ -1440,7 +1764,7 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 584,
+   "cars": 586,
    "carsSrc": "raw-net"
   },
   {
@@ -1462,7 +1786,7 @@
     "50대 이상": 0.105
    },
    "meanAge": 31.8,
-   "cars": 513,
+   "cars": 514,
    "carsSrc": "raw-net"
   },
   {
@@ -1475,7 +1799,7 @@
    "otherVenues": 2,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 951,
+   "cars": 954,
    "carsSrc": "raw-net"
   },
   {
@@ -1497,7 +1821,7 @@
     "50대 이상": 0.131
    },
    "meanAge": 32.7,
-   "cars": 785,
+   "cars": 786,
    "carsSrc": "raw-net"
   },
   {
@@ -1510,7 +1834,7 @@
    "otherVenues": 2,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 381,
+   "cars": 382,
    "carsSrc": "raw-net"
   },
   {
@@ -1532,7 +1856,7 @@
     "50대 이상": 0.104
    },
    "meanAge": 30.5,
-   "cars": 364,
+   "cars": 365,
    "carsSrc": "raw-net"
   },
   {
@@ -1545,7 +1869,7 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 657,
+   "cars": 660,
    "carsSrc": "raw-net"
   },
   {
@@ -1567,7 +1891,7 @@
     "50대 이상": 0.072
    },
    "meanAge": 26.2,
-   "cars": 806,
+   "cars": 807,
    "carsSrc": "raw-net"
   },
   {
@@ -1580,7 +1904,7 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 780,
+   "cars": 782,
    "carsSrc": "raw-net"
   },
   {
@@ -1602,7 +1926,7 @@
     "50대 이상": 0.039
    },
    "meanAge": 29.5,
-   "cars": 807,
+   "cars": 808,
    "carsSrc": "raw-net"
   },
   {
@@ -1624,7 +1948,7 @@
     "50대 이상": 0.047
    },
    "meanAge": 25.5,
-   "cars": 275,
+   "cars": 272,
    "carsSrc": "raw-net"
   },
   {
@@ -1637,7 +1961,7 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 371,
+   "cars": 373,
    "carsSrc": "raw-net"
   },
   {
@@ -1659,7 +1983,7 @@
     "50대 이상": 0.083
    },
    "meanAge": 28.4,
-   "cars": 652,
+   "cars": 653,
    "carsSrc": "raw-net"
   },
   {
@@ -1672,7 +1996,7 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 733,
+   "cars": 734,
    "carsSrc": "raw-net"
   },
   {
@@ -1694,7 +2018,7 @@
     "50대 이상": 0.085
    },
    "meanAge": 33.6,
-   "cars": 716,
+   "cars": 717,
    "carsSrc": "raw-net"
   },
   {
@@ -1707,7 +2031,7 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 789,
+   "cars": 791,
    "carsSrc": "raw-net"
   },
   {
@@ -1729,7 +2053,7 @@
     "50대 이상": 0.031
    },
    "meanAge": 27.0,
-   "cars": 868,
+   "cars": 869,
    "carsSrc": "raw-net"
   },
   {
@@ -1751,7 +2075,7 @@
     "50대 이상": 0.009
    },
    "meanAge": 28.0,
-   "cars": 594,
+   "cars": 592,
    "carsSrc": "raw-net"
   },
   {
@@ -1764,7 +2088,7 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 537,
+   "cars": 539,
    "carsSrc": "raw-net"
   },
   {
@@ -1786,7 +2110,7 @@
     "50대 이상": 0.041
    },
    "meanAge": 29.2,
-   "cars": 553,
+   "cars": 555,
    "carsSrc": "raw-net"
   },
   {
@@ -1808,7 +2132,7 @@
     "50대 이상": 0.006
    },
    "meanAge": 27.1,
-   "cars": 580,
+   "cars": 578,
    "carsSrc": "raw-net"
   },
   {
@@ -1821,7 +2145,7 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 597,
+   "cars": 599,
    "carsSrc": "raw-net"
   },
   {
@@ -1843,7 +2167,7 @@
     "50대 이상": 0.029
    },
    "meanAge": 29.0,
-   "cars": 769,
+   "cars": 770,
    "carsSrc": "raw-net"
   },
   {
@@ -1856,7 +2180,7 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 606,
+   "cars": 608,
    "carsSrc": "raw-net"
   },
   {
@@ -1878,7 +2202,7 @@
     "50대 이상": 0.059
    },
    "meanAge": 29.7,
-   "cars": 474,
+   "cars": 476,
    "carsSrc": "raw-net"
   },
   {
@@ -1900,7 +2224,7 @@
     "50대 이상": 0.012
    },
    "meanAge": 26.3,
-   "cars": 201,
+   "cars": 230,
    "carsSrc": "raw-net"
   },
   {
@@ -1913,7 +2237,7 @@
    "otherVenues": 0,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 358,
+   "cars": 388,
    "carsSrc": "raw-net"
   },
   {
@@ -1935,7 +2259,7 @@
     "50대 이상": 0.024
    },
    "meanAge": 25.1,
-   "cars": 347,
+   "cars": 410,
    "carsSrc": "raw-net"
   },
   {
@@ -1957,7 +2281,7 @@
     "50대 이상": 0.043
    },
    "meanAge": 30.7,
-   "cars": 322,
+   "cars": 397,
    "carsSrc": "raw-net"
   },
   {
@@ -1970,7 +2294,7 @@
    "otherVenues": 0,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 527,
+   "cars": 592,
    "carsSrc": "raw-net"
   },
   {
@@ -1992,7 +2316,7 @@
     "50대 이상": 0.035
    },
    "meanAge": 27.5,
-   "cars": 1161,
+   "cars": 832,
    "carsSrc": "raw-net"
   },
   {
@@ -2014,7 +2338,7 @@
     "50대 이상": 0.015
    },
    "meanAge": 29.9,
-   "cars": 218,
+   "cars": 273,
    "carsSrc": "raw-net"
   },
   {
@@ -2027,7 +2351,7 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 278,
+   "cars": 320,
    "carsSrc": "raw-net"
   },
   {
@@ -2041,7 +2365,7 @@
    "excess": 1885,
    "ok": false,
    "why": "늘어난 사람이 3,000명 미만",
-   "cars": 304,
+   "cars": 345,
    "carsSrc": "raw-net"
   },
   {
@@ -2063,7 +2387,7 @@
     "50대 이상": 0.028
    },
    "meanAge": 22.3,
-   "cars": 234,
+   "cars": 186,
    "carsSrc": "raw-net"
   },
   {
@@ -2076,7 +2400,7 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 313,
+   "cars": 261,
    "carsSrc": "raw-net"
   },
   {
@@ -2098,7 +2422,7 @@
     "50대 이상": 0.009
    },
    "meanAge": 16.8,
-   "cars": 348,
+   "cars": 401,
    "carsSrc": "raw-net"
   },
   {
@@ -2392,7 +2716,7 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 258,
+   "cars": 260,
    "carsSrc": "raw-net"
   },
   {
@@ -2436,7 +2760,7 @@
     "50대 이상": 0.02
    },
    "meanAge": 24.0,
-   "cars": 141,
+   "cars": 138,
    "carsSrc": "raw-net"
   },
   {
@@ -2448,7 +2772,9 @@
    "baseWindowDays": 140,
    "otherVenues": 2,
    "ok": false,
-   "why": "비교할 평소 같은 요일이 모자람"
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 573,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-10-12",
@@ -2468,7 +2794,9 @@
     "40대": 0.078,
     "50대 이상": 0.171
    },
-   "meanAge": 31.6
+   "meanAge": 31.6,
+   "cars": 527,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-10-24",
@@ -2488,7 +2816,9 @@
     "40대": 0.106,
     "50대 이상": 0.088
    },
-   "meanAge": 27.6
+   "meanAge": 27.6,
+   "cars": 111,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-10-25",
@@ -2499,7 +2829,9 @@
    "baseWindowDays": 140,
    "otherVenues": 1,
    "ok": false,
-   "why": "비교할 평소 같은 요일이 모자람"
+   "why": "비교할 평소 같은 요일이 모자람",
+   "cars": 277,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-10-26",
@@ -2519,7 +2851,9 @@
     "40대": 0.131,
     "50대 이상": 0.12
    },
-   "meanAge": 30.0
+   "meanAge": 30.0,
+   "cars": 194,
+   "carsSrc": "raw-net"
   },
   {
    "date": "2025-10-31",
@@ -2551,7 +2885,7 @@
    "otherVenues": 1,
    "ok": false,
    "why": "비교할 평소 같은 요일이 모자람",
-   "cars": 647,
+   "cars": 650,
    "carsSrc": "raw-net"
   },
   {
@@ -2848,7 +3182,7 @@
     "50대 이상": 0.122
    },
    "meanAge": 38.4,
-   "cars": 1220,
+   "cars": 1223,
    "carsSrc": "raw-net"
   },
   {
