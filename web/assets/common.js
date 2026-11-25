@@ -392,11 +392,11 @@ function drawRoadMap(svg, links, places, roads) {
       "stroke-width": Math.min(4 * S, 9), "stroke-linecap": "round", opacity: 0.9,
     });
     const t = document.createElementNS(ns, "title");
-    const walkNote = String(l.id) === "1230085700" ? " · 상부 보행 인도(육교) 아래 통과" : "";
+    const walkNote = String(l.id) === "1230085700" ? " · 위로 보행로가 지나가요" : "";
     t.textContent = `${l.road} ${l.from}→${l.to}` + (r ? ` · ${r.spd}km/h ${r.idx}` : " · 수집값 없음") + walkNote;
     line.appendChild(t);
   });
-  // 하부 차도(1230085700) 위로 지나가는 만남의광장~KSPO DOME 보행 인도·육교를 차도 위에 표시
+  // 하부 차도(1230085700) 위로 지나가는 만남의광장~KSPO DOME 보행로(육교 아님 — 차가 아래로 지나가는 평평한 보행로, 주인 현장 확인)를 차도 위에 표시
   const pedPts = HANEOL_WALKWAY_LINE.map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(" ");
   const [ba, bb] = HANEOL_BRIDGE_SPAN;
   el("line", {
@@ -412,7 +412,7 @@ function drawRoadMap(svg, links, places, roads) {
     "stroke-width": Math.max(3, 1.5 * S), "stroke-dasharray": `${(4 * S).toFixed(1)} ${(2.5 * S).toFixed(1)}`, "stroke-linecap": "round", "stroke-linejoin": "round",
   });
   const pedTitle = document.createElementNS(ns, "title");
-  pedTitle.textContent = "만남의광장~KSPO DOME 보행 인도 (하부 차도 위로 지나가는 육교)";
+  pedTitle.textContent = "만남의광장~KSPO DOME 보행로 · 보행자 전용 · 아래로 차도가 지나가요";
   pedLine.appendChild(pedTitle);
 
   // 점과 이름: 화면에서 글씨 12px 안팎. 이름끼리 겹치면 위·아래·옆 자리를 차례로 찾아보고, 그래도 겹치면 이름만 뺀다(점은 남김).
@@ -451,11 +451,11 @@ function legendHTML() {
     <span><i style="background:var(--warn)"></i>▲ 서행</span>
     <span><i style="background:var(--bad)"></i>■ 정체</span>
     <span><i style="background:var(--none)"></i>— 수집값 없음</span>
-    <span><i style="background:#fde68a;border:1.5px solid #b45309;height:7px"></i>보행 인도(차도 위 육교)</span>
+    <span><i style="background:#fde68a;border:1.5px solid #b45309;height:7px"></i>차도 위 보행로</span>
     <span>● 보라: 지하철역 · 회색: 주차장</span></div>`;
 }
 
-// ---------- 입체 보행 네트워크 (차도 보행 겸용 level=0 + 차도 위 인도·육교 level=1) ----------
+// ---------- 입체 보행 네트워크 (지상 level=0 + 차도 위 보행로 level=1) ----------
 // 추후 도보 경로 탐색에서 상용 API 없이 호출할 수 있는 다층 그래프 로더·최단경로 탐색기.
 let _pedNetPromise = null;
 async function loadPedestrianNetwork() {

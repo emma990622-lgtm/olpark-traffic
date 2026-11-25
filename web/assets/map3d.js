@@ -86,7 +86,7 @@ async function initMap3D(el, { links, places, live, venues }) {
     },
   });
 
-  // 2-1) 만남의광장~KSPO DOME 지상 보행광장 바닥면 (차도 위, 육교 상판 아래)
+  // 2-1) 만남의광장~KSPO DOME 보행로 바닥면 (차도 위 · 육교 아님: 차가 아래로 지나가는 평평한 보행로, 주인 현장 확인)
   let pedLoaded = false;
   try {
     const pedOver = await fetch(CONFIG.dataDir + "pedestrian_overpass.geojson").then((r) => { if (!r.ok) throw 0; return r.json(); });
@@ -104,7 +104,7 @@ async function initMap3D(el, { links, places, live, venues }) {
     });
   } catch (_) { /* 입체 인도 파일 로드 실패 시 기본 지도만 표시 */ }
 
-  // 3) 걷는 길(지상 기준 TMAP 보행자 경로): 육교 상판보다 아래에 두어 하부 차도를 따라가는 선은 육교 밑으로 지나가게 함
+  // 3) 걷는 길(지상 기준 TMAP 보행자 경로): 보행로 바닥보다 아래에 두어 하부 차도를 따라가는 선은 보행로 밑으로 지나가게 함
   let walkAll = [];
   try {
     const w = await fetch(CONFIG.dataDir + "walk_routes.geojson").then((r) => r.json());
@@ -127,7 +127,7 @@ async function initMap3D(el, { links, places, live, venues }) {
     },
   });
 
-  // 3-1) 차도 위 입체 보행 육교 상판·난간·주 보행축 (level=1: 하부 차도·지상 선 모두 위로 통과)
+  // 3-1) 차도 위 보행로 바닥·가장자리·주 보행축 (level=1: 하부 차도·지상 선 모두 위로 통과)
   if (pedLoaded) {
     map.addLayer({
       id: "ped-overpass-deck-flat", type: "fill", source: "ped-overpass",
@@ -230,12 +230,12 @@ async function initMap3D(el, { links, places, live, venues }) {
   map.on("click", "roads", (e) => {
     const p = e.features[0].properties;
     const under = p.underpass === true || p.underpass === "true";
-    const walkNote = under ? `<br><span class="muted small">상부 보행 인도(육교) 아래 통과</span>` : "";
+    const walkNote = under ? `<br><span class="muted small">위로 보행로가 지나가요</span>` : "";
     pop.setLngLat(e.lngLat).setHTML(`<b>${p.name}</b><br>${p.spd && p.spd !== "null" ? p.spd + "km/h · " + p.idx : "수집값 없음"}${walkNote}`).addTo(map);
   });
   const showPedPopup = (e) => {
     pop.setLngLat(e.lngLat).setHTML(
-      `<b>만남의광장~KSPO DOME 보행 인도</b><br>보행자 전용 · 하부 차도 위로 지나가는 입체 인도(육교)`
+      `<b>만남의광장~KSPO DOME 보행로</b><br>보행자 전용 · 아래로 차도가 지나가요`
     ).addTo(map);
   };
   ["ped-overpass-3d", "ped-promenade-fill", "ped-walkway-spine"].forEach((id) => {
@@ -283,7 +283,7 @@ function legend3DHTML(buildingSrc) {
     <span><i style="background:${IDX_HEX["서행"]}"></i>▲ 서행</span>
     <span><i style="background:${IDX_HEX["정체"]}"></i>■ 정체</span>
     <span><i style="background:#94a3b8"></i>— 수집값 없음</span>
-    <span><i style="background:#fde68a;border:1.5px solid #b45309;height:7px"></i>보행 인도(차도 위 육교)</span>
+    <span><i style="background:#fde68a;border:1.5px solid #b45309;height:7px"></i>차도 위 보행로</span>
     <span><i style="background:repeating-linear-gradient(90deg,#1d4ed8 0 5px,transparent 5px 9px)"></i>주차장→공연장 도보</span>
     <span><i style="background:repeating-linear-gradient(90deg,#7c3aed 0 5px,transparent 5px 9px)"></i>역→공연장 도보</span>
     <span>건물: ${buildingSrc}</span></div>`;
