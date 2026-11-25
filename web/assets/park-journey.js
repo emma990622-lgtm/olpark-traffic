@@ -2,12 +2,12 @@
 (() => {
   const $ = (id) => document.getElementById(id);
   let step = 'event';
-  let mapReturn = 'topics';
+  let topicReturn = 'topics';
   let transition;
   const titles = {
     event: '공연 선택', mode: '이동수단 선택', parking: '주차 위치 선택',
     direction: '이동 방면 선택', guide: '출구별 귀가 안내', transit: '대중교통 안내',
-    topics: '안내 선택', map: '주변 도로와 도보 경로',
+    topics: '안내 선택', map: '주변 도로와 도보 경로', arrival: '시간대별 공연장 도착 관객수',
   };
   const previous = {mode: 'event', topics: 'mode', parking: 'topics', direction: 'parking', guide: 'direction', transit: 'mode'};
   function summary() {
@@ -20,7 +20,7 @@
     transition?.cancel();
     step = n;
     const car = ['parking', 'direction', 'guide'].includes(n);
-    const result = n === 'guide' || n === 'transit' || n === 'map';
+    const result = n === 'guide' || n === 'transit' || n === 'map' || n === 'arrival';
     document.querySelectorAll('[data-journey]').forEach(el => {
       const key = el.dataset.journey;
       el.hidden = !(key === n || (key === 'car' && car) || (key === 'result' && result));
@@ -69,7 +69,7 @@
   new MutationObserver(() => { list(); summary(); }).observe($('event'), {childList:true});
   if ($('event').options.length) list();
   $('date').addEventListener('change', () => { if (step !== 'event') show('event'); });
-  $('journeyBack').addEventListener('click', () => show(step === 'map' ? mapReturn : previous[step], true, -1));
+  $('journeyBack').addEventListener('click', () => show((step === 'map' || step === 'arrival') ? topicReturn : previous[step], true, -1));
   $('journeyChange').addEventListener('click', () => show('event', true, -1));
   $('journeyRestart').addEventListener('click', () => show('event', true, -1));
   // 버블 단계에서 처리하므로 기존 audience.js의 이동 방법 핸들러 뒤에 실행된다.
@@ -80,7 +80,7 @@
   });
   document.querySelectorAll('[data-topic]').forEach(button => {
     button.addEventListener('click', () => {
-      if (button.dataset.topic === 'map') mapReturn = step;
+      if (button.dataset.topic === 'map' || button.dataset.topic === 'arrival') topicReturn = step;
       show(button.dataset.topic);
     });
   });

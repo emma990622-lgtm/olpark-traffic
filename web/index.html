@@ -43,6 +43,7 @@
     <div class="topic-choices">
       <button type="button" data-topic="parking">출구별 귀가 안내</button>
       <button type="button" data-topic="map">주변 도로와 도보 경로</button>
+      <button type="button" data-topic="arrival">시간대별 공연장 도착 관객수</button>
     </div>
   </section>
 
@@ -58,7 +59,10 @@
     </div>
     <div class="notice info" id="stationTip" style="margin-top:12px"></div>
     <span id="walkSrc" hidden></span>
-    <div class="topic-choices"><button type="button" data-topic="map">주변 도로와 도보 경로</button></div>
+    <div class="topic-choices">
+      <button type="button" data-topic="map">주변 도로와 도보 경로</button>
+      <button type="button" data-topic="arrival">시간대별 공연장 도착 관객수</button>
+    </div>
   </section>
 
   <section class="card" id="exitGate" data-journey="car" hidden>
@@ -99,8 +103,7 @@
     </details>
     <p class="live-foot" id="roadNote">불러오는 중…</p>
   </section>
-  <section class="card" id="visitorCard" data-journey="map" hidden>
-    <h2>공연장 도착 시간대</h2>
+  <section class="card" id="visitorCard" data-journey="arrival" aria-labelledby="journeyTitle" hidden>
     <div id="vfStatus" class="le-status" role="status">불러오는 중…</div>
     <div id="vfChart" class="arr-chart-wrap"></div>
     <div id="vfNote" hidden></div>
@@ -115,6 +118,6 @@
 <script src="assets/audience.js?v=all-park"></script>
 <script src="assets/visitor.js?v=all-park"></script>
 <script src="assets/exit_gate.js?v=all-park"></script>
-<script src="assets/park-journey.js?v=4"></script>
+<script src="assets/park-journey.js?v=5"></script>
 </body>
 </html>
