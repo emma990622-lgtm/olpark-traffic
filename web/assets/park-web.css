@@ -1,0 +1,133 @@
+/* 공식 웹 추출값 #292F54를 바탕으로 재설계한 관객용 웹. */
+:root {
+  --accent:#292f54; --accent-hover:#1c223f; --accent-soft:#f0f1f7; --accent-border:#b8bdd0;
+  --bg:#fff; --ink:#202334; --ink-2:#4e5261; --ink-3:#626674;
+  --line:#e2e3e9; --surface-2:#f6f7f9; --surface-3:#f0f1f5;
+  --radius:8px; --radius-sm:8px; --tap-min:48px;
+  font-family:'Spoqa Han Sans Neo','Pretendard Variable','Malgun Gothic',sans-serif;
+}
+[hidden] {display:none!important}
+button,select,input {font:inherit}
+button,a,select,summary {-webkit-tap-highlight-color:transparent}
+button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible {outline:3px solid var(--accent);outline-offset:4px}
+.visually-hidden,.skip-link:not(:focus) {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.skip-link:focus {position:fixed;z-index:99;top:8px;left:8px;background:white;padding:12px}
+.park-header {border-bottom:1px solid var(--line);background:white}
+.park-header-inner {max-width:840px;margin:auto;padding:25px 40px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.park-brand {display:flex;align-items:center;gap:13px;text-decoration:none;color:var(--accent);font-weight:700;font-size:23px;letter-spacing:-.8px}
+.journey-layout {max-width:840px;margin:auto;padding:48px 32px 40px}
+.park-web main {max-width:none;width:100%;padding:0;margin:0;min-width:0}
+.journey-toolbar {display:flex;align-items:center;justify-content:space-between;min-height:38px;color:var(--ink-3);font-size:13px;margin-bottom:22px}
+.journey-toolbar:has(button[hidden]) {display:none}
+.text-button {border:0;background:transparent;color:var(--accent);padding:12px 0;min-height:48px;font-size:14px;font-weight:500;cursor:pointer;text-decoration:underline;text-underline-offset:4px}
+.journey-heading {margin-bottom:36px}
+.journey-heading h1 {font-size:34px;line-height:1.45;letter-spacing:-1.5px;margin:0 0 12px;color:var(--accent);font-weight:700}
+.journey-heading h1:focus {outline:0}
+.journey-heading>p:last-child {font-size:16px;color:var(--ink-2);margin:0;line-height:1.8}
+.park-web .card {padding:0 0 32px;margin:0 0 32px;border:0;border-bottom:1px solid var(--line);box-shadow:none;border-radius:0;background:transparent}
+.park-web .card h2 {font-size:23px;line-height:1.5;letter-spacing:-.8px;margin:0 0 12px;color:var(--accent)}
+.park-web .card h3 {font-size:17px;margin-top:28px}
+.park-web .sec-sub {font-size:16px;line-height:1.8;color:var(--ink-2);margin-bottom:24px}
+.park-web .row {display:block}.park-web .field {font-size:14px;font-weight:500;margin-bottom:10px}
+.park-web select {width:100%;border:1px solid #a8acba;border-radius:8px;min-height:52px;background-color:white;padding:12px 42px 12px 16px;font-size:16px;color:var(--ink)}
+.show-list {margin-top:22px;border-top:2px solid var(--accent)}
+.show-choice {display:grid;grid-template-columns:minmax(0,1fr) auto;text-align:left;width:100%;gap:7px 20px;min-height:116px;padding:23px 8px;background:transparent;color:var(--ink);border:0;border-bottom:1px solid var(--line);border-radius:0;cursor:pointer}
+.show-choice:hover {background:var(--surface-2)}
+.show-venue {grid-column:1/-1;font-size:13px;color:var(--ink-3)}
+.show-choice strong {font-size:18px;font-weight:500;line-height:1.6;letter-spacing:-.5px;overflow-wrap:anywhere}
+.show-time {align-self:center;font-size:14px;color:var(--accent);white-space:nowrap;font-variant-numeric:tabular-nums}
+.park-web details summary {min-height:48px;padding:14px 0;font-size:14px;color:var(--ink-2);cursor:pointer}
+.event-summary {background:var(--surface-2)!important;border:0!important;border-radius:8px!important;margin-top:12px!important}
+.event-summary .title {font-size:17px}.event-summary .stat-strip {grid-template-columns:1fr 1fr}.event-summary .stat-item:last-child {grid-column:1/-1}
+.event-summary .sv {font-size:16px}.event-summary .sk {font-size:13px}
+.journey-selection {display:flex;align-items:center;justify-content:space-between;gap:16px;border-left:3px solid var(--accent);background:var(--surface-2);padding:17px 20px;margin-bottom:32px}
+.journey-selection span {display:block;font-size:12px;color:var(--ink-3);margin-bottom:5px}
+.journey-selection strong {display:block;font-size:17px;font-weight:500;line-height:1.6}
+.journey-selection small {display:block;font-size:13px;color:var(--ink-2);margin-top:6px}
+.journey-selection button {flex-shrink:0}
+.park-web #mode {display:flex;flex-direction:column;gap:16px;background:transparent;padding:0;border:0}
+.park-web #mode button {display:flex;align-items:center;gap:22px;min-height:124px;text-align:left;padding:25px;border:1px solid var(--line-strong);border-radius:8px;background:white;color:var(--ink);box-shadow:none;cursor:pointer;white-space:normal}
+.park-web #mode button:hover {border-color:var(--accent);background:var(--surface-2)}
+.park-web #mode button strong {display:block;font-size:20px;font-weight:500;letter-spacing:-.8px}
+.park-web #mode button small {display:block;font-size:14px;color:var(--ink-3);font-weight:400;margin-top:8px}
+.park-web .gps-bar {background:transparent;border:0;padding:0;gap:8px;margin:18px 0 24px;display:flex;flex-wrap:wrap}
+.park-web .gps-bar>span {flex-basis:100%;font-size:14px;line-height:1.7}
+.park-web button.ghost {font-size:14px;min-height:48px;padding:10px 14px;color:var(--accent);border:1px solid var(--line-strong);background:white;box-shadow:none;border-radius:6px}
+.park-web .eg-zones {gap:10px}
+.park-web .eg-zones button {min-height:86px;border-radius:8px;background:white;box-shadow:none;padding:14px 12px;border:1px solid var(--line-strong);color:var(--ink)}
+.park-web .eg-zones button b {font-size:16px}.park-web .eg-zones button span {font-size:14px;line-height:1.65;color:var(--ink-2)}
+.park-web .eg-zones button.on {background:var(--accent-soft);border:2px solid var(--accent);padding:13px 11px;color:var(--accent)}
+.park-web .eg-reco {margin-top:24px;padding:22px 20px;background:var(--accent-soft);border:0;border-top:3px solid var(--accent);border-radius:0;line-height:1.9;font-size:17px}
+.park-web .eg-reco p {font-size:16px;line-height:1.9;margin-top:12px}.park-web .eg-gate {font-size:27px;color:var(--accent)}
+.park-web .eg-wx {font-size:16px;line-height:1.9}
+.park-web .footnote,.park-web .small {font-size:14px!important;line-height:1.85}
+.source-detail {margin-top:16px}.weather-detail {margin-top:22px;border-bottom:1px solid var(--line)}
+.park-web table.list {font-size:14px;min-width:0}.park-web table.list th,.park-web table.list td {padding:13px 9px;line-height:1.7}
+.park-web .chip {font-size:13px!important;padding:4px 8px}
+.park-web .table-scroll {overflow:auto}
+.park-web .notice {font-size:15px;line-height:1.8;border-radius:6px}
+.park-web .arr-chart-wrap {overflow-x:auto}
+.park-web .arr-chart-box {min-width:460px;padding:16px 10px}
+.park-web .arr-val,.park-web .arr-clock,.park-web .arr-rel {font-size:14px;line-height:1.5}
+.park-web .arr-chart-title {font-size:16px}.park-web .arr-chart-legend {font-size:13px}
+.park-web .arr-start-pill {font-size:14px}
+.park-web .map3d {height:360px;border-radius:6px}.park-web .map3d.failed {display:none}
+.park-web .live-foot {font-size:14px}
+.result-reset {margin-bottom:24px}
+@media(max-width:800px) {
+  .park-header-inner {padding:18px 22px}.park-brand {font-size:21px}
+  .journey-layout {display:block;padding:24px 22px 0;max-width:640px}
+  .journey-toolbar {margin-bottom:24px}.journey-heading {margin-bottom:30px}
+  .journey-heading h1 {font-size:28px;letter-spacing:-1.2px}.journey-heading>p:last-child {font-size:16px}
+  .show-choice {padding:20px 4px;gap:8px 12px;min-height:112px}.show-choice strong {font-size:17px}.show-time {font-size:14px}
+  .park-web #mode button {padding:20px 16px;gap:16px;min-height:132px}.park-web #mode button strong {font-size:18px}.park-web #mode button small {line-height:1.7}
+  .journey-selection {padding:15px 14px}.journey-selection strong {font-size:16px}
+  .park-web .card h2 {font-size:22px}.park-web .eg-zones {grid-template-columns:1fr 1fr}
+  .park-web table.list .chip {display:inline-block;font-size:12px!important;padding:2px 5px}
+  .park-web .card {padding-bottom:26px;margin-bottom:26px}.park-web .map3d {height:300px}
+}
+@media(prefers-reduced-motion:reduce) {html {scroll-behavior:auto}* {animation:none!important;transition:none!important}}
+
+.park-brand img {display:block;object-fit:contain}
+.park-brand span {
+  font-family:"Oswald","Arial Narrow",sans-serif;
+  font-size:1.75rem;
+  font-weight:500;
+  letter-spacing:.015em;
+  line-height:1.1;
+}
+.topic-choices {display:grid;gap:12px}
+.topic-choices button {
+  min-height:76px;
+  padding:16px 20px;
+  text-align:left;
+  font-size:1.125rem;
+  font-weight:700;
+  color:var(--accent);
+  background:var(--card);
+  border:1px solid var(--line-strong);
+  border-radius:var(--radius);
+  cursor:pointer;
+}
+.topic-choices button:hover {background:var(--accent-soft);border-color:var(--accent)}
+#transitSection .topic-choices {margin-top:20px}
+.journey-layout .journey-heading {margin-bottom:28px}
+#journeyMeta {margin-top:5px;color:var(--ink-2);font-size:16px}
+.show-choice .show-venue,.show-choice .show-time {font-size:16px}
+.park-web .field,.park-web .text-button,.park-web button.ghost,.park-web details summary {font-size:16px}
+.park-web .gps-bar>span:empty {display:none}
+.park-web .eg-zones button span,.park-web .gps-bar>span {font-size:16px!important}
+.park-web .eg-zones button {min-height:92px;overflow-wrap:anywhere}
+.park-web #mode button {min-height:80px}
+.result-scope {font-size:16px;color:var(--ink-2)}
+.exit-options {list-style:none;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.exit-option {border:1px solid var(--line-strong);border-radius:8px;padding:18px}
+.exit-option.is-recommended {border-color:var(--accent);background:var(--accent-soft)}
+.exit-option strong {display:block;color:var(--accent);font-size:25px}
+.exit-option p {font-size:16px;margin:6px 0 0}
+.park-web .arr-chart-box {min-width:510px}
+.park-web .arr-val,.park-web .arr-clock,.park-web .arr-rel,.park-web .arr-chart-legend,.park-web .arr-start-pill,.park-web .live-foot {font-size:16px}
+@media(max-width:640px) {
+  .exit-options {grid-template-columns:1fr}
+  .exit-option {padding:14px 16px}
+}
