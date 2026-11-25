@@ -98,7 +98,7 @@
 
     $("vfStatus").innerHTML =
       `<span class="chip bad">■ 도착 집중</span> ` +
-      `<b>${twoHourStart}~${start}</b> 관객 약 <b>${peak2Pct}%</b> 도착 예상 · ${twoHourStart} 전 도착 권장`;
+      `<b>${twoHourStart}~${start}</b> 관객 약 <b>${peak2Pct}%</b> 도착 예상`;
 
     if (chartBox) {
       const ariaSummary = slots.map((s) => `${s.ck.plain}(${s.label}) 약 ${s.pct}%`).join(", ");
@@ -143,7 +143,7 @@
         const mostClock = toHHMM(startMin + C.most.med);
         notes.push(
           `<div class="notice info" style="margin-top:10px"><b>차로 오시는 경우:</b> 지난 공연 ${C.shows}회에서 관객 차 절반(50%)은 <b>${halfClock}</b>(시작 ${Math.abs(C.half.med) >= 60 ? durText(Math.abs(C.half.med)) : Math.abs(C.half.med) + "분"} 전)까지, ` +
-          `90%는 <b>${mostClock}</b>(시작 ${Math.abs(C.most.med)}분 전)까지 이미 주차장에 들어왔어요. 공연장 가까운 구역에 세우려면 <b>${twoHourStart} 전</b> 입차가 유리해요.</div>`
+          `90%는 <b>${mostClock}</b>(시작 ${Math.abs(C.most.med)}분 전)까지 주차장에 들어왔어요.</div>`
         );
       } else if (mode === "transit" && A.subwayTop) {
         const S = A.subwayTop;
