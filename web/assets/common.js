@@ -455,8 +455,8 @@ function legendHTML() {
     <span>● 보라: 지하철역 · 회색: 주차장</span></div>`;
 }
 
-// ---------- 입체 보행 네트워크 (지상 level=0 + 차도 위 보행로 level=1) ----------
-// 추후 도보 경로 탐색에서 상용 API 없이 호출할 수 있는 다층 그래프 로더·최단경로 탐색기.
+// ---------- 입체·경사 반영 보행 네트워크 (서울시 도보망 OA-21208 + 공원 보행로 + 차도 위 보행로 + 5m 등고선) ----------
+// 추후 도보 경로 탐색에서 상용 API 없이 호출할 수 있는 다층 그래프 로더·경로 탐색기.
 let _pedNetPromise = null;
 async function loadPedestrianNetwork() {
   if (!_pedNetPromise) {
@@ -473,8 +473,15 @@ async function loadPedestrianNetwork() {
         if (p.featureRole !== "edge" || !p.walkable || !p.u || !p.v) return;
         const cs = f.geometry.coordinates;
         const w = Number(p.meters) || 0;
-        addEdge(p.u, p.v, { w, coords: cs, kind: p.kind, bridge: !!p.bridge });
-        addEdge(p.v, p.u, { w, coords: cs.slice().reverse(), kind: p.kind, bridge: !!p.bridge });
+        const slope = Number(p.slopePct) || 0;
+        const z0 = Number(p.elevFrom) || 0, z1 = Number(p.elevTo) || 0;
+        const common = {
+          w, slope, kind: p.kind,
+          bridge: !!p.bridge, vehicle: !!p.vehicle,
+          crosswalk: !!p.crosswalk, footbridge: !!p.footbridge,
+        };
+        addEdge(p.u, p.v, { ...common, dz: z1 - z0, coords: cs });
+        addEdge(p.v, p.u, { ...common, dz: z0 - z1, coords: cs.slice().reverse() });
         if (p.fromLevel === 0 && !String(p.u).startsWith("ANCHOR_")) groundNodes.set(p.u, cs[0]);
         if (p.toLevel === 0 && !String(p.v).startsWith("ANCHOR_")) groundNodes.set(p.v, cs[cs.length - 1]);
         if (p.anchorName && String(p.u).startsWith("ANCHOR_")) anchors.set(p.anchorName, p.u);
@@ -486,8 +493,10 @@ async function loadPedestrianNetwork() {
 }
 
 // from·to는 장소 이름("올림픽공원역", "KSPO DOME" 등) 또는 { lat, lng } 객체
-function findPedestrianRoute(net, from, to) {
+// opts.gentle = true 이면 가파른 언덕(경사 8% 이상)·계단 육교를 피하는 완만한 길을 우선 탐색
+function findPedestrianRoute(net, from, to, opts = {}) {
   if (!net || !net.adj) return null;
+  const gentle = !!opts.gentle;
   const resolveEndpoint = (ep, tag) => {
     if (typeof ep === "string" && net.anchors.has(ep)) return { id: net.anchors.get(ep), extra: null };
     if (!ep || ep.lat == null || ep.lng == null) return null;
@@ -501,28 +510,34 @@ function findPedestrianRoute(net, from, to) {
   };
   const s = resolveEndpoint(from, "start"), t = resolveEndpoint(to, "end");
   if (!s || !t) return null;
-  const dist = new Map([[s.id, 0]]);
+  const bestCost = new Map([[s.id, 0]]);
   const prev = new Map();
   const visited = new Set();
-  const pq = [{ id: s.id, d: 0 }];
+  const pq = [{ id: s.id, cost: 0 }];
   while (pq.length) {
     let minIdx = 0;
-    for (let i = 1; i < pq.length; i++) if (pq[i].d < pq[minIdx].d) minIdx = i;
+    for (let i = 1; i < pq.length; i++) if (pq[i].cost < pq[minIdx].cost) minIdx = i;
     const cur = pq.splice(minIdx, 1)[0];
     if (visited.has(cur.id)) continue;
     visited.add(cur.id);
     if (cur.id === t.id) break;
     (net.adj.get(cur.id) || []).forEach((e) => {
       if (visited.has(e.to)) return;
-      const nd = cur.d + e.w;
-      if (nd < (dist.has(e.to) ? dist.get(e.to) : Infinity)) {
-        dist.set(e.to, nd);
+      let mult = e.vehicle ? 1.12 : 1.0;   // 전용 보도가 비슷하면 차도보다 전용 보도를 우선
+      if (gentle) {
+        if (e.footbridge) mult += 1.5;
+        if (e.slope >= 8) mult += (e.slope - 6) * 0.18;
+        else if (e.slope >= 4) mult += (e.slope - 4) * 0.05;
+      }
+      const nc = cur.cost + e.w * mult;
+      if (nc < (bestCost.has(e.to) ? bestCost.get(e.to) : Infinity)) {
+        bestCost.set(e.to, nc);
         prev.set(e.to, { from: cur.id, edge: e });
-        pq.push({ id: e.to, d: nd });
+        pq.push({ id: e.to, cost: nc });
       }
     });
   }
-  if (!dist.has(t.id)) return null;
+  if (!bestCost.has(t.id)) return null;
   const steps = [];
   for (let cur = t.id; prev.has(cur); cur = prev.get(cur).from) steps.push(prev.get(cur).edge);
   steps.reverse();
@@ -533,11 +548,22 @@ function findPedestrianRoute(net, from, to) {
   if (s.extra && s.extra.d > 1) pushCoord(s.extra.pt);
   steps.forEach((st) => st.coords.forEach(pushCoord));
   if (t.extra && t.extra.d > 1) pushCoord(t.extra.pt);
-  const totalM = Math.round(dist.get(t.id) + (s.extra ? s.extra.d : 0) + (t.extra ? t.extra.d : 0));
+  const segMeters = steps.reduce((acc, st) => acc + st.w, 0);
+  const totalM = Math.round(segMeters + (s.extra ? s.extra.d : 0) + (t.extra ? t.extra.d : 0));
+  const climbM = Math.round(steps.reduce((acc, st) => acc + (st.dz > 0 ? st.dz : 0), 0) * 10) / 10;
+  const maxSlopePct = Math.round(steps.reduce((mx, st) => Math.max(mx, st.slope || 0), 0) * 10) / 10;
+  const crosswalkCount = steps.filter((st) => st.crosswalk).length;
+  const usedUpper = steps.some((st) => st.kind === "overpass_walkway" && st.bridge);
+  // 오르막 고도 상승분(10m 상승당 약 1분 추가, Naismith/Tobler 보행 보정) 반영
+  const minutes = Math.max(1, Math.round(totalM / net.walkSpeedMPerMin + climbM / 12));
   return {
     meters: totalM,
-    minutes: Math.max(1, Math.round(totalM / net.walkSpeedMPerMin)),
-    usedOverpass: steps.some((st) => st.kind === "overpass_walkway" && st.bridge),
+    minutes,
+    usedOverpass: usedUpper,
+    usedUpperWalkway: usedUpper,
+    climbM,
+    maxSlopePct,
+    crosswalkCount,
     coordinates: coords,
   };
 }

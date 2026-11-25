@@ -287,7 +287,7 @@ class DbfRandomReader:
         while pos + 32 <= self.header_len and raw_bytes[pos] != 0x0D:
             fdesc = raw_bytes[pos:pos + 32]
             raw_name = fdesc[:11].split(b"\x00", 1)[0]
-            fname = self._decode(raw_name).strip()
+            fname = self._decode(raw_name).replace("\x00", "").strip()
             ftype = chr(fdesc[11])
             flen = fdesc[16]
             fdec = fdesc[17]
@@ -316,7 +316,7 @@ class DbfRandomReader:
         for fname, ftype, flen, fdec in self.fields:
             raw = rec[pos:pos + flen]
             pos += flen
-            txt = self._decode(raw).strip()
+            txt = self._decode(raw).replace("\x00", "").strip()
             if not txt:
                 continue
             if ftype in ("N", "F"):
@@ -488,21 +488,21 @@ def enrich_props(props, kind, z_val=None):
         return None
 
     if kind == "buildings":
-        # GIS건물통합정보(AL_D010): A16=높이(m), 도로명주소건물: GRO_FLO_CO/GRND_FLR=지상층수
+        # GIS건물통합정보(AL_D010): A16=높이(m), A26=지상층수, A24=건물명 / 도로명주소건물: GRO_FLO_CO/GRND_FLR
         h = num_from(["height", "hg", "bld_hg", "heit", "a16"])
-        fl = num_from(["grnd_flr", "gro_flo_co", "flr_cnt"])
+        fl = num_from(["grnd_flr", "gro_flo_co", "flr_cnt", "a26"])
         if h is not None and h > 0:
             out["height_m"] = round(h, 2)
         if fl is not None and 0 < fl < 200:
             out["floors"] = int(round(fl))
-        for nk in ("bld_nm", "buld_nm", "bd_nm"):
+        for nk in ("bld_nm", "buld_nm", "bd_nm", "a24"):
             v = lower.get(nk)
             if isinstance(v, str) and v:
                 out.setdefault("name", v)
                 break
     elif kind == "contours":
-        # 연속수치지형도 등고선(AL_D155 / N3L_F0010000): CONT / ELEV / ALT / A2 / Z값
-        elev = num_from(["cont", "elev", "elevation", "alt", "height", "z", "a2", "a3"])
+        # 연속수치지형도 등고선(N3L_F0010000 / AL_D155): ctrln_hg / CONT / ELEV / ALT / Z값
+        elev = num_from(["ctrln_hg", "cont", "elev", "elevation", "alt", "height", "z", "a2", "a3"])
         if elev is None and z_val is not None and math.isfinite(z_val) and abs(z_val) < 9000:
             elev = z_val
         if elev is not None:
@@ -524,7 +524,7 @@ def classify_layer(display_name, shape_type, field_names):
             return "buildings"
     if base_type == 3:
         if any(k in nm for k in ("등고", "cont", "d155", "f001")) or (
-            fset & {"cont", "elev", "elevation"}
+            fset & {"ctrln_hg", "cont", "elev", "elevation"}
         ):
             return "contours"
         if any(k in nm for k in ("보행", "도로", "인도", "육교", "road", "walk")):

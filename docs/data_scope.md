@@ -1,12 +1,12 @@
 # 사용 데이터 목록·출처 및 검수 내역 (`olpark-traffic`)
 
-> **최종 갱신**: 2026-11-24  
+> **최종 갱신**: 2026-11-25  
 > **대상 서비스**: KSPO DOME·올림픽공원 공연 전후 주차·교통·도착 시간 안내 웹앱 (https://olpark-traffic.vercel.app)  
 > **원칙**: 화면과 분석에 쓰이는 모든 수치는 원천 데이터의 **공식 제목·제공 기관·식별 코드·기간·산출 방법**을 함께 밝히며, 원본 결측·오류는 임의로 메우지 않고 검수 기준에 따라 보정하거나 제외 사유를 공개합니다(`web/data/data_quality.json`, `web/data-guide.html`).
 
 ---
 
-## 1. 사용 데이터 전체 목록 (총 21종 — 제목 및 출처)
+## 1. 사용 데이터 전체 목록 (총 24종 — 제목 및 출처)
 
 ### 1-1. 한국체육산업개발(KSPO&CO) 공공데이터 (8종)
 
@@ -23,7 +23,7 @@
 
 ---
 
-### 1-2. 서울특별시 공공데이터 (6종 — 서울 열린데이터광장 · TOPIS)
+### 1-2. 서울특별시 공공데이터 (7종 — 서울 열린데이터광장 · TOPIS)
 
 | # | 데이터 제목 (식별코드·서비스명) | 제공 기관 · 출처 플랫폼 | 기간 · 규모 | 단위 · 주요 항목 | 확보 · 갱신 상태 | 프로젝트 활용처 |
 |---|---|---|---|---|---|---|
@@ -33,28 +33,30 @@
 | B4 | **서울교통공사 역간 거리 및 소요시간 정보** (`StationDstncReqreTimeHm`) | 서울교통공사 · [서울 열린데이터광장](https://data.seoul.go.kr) | 최신 표준 운행시간표 (1~8호선 전 구간) | 역간 1구간 = 1행 · 호선, 역명, 역간 거리, 소요시간(분:초) | ✅ 실시간 중계·캐시 (`api/subway.js`, 24시간 캐시) | 환승주차장 및 주변 지하철 노선 이동 소요시간 계산(`web/assets/common.js`) |
 | B5 | **서울시 시영·공영주차장 실시간 주차대수 정보** (`GetParkingInfo`) | 서울특별시 · [서울 열린데이터광장](https://data.seoul.go.kr) | 실시간 (송파구·강동구 관내 공영주차장) | 주차장 1곳 = 1행 · 주차장명, 총 주차면, 현재 주차대수, 요금·운영시간 | ✅ 실시간 연동 (`api/parking.js`) | 천호역·잠실역·복정역·신천유수지 등 주변 환승 공영주차장 기초 정보(`places.json`) 및 실시간 잔여면 조회 |
 | B6 | **서울시 도로별 일자별 통행속도** (월별 이력) | 서울특별시 교통정보과 · [서울교통정보센터(TOPIS)](https://topis.seoul.go.kr) | 2024-07 ~ 2026-10 (월별 파일, 공원 주변 주요 간선 14개 구간 매칭) | 일자 × 링크 × 1시간 속도(`01시`~`24시`) | ✅ 검증 완료 (`web/data/road_source_check.json`) | 서울시 실시간 도시데이터(B1) 58구간 속도와 TOPIS 공식 소통 통계의 일치도 교차검증(`road_source_check.json`, 상관계수 및 등급 일치율 확인) |
-| B7 | **서울시 자치구별 도보 네트워크 공간정보** (`OA-21208`, `TbTraficWlkNet`) | 서울특별시 · [서울 열린데이터광장](https://data.seoul.go.kr/dataList/OA-21208/S/1/datasetView.do) (공공누리 1유형) | 2026-11-25 수집본(매일 갱신) · 송파구 21,779행 중 21,572행(99.0%)·강동구 19,274행 전부 → 공원 둘레만 잘라 노드 5,190·링크 7,286 | 보행자도로 노드·링크(WGS84) · 링크 길이, 고가도로·지하철·교량·터널·**육교**·**횡단보도**·공원녹지·건물내 표시 | ✅ 확보 (`scripts/34`, 서울시 키 필요 → 수집기 Actions `fetch_walknet`, `data/raw/seoul_walknet_olpark.geojson`) | 보행 길 안내(육교·횡단보도 구분) 준비. 아직 화면 미사용 |
+| B7 | **서울시 자치구별 도보 네트워크 공간정보** (`OA-21208`, `TbTraficWlkNet`) | 서울특별시 · [서울 열린데이터광장](https://data.seoul.go.kr/dataList/OA-21208/S/1/datasetView.do) (공공누리 1유형) | 2026-11-25 수집본(매일 갱신) · 송파구 21,779행 중 21,572행(99.0%)·강동구 19,274행 전부 → 공원 둘레만 잘라 노드 5,190·링크 7,286 | 보행자도로 노드·링크(WGS84) · 링크 길이, 고가도로·지하철·교량·터널·**육교**·**횡단보도**·공원녹지·건물내 표시 | ✅ 확보 (`scripts/34`, `data/raw/seoul_walknet_olpark.geojson`) | 다층 보행 네트워크(`scripts/33` → `pedestrian_network.geojson`, `common.js` `findPedestrianRoute`)의 공식 보도·횡단보도·육교·교량 간선으로 통합 |
 
 ---
 
-### 1-3. 중앙행정기관 공공데이터 및 법정공휴일 자료 (3종)
+### 1-3. 중앙행정기관 공공데이터 및 법정공휴일 자료 (5종)
 
 | # | 데이터 제목 (식별코드·레이어명) | 제공 기관 · 출처 플랫폼 | 기간 · 규모 | 단위 · 주요 항목 | 확보 · 갱신 상태 | 프로젝트 활용처 |
 |---|---|---|---|---|---|---|
 | C1 | **기상청_지상(종관, ASOS) 시간자료 조회서비스** (`15057210`, 서울 관측소 지점 `108`) | 기상청 · [공공데이터포털](https://www.data.go.kr/data/15057210/openapi.do) | 2024-01-01 ~ 2025-12-31+ (1시간 간격 지상관측) | 1시간 = 1행 · 관측시각(`tm`), 기온(`ta`), 강수량(`rn`), 풍속(`ws`), 습도(`hm`), 적설(`sd_tot`), 체감온도(`feels`) | ✅ 확보 (`scripts/26` → `data/raw/weather_asos_108.csv`) | **관객 출구 안내의 비·추위 출차 지연 회귀분석 공식 기상 원천**(`scripts/25, 32` → `exit_gate.json` `weather`, 투어 고정효과 비교) |
-| C2 | **국토교통부 브이월드(VWorld) 2D 데이터 API — 도로명주소 건물** (`LT_C_SPBD`) | 국토교통부 공간정보오픈플랫폼 · [브이월드(VWorld)](https://www.vworld.kr) | 최신 공간정보 (올림픽공원 일대 경위도 범위 `127.105~127.140, 37.505~37.528`) | 건물 폴리곤 GeoJSON · 건물 형상 좌표, 지상 층수(`gro_flo_co`), 건물명 | ✅ 실시간 중계·캐시 (`api/buildings.js`, 7일 캐시) | 관객·보관 화면의 MapLibre 3D 건물 입체 지도 렌더링(`web/assets/map3d.js`) |
+| C2 | **국토교통부 브이월드(VWorld) 2D 데이터 API — 도로명주소 건물** (`LT_C_SPBD`) | 국토교통부 공간정보오픈플랫폼 · [브이월드(VWorld)](https://www.vworld.kr) | 최신 공간정보 (올림픽공원 일대 경위도 범위 `127.105~127.140, 37.505~37.528`) | 건물 폴리곤 GeoJSON · 건물 형상 좌표, 지상 층수(`gro_flo_co`), 건물명 | ✅ 예비 중계(`api/buildings.js`, C4 정적 파일 미존재 시 대체) | C4(`buildings_3d.geojson`) 도입 전 기본 건물 소스 및 장애 대비 백업 |
 | C3 | **대한민국 법정공휴일·대체공휴일 목록 (2024~2027)** | 인사혁신처 「관공서의 공휴일에 관한 규정」 기준 (Python `holidays` 패키지로 생성) | 2024-01 ~ 2027-12 (설·추석 연휴, 대체공휴일, 임시공휴일 포함) | 공휴일 1일 = 1행 · 날짜(`date`), 공휴일명(`name`) | ✅ 확보 (`data/processed/holidays_kr.csv`) | 평일 vs 주말·공휴일 구분(`scripts/02, 22, 23, 24, 31`), '주말 및 공휴일' 공연 회차 자동 전개 |
+| C4 | **국토교통부_GIS건물통합정보** (`AL_D010_11_20261109`, `SHP`) | 국토교통부 국가공간정보센터 · [브이월드 공간정보 다운로드](https://www.vworld.kr) (공공누리 1유형) | 2026-11-09 기준 서울특별시 최신판 중 올림픽공원 일대 추출(7,874동 → 지도 범위 **6,195동**) | 건물 폴리곤(`EPSG:5186`→`WGS84`) · **실측 건물 높이(`A16`, m)**, 지상층수(`A26`), 건물명(`A24`·`A25`), 용도(`A9`) | ✅ 정적 반영 (`scripts/35, 36` → `data/processed/vworld_buildings_olpark.geojson`, `web/data/buildings_3d.geojson`) | **런타임 API 호출 없이 즉시 그리는 3D 건물 입체 지도**(`web/assets/map3d.js`, 방이동 88 경기장 오매칭 보정 완료) |
+| C5 | **국토교통부_등고선 (연속수치지형도)** (`N3L_F0010000`, `SHP`) | 국토교통부 국토지리정보원·국가공간정보센터 · [브이월드 공간정보 다운로드](https://www.vworld.kr) | 2024-04 갱신판 중 올림픽공원 일대 추출(5m 간격 등고선 93개, 해발 **5~50m**) | 등고선 선형(`EPSG:5179`→`WGS84`) · 등고선 높이(`ctrln_hg`, m), 구분(`ctrln_se`) | ✅ 정적 반영 (`scripts/35, 36, 33` → `data/processed/vworld_contours_olpark.geojson`, `web/data/contours_5m.geojson`) | 3D 지도 바닥 등고선 표시(`map3d.js`) 및 **다층 보행 네트워크 정점 표고·간선 경사도(%) 산출**(`pedestrian_network.geojson`, 완만한 길 탐색 지원) |
 
 ---
 
-### 1-4. 민간·오픈 데이터 및 자체 조사·교차검증 데이터 (3종)
+### 1-4. 민간·오픈 데이터 및 자체 조사·교차검증 데이터 (4종)
 
 | # | 데이터 제목 | 제공처 · 라이선스 / 수집 출처 | 기간 · 규모 | 단위 · 주요 항목 | 확보 · 갱신 상태 | 프로젝트 활용처 |
 |---|---|---|---|---|---|---|
 | D1 | **Open-Meteo Historical Weather API (ERA5 재분석 기상 자료)** | [Open-Meteo](https://open-meteo.com) · ECMWF ERA5 재분석 (CC BY 4.0) | 2024-06-01 ~ 2026-11 (올림픽공원 좌표 `37.5207, 127.1214`, 1시간 간격) | 1시간 = 1행 · 기온, 체감온도, 강수량, 비, 적설, 습도, 풍속, 구름양, WMO 날씨코드 | ✅ 확보 (`data/raw/visitor_weather/weather_hourly_openmeteo.csv`, `scripts/21`) | 2026년까지 이어지는 시간별 방문객 연계표(`visitor_hourly.csv`) 및 방문객 예측 모형(`visitor_forecast.json`) 학습용 기상 변수 |
 | D2 | **SK텔레콤 TMAP Open API (보행자 경로 · 자동차 경로 · 타임머신 · 실시간 교통)** | SK텔레콤(티맵모빌리티) · [TMAP Open API](https://openapi.sk.com) | 2026-11 사전 측정 고정본 + 공연 종료 시점 도로 검증 10회(`road_check_*.csv`) | 주차장·역→공연장 보행 거리·시간·경로선, 도로 링크 형상, 서울시 도로 속도 대비 TMAP 통행시간 | ✅ 정적 JSON·GeoJSON 구축 완료 (`scripts/05~08, 10`) — **관객 화면 런타임 호출 없음(무료 운영 보장)** | 주차장·지하철역→각 공연장 도보 시간·경로(`walk_tmap.json`, `walk_routes.geojson`), 도로 57구간 상세 선형(`link_shapes.geojson`), 서울시 도로 소통 정확도 교차검증(`road_check.json`) |
 | D3 | **공식 예매처 공연 상세 정보 및 언론 현장 기사 기반 실제 공연 종료 시각 조사 데이터** | **예매처**: NOL 티켓(인터파크)·YES24 티켓·멜론티켓 상세 페이지 / **종료 시각 조사**: 동아일보·조선일보·파이낸셜뉴스·스타뉴스 등 언론 현장·성료 기사 및 후기 원문 URL 65건 | 앞으로 열리는 공연 25건(`show_seller.csv`·`show_official.csv`) + 과거 KSPO DOME 공연 65건 전수 대조(`show_runtime_known.csv`, 실제 종료 시각 확정 **43회·20개 투어**) | 공연 회차 1건 = 1행 · 예매처 시작시각·예정 관람시간·원문 URL·확인일 / 과거 공연 실제 러닝타임(분)·종료 시각·근거 문구·기사 URL·신뢰 등급 | ✅ 예매처 매일 2회 자동 갱신(`scripts/28, 27`) · 과거 공연 검증표 수록(`scripts/30`) | 관객 화면 1단계 회차 시각·예정 종료 안내(`events.json`) 및 3단계 **'공연 종료 후 관객 차 50%(약 24분)·90%(약 1시간 11분) 출차 소요 시간'** 산출(`exit_after_end_shows.csv`, `exit_gate.json`) |
-| D4 | **OpenStreetMap · OpenFreeMap 올림픽공원 보행로·육교·내부도로 공간데이터** | [OpenStreetMap 기여자](https://www.openstreetmap.org/copyright) (ODbL) · [OpenFreeMap](https://openfreemap.org) 벡터 타일 | 올림픽공원 전역 보행로·보행육교(`bridge`, `layer=1`)·공원 내부 차도 377개 선형 | GeoJSON 선형·다각형 · 보행 전용 여부, 교량(`brunnel=bridge`), 층(`layer`) | ✅ 확보 (`data/processed/osm_park_paths_raw.json` → `scripts/33`) | 3D 바탕지도 및 **하부 차도(`level=0`, 보행 가능) 위로 지나가는 만남의광장~KSPO DOME 입체 보행 인도·육교(`level=1`)** 표시·다층 보행 네트워크(`pedestrian_overpass.geojson`, `pedestrian_network.geojson`) |
+| D4 | **OpenStreetMap · OpenFreeMap 올림픽공원 내부 보행로·차도 위 보행로 공간데이터** | [OpenStreetMap 기여자](https://www.openstreetmap.org/copyright) (ODbL) · [OpenFreeMap](https://openfreemap.org) 벡터 타일 + 주인 현장 확인 | 올림픽공원 전역 세밀 보행로·입체 보행로(`bridge`, `layer=1`)·공원 내부 차도 377개 선형 | GeoJSON 선형·다각형 · 보행 전용 여부, 상부 보행로(`level=1`) | ✅ 확보 (`data/processed/osm_park_paths_raw.json` → `scripts/33`) | 3D 바탕지도 및 **아래로 차도(`1230085700`)가 지나가는 만남의광장~KSPO DOME 평평한 '차도 위 보행로'(`level=1`)** 표시·통합 다층 보행 네트워크(`pedestrian_overpass.geojson`, `pedestrian_network.geojson`) |
 
 > **참고(보관된 선택 기능)**: `api/drive.js`(네이버 클라우드 플랫폼 Directions 5 API)와 `api/drivetime.js`(TMAP 실시간 자동차 경로 API)는 초기 환승주차 비교 시제품용 서버 함수로 저장소에 남아 있으나, 공공기관 무상 운영 원칙에 따라 현재 관객 화면(`web/index.html`)에서는 호출하지 않으며 출구·방면 안내는 100% 공공데이터 정적 분석(`exit_gate.json` + `gate_directions.json`)으로 동작합니다.
 
@@ -73,7 +75,8 @@
 | `places.json` | 공연장·공원 주차장·주변 환승 공영주차장·지하철역 좌표·면수·요금·도보 기본값 | `scripts/04` | A6, B1, B4, B5 |
 | `walk_tmap.json`, `walk_routes.geojson` | 주차장·역 → 올림픽공원 내 각 공연장 보행 거리·소요시간 및 보행 경로 도형 | `scripts/05` | D2, A6, B5 |
 | `links.json`, `link_shapes.geojson` | 올림픽공원 주변 도로 58개 구간 목록·시종점 좌표 및 상세 도로 선형 | `scripts/04, 07` | B1, D2 |
-| `pedestrian_overpass.geojson`, `pedestrian_network.geojson` | 하부 차도(`1230085700`, 보행 가능) 위로 지나가는 **만남의광장~KSPO DOME 입체 보행 인도·육교** 및 공원 전역 차도 겸용(`level=0`)·육교(`level=1`) 다층 보행 네트워크 | `scripts/33` | D4, B1, D2, A6 |
+| `pedestrian_overpass.geojson`, `pedestrian_network.geojson` | 아래로 차도(`1230085700`)가 지나가는 **만남의광장~KSPO DOME 차도 위 보행로(`level=1`)** 및 서울시 도보망(B7)·공원 보행로(D4)·5m 등고선 경사(C5) 통합 다층 보행 네트워크 | `scripts/33` | B7, C5, D4, B1, D2, A6 |
+| `buildings_3d.geojson`, `contours_5m.geojson` | API 호출 없이 즉시 그리는 **실측 높이 기반 3D 건물(6,195동)** 및 **5m 간격 지형 등고선(74개)** | `scripts/35, 36` | C4, C5 |
 | `kspo_waves.json` | KSPO DOME 공연 후 15분 출차 최대 시각·대수 요약 (**171회** 공연) | `scripts/16, 32` | A1, A7 |
 | `exit_profile.json` | 공연 후 출차 급증 시점, 관객 차 50%·90% 출차 시간, 7개 출구 비중 | `scripts/09` | A2, A3, A7 |
 | `live_exit.json` | 공연 당일 실시간 출차 감지 규칙·오차 검증 및 관객 차 입차 절반·90% 시각 | `scripts/14` | A2, A3, A7 |
@@ -106,3 +109,4 @@
 | 9 | **주차장 혼잡도 (`15164156`)** | `등록시간` 열의 분·초 자리에 월·일 숫자가 잘못 기록되어 있음(전 행 공통) | 분·초 단위는 폐기하고 신뢰 가능한 **시(hour) 단위**로만 집계(`scripts/13`) |
 | 10 | **입출차 대수 vs 주차 면수** | 동2·남2·북2문 입차만 세고 24시간 이상 장기 주차를 제외해도 공식 면수(2,120면)를 넘는 공연일이 발생함 | 임의로 값을 깎지 않고 초과 회차 수(`overCapacity`)와 함께 `'기록상 면수보다 많음, 참고값'` 안내를 명시(`park_profile.json`) |
 | 11 | **도로 58구간 상세 도형 (`link_shapes.geojson`)** | 서울시 도로 58구간 중 1개 구간(`LINK_ID 1230028803`)이 TMAP 도형 매칭에서 누락됨 | 누락된 1개 구간은 `links.json`의 시·종점 좌표를 잇는 직선 도형으로 자동 대체해 지도에서 빠지는 도로가 없도록 처리(`common.js`, `map3d.js`) |
+| 12 | **GIS건물통합정보 (`AL_D010`) 단일 필지 오매칭** | 올림픽공원 전체가 **`방이동 88` 단일 필지**여서 국토교통부 자동 결합 과정에서 건축물대장 동명·높이(`체조경기장 34.55m`, `핸드볼 21.58m`, `역도경기장 22.7m`, `올림픽홀` 등)가 다른 경기장 도형에 서로 뒤바뀌어 붙어 있고 일부 아파트(`A16=0`) 높이가 비어 있음 | 실제 공연장·경기장 중심 좌표(`walk_tmap.json`·현장 도면) 기준으로 공원 내 8대 시설 높이와 이름을 바로잡고(`KSPO DOME 34.6m`, `핸드볼 21.6m`, `우리금융아트홀 22.7m`, `올림픽홀 21.0m`, `테니스장 31.2m`, `수영장 36.8m`, `벨로드롬 20.0m`, `소마미술관 15.0m`), 일반 건물의 `A16=0` 결측은 지상층수(`A26 × 3.3m`)로 보완(`scripts/36` → `buildings_3d.geojson`) |

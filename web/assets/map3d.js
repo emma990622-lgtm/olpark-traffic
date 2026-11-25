@@ -57,10 +57,32 @@ async function initMap3D(el, { links, places, live, venues }) {
     setTimeout(() => { if (!done) { done = true; fail(new Error("지도 로딩 시간 초과")); } }, 30000);
   });
 
-  // 1) 건물: 브이월드(층수 높이). 실패하면 바탕지도의 OpenStreetMap 건물을 그대로 둔다.
+  // 0) 등고선(국토교통부 연속수치지형도 5m 간격): 이름표 없이 바닥에 은은하게 깔아 몽촌토성·평지 고저차 표현
+  try {
+    const c5 = await fetch(CONFIG.dataDir + "contours_5m.geojson").then((r) => { if (!r.ok) throw 0; return r.json(); });
+    map.addSource("contours-5m", { type: "geojson", data: c5 });
+    map.addLayer({
+      id: "contours-5m", type: "line", source: "contours-5m",
+      paint: {
+        "line-color": "#7c8ba1",
+        "line-width": ["case", ["get", "major"], 1.1, 0.55],
+        "line-opacity": ["case", ["get", "major"], 0.34, 0.18],
+      },
+    });
+  } catch (_) { /* 등고선 파일이 없으면 생략 */ }
+
+  // 1) 건물: 브이월드 GIS건물통합정보 정적 실측 높이(buildings_3d.geojson) 우선 → /api/buildings → 바탕지도 OpenStreetMap
   let buildingSrc = "OpenStreetMap";
   try {
-    const b = await fetch("/api/buildings").then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
+    let b = null;
+    let srcLabel = "";
+    try {
+      b = await fetch(CONFIG.dataDir + "buildings_3d.geojson").then((r) => { if (!r.ok) throw 0; return r.json(); });
+      srcLabel = "브이월드 GIS건물통합정보";
+    } catch (_) {
+      b = await fetch("/api/buildings").then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
+      srcLabel = "브이월드 건물(층수 × 3.3m)";
+    }
     map.getStyle().layers.filter((ly) => ly.type === "fill-extrusion").forEach((ly) => map.setLayoutProperty(ly.id, "visibility", "none"));
     map.addSource("vw-buildings", { type: "geojson", data: b });
     map.addLayer({
@@ -70,7 +92,7 @@ async function initMap3D(el, { links, places, live, venues }) {
         "fill-extrusion-height": ["get", "height"], "fill-extrusion-base": 0, "fill-extrusion-opacity": 0.88,
       },
     });
-    buildingSrc = "브이월드 건물(층수 × 3.3m)";
+    buildingSrc = srcLabel;
   } catch (_) { /* 바탕지도 건물 사용 */ }
 
   // 2) 차도(지상 level=0, 모든 차도 보행 가능): 실시간 속도 색, 방향별로 살짝 띄워 양방향이 겹치지 않게
