@@ -36,10 +36,13 @@ async function initMap3D(el, { links, places, live, venues }) {
     g.features.forEach((f) => { shapes[f.properties.id] = f.geometry.coordinates; });
   } catch (_) { /* 도로 모양 파일이 없으면 시작~끝 직선 */ }
   const dome = places.dome;
-  const initZoom = (el && el.clientWidth && el.clientWidth < 520) ? 14.72 : 14.98;
+  const narrow = !!(el && el.clientWidth && el.clientWidth < 520);
+  const initZoom = narrow ? 14.72 : 14.98;
+  // 좁은 화면에서는 가운데를 공연장 쪽으로 더 당겨 'KSPO DOME' 이름표가 오른쪽 끝에서 잘리지 않게
+  const centerOf = (d) => narrow ? [d.lng - 0.0006, d.lat - 0.0008] : [d.lng - 0.0015, d.lat - 0.0008];
   const map = new maplibregl.Map({
     container: el, style: MAP3D_STYLE,
-    center: [dome.lng - 0.0015, dome.lat - 0.0008], zoom: initZoom, pitch: 56, bearing: -18,
+    center: centerOf(dome), zoom: initZoom, pitch: 56, bearing: -18,
     antialias: true, attributionControl: { compact: true },
   });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
@@ -269,7 +272,7 @@ async function initMap3D(el, { links, places, live, venues }) {
       drawMarkers(pl);
       setTimeout(declutter, 50);
       map.getSource("walk").setData(walkFor(pl.dome.name || "KSPO DOME"));
-      map.easeTo({ center: [pl.dome.lng - 0.0015, pl.dome.lat - 0.0008], duration: 800 });
+      map.easeTo({ center: centerOf(pl.dome), duration: 800 });
     },
   };
 }
