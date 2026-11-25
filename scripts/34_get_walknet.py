@@ -81,6 +81,7 @@ def main():
         sys.exit("환경변수 SEOUL_API_KEY 가 비어 있어요(키가 있는 곳에서만 실행).")
 
     feats, total, kept, dttm = [], {}, {"node": 0, "link": 0}, set()
+    seen = set()  # 같은 노드·링크가 두 번 오기도 하고(구 경계), 두 구에 함께 들어 있기도 해서 한 번만 남긴다
     for sgg in SGGS:
         first = get(key, sgg, 1, PAGE)
         n = int(first.get("list_total_count") or 0)
@@ -95,8 +96,9 @@ def main():
                 dttm.add(r["WORK_DTTM"][:10])
             if r.get("NODE_TYPE") == "NODE":
                 c = coords(r.get("NODE_WKT"))
-                if not c or not inside(c[0]):
+                if not c or not inside(c[0]) or ("N", r.get("NODE_ID")) in seen:
                     continue
+                seen.add(("N", r.get("NODE_ID")))
                 feats.append({"type": "Feature", "geometry": {"type": "Point", "coordinates": c[0]},
                               "properties": {"kind": "node", "id": num(r.get("NODE_ID")),
                                              "typeCd": r.get("NODE_TYPE_CD") or "",
@@ -105,8 +107,9 @@ def main():
                 kept["node"] += 1
             elif r.get("NODE_TYPE") == "LINK":
                 c = coords(r.get("LNKG_WKT"))
-                if len(c) < 2 or not any(inside(p) for p in c):
+                if len(c) < 2 or not any(inside(p) for p in c) or ("L", r.get("LNKG_ID")) in seen:
                     continue
+                seen.add(("L", r.get("LNKG_ID")))
                 p = {"kind": "link", "id": num(r.get("LNKG_ID")), "typeCd": r.get("LNKG_TYPE_CD") or "",
                      "from": num(r.get("BGNG_LNKG_ID")), "to": num(r.get("END_LNKG_ID")),
                      "meters": num(r.get("LNKG_LEN")), "sgg": r.get("SGG_NM"), "emd": r.get("EMD_NM")}
