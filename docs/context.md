@@ -27,6 +27,7 @@
 | `transfer_tmap.json` | 환승주차장 경로 | TMAP (`scripts/06`) |
 | `station_drive.json` | 환승주차장(천호·잠실·복정·신천유수지) → 공원 운전 시간, 공연 시간대 예측 | TMAP 예측 경로 (`scripts/08`) |
 | `links.json`, `link_shapes.geojson` | 도로 58구간과 모양 | 서울 실시간 도시데이터 + TMAP (`scripts/07`) |
+| `pedestrian_overpass.geojson`, `pedestrian_network.geojson` | 하부 차도(`1230085700`) 위로 지나가는 **만남의광장~KSPO DOME 입체 보행 인도·육교**(지도 표시용 경량 14KB) 및 **전 구간 차도 보행 가능(`level=0`) + 고가 육교(`level=1`) 다층 보행 네트워크**(추후 도보경로 탐색용, `loadPedestrianNetwork`·`findPedestrianRoute`) | OpenStreetMap(OpenFreeMap) 보행로·육교 + 서울시 도로 58구간 (`scripts/33_build_pedestrian_network.py`) |
 | `exit_profile.json` | 공연 후 출차 곡선(50%·90% 빠지는 시간), 게이트 비율 | 2024-07 + 2025 입출차(88% 받은 시점), 공연 70회 (`scripts/09`) |
 | `exits_2024_07.json` | 2024년 7월 날짜별 15분 출차·입차 곡선(운영자 '공연 후 출차 곡선' 그래프의 예비 자료, 관객·운영자 참고값 대체용) | KSPO 입출차 215,528행 (`scripts/04`) |
 | `exit_curves.json` | 운영자 '공연 후 출차 곡선': 시작 시각별 KSPO DOME 공연 15분 출차 중앙값·가운데 50%, 평일 / 주말·공휴일 큰 공연 없는 날 중앙값(12:00~다음날 01:00) | 2024-07 + 2025, 동2·남2·북2문 구역(`scripts/18`). 없으면 화면은 예전 2024년 7월 하루 곡선 |
@@ -111,6 +112,7 @@
 
 ## 7. 결정 기록 (최신이 위)
 
+- 2026-11-25 13:58: **하부 차도 위로 지나가는 만남의광장~KSPO DOME 입체 보행 인도·육교 및 차도 보행 가능 구조 반영**(사용자 요청). 올림픽공원역(3·4번 출구 만남의광장)에서 상가동 북동측 광장을 지나 공원 내부 차도(`1230085700`, `양재대로.강동대로사이길`) **위로 입체 교차**해 KSPO DOME·핸드볼경기장 앞 한얼광장으로 이어지는 보행 전용 인도·육교를 3D 지도(`map3d.js`, 차도 레이어 위에 평면 데크·난간·`4.4~5.4m` 3D 상판 렌더링)와 평면 지도(`common.js` `drawRoadMap`)에 반영하고, 모든 차도는 지상(`level=0`) 보행 가능(`walkable: true`)으로 두되 육교 상판은 `level=1`로 층 분리한 다층 보행 그래프(`scripts/33_build_pedestrian_network.py` → `web/data/pedestrian_overpass.geojson`·`pedestrian_network.geojson`, `common.js`의 `loadPedestrianNetwork()`·`findPedestrianRoute()`)를 구축해 추후 상용 API 없는 도보 경로 탐색에 바로 쓸 수 있게 준비함.
 - 2026-11-25 13:16: **'시간대별 공연장 도착 관객수'에서 `'00:00 전 도착 권장'` 문구 삭제**(사용자 요청, `web/assets/visitor.js`). 몇 시에 도착할지는 관객 각자의 일정·판단에 맡길 영역이므로 권유 문구를 빼고 데이터 사실(`00:00~00:00 관객 약 N% 도착 예상`)만 표시함.
 - 2026-11-25 11:58: **'안내 선택' 3개 카테고리 분리**(`web/index.html`, `web/assets/park-journey.js`). '주변 도로와 도보 경로'(`data-journey="map"`) 안에 함께 묶여 있던 `#visitorCard`(도착 시간대 막대그래프)를 독립 화면 `data-journey="arrival"`(제목: `시간대별 공연장 도착 관객수`)로 분리해, '안내 선택'(`topics`)에 **'출구별 귀가 안내' · '주변 도로와 도보 경로' · '시간대별 공연장 도착 관객수'** 세 가지가 동시에 보이도록 구성(대중교통 화면 하단 진입 버튼 및 `이전으로` 복귀 경로도 함께 연결).
 - 2026-11-25: ALL PARK 관객 UI를 검토 브랜치에 통합. 공연·이동수단을 고른 뒤 귀가 안내와 지도 화면을 분리. 출구·날씨·도착 계산과 데이터 파일은 기존 자료 사용.

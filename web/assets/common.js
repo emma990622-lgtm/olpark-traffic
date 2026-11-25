@@ -342,6 +342,11 @@ async function loadCollectedFolder(folder) {
 
 // ---------- 도로 지도 (SVG, 지도 타일 없이) ----------
 const IDX_COLOR = { "원활": "var(--good)", "서행": "var(--warn)", "정체": "var(--bad)" };
+const HANEOL_WALKWAY_LINE = [
+  [127.130855, 37.516471], [127.129610, 37.517003], [127.128363, 37.517536],
+  [127.127977, 37.517700], [127.126976, 37.518210], [127.127450, 37.518680],
+];
+const HANEOL_BRIDGE_SPAN = [[127.128363, 37.517536], [127.127977, 37.517700]];
 
 function drawRoadMap(svg, links, places, roads) {
   const pts = [];
@@ -373,9 +378,29 @@ function drawRoadMap(svg, links, places, roads) {
       "stroke-width": 5, "stroke-linecap": "round", opacity: 0.9,
     });
     const t = document.createElementNS(ns, "title");
-    t.textContent = `${l.road} ${l.from}→${l.to}` + (r ? ` · ${r.spd}km/h ${r.idx}` : " · 수집값 없음");
+    const walkNote = String(l.id) === "1230085700" ? " · 상부 보행 인도(육교) 아래 통과·차도 보행 가능" : " · 차도 보행 가능";
+    t.textContent = `${l.road} ${l.from}→${l.to}` + (r ? ` · ${r.spd}km/h ${r.idx}` : " · 수집값 없음") + walkNote;
     line.appendChild(t);
   });
+  // 하부 차도(1230085700) 위로 지나가는 만남의광장~KSPO DOME 보행 인도·육교를 차도 위에 표시
+  const pedPts = HANEOL_WALKWAY_LINE.map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(" ");
+  const [ba, bb] = HANEOL_BRIDGE_SPAN;
+  el("line", {
+    x1: X(ba[0]), y1: Y(ba[1]), x2: X(bb[0]), y2: Y(bb[1]),
+    stroke: "#92400e", "stroke-width": 9, "stroke-linecap": "butt",
+  });
+  el("line", {
+    x1: X(ba[0]), y1: Y(ba[1]), x2: X(bb[0]), y2: Y(bb[1]),
+    stroke: "#fde68a", "stroke-width": 6, "stroke-linecap": "butt",
+  });
+  const pedLine = el("polyline", {
+    points: pedPts, fill: "none", stroke: "#b45309",
+    "stroke-width": 3, "stroke-dasharray": "5 3", "stroke-linecap": "round", "stroke-linejoin": "round",
+  });
+  const pedTitle = document.createElementNS(ns, "title");
+  pedTitle.textContent = "만남의광장~KSPO DOME 보행 인도 (하부 차도 위로 지나가는 육교 · 차도도 보행 가능)";
+  pedLine.appendChild(pedTitle);
+
   const dot = (lng, lat, color, r, label, dy = -9) => {
     el("circle", { cx: X(lng), cy: Y(lat), r, fill: color, stroke: "#fff", "stroke-width": 2 });
     if (label) el("text", { x: X(lng), y: Y(lat) + dy, "text-anchor": "middle", "font-size": 12, fill: "var(--ink)", "font-weight": 600 }, label);
@@ -395,7 +420,95 @@ function legendHTML() {
     <span><i style="background:var(--warn)"></i>▲ 서행</span>
     <span><i style="background:var(--bad)"></i>■ 정체</span>
     <span><i style="background:var(--none)"></i>— 수집값 없음</span>
-    <span>● 보라: 지하철역 · 회색: 주차장</span></div>`;
+    <span><i style="background:#fde68a;border:1.5px solid #b45309;height:7px"></i>보행 인도(차도 위 육교)</span>
+    <span>● 보라: 지하철역 · 회색: 주차장 · 차도 보행 가능</span></div>`;
+}
+
+// ---------- 입체 보행 네트워크 (차도 보행 겸용 level=0 + 차도 위 인도·육교 level=1) ----------
+// 추후 도보 경로 탐색에서 상용 API 없이 호출할 수 있는 다층 그래프 로더·최단경로 탐색기.
+let _pedNetPromise = null;
+async function loadPedestrianNetwork() {
+  if (!_pedNetPromise) {
+    _pedNetPromise = loadJSON("pedestrian_network.geojson").then((fc) => {
+      const adj = new Map();
+      const groundNodes = new Map();   // nodeId -> [lng, lat] (지상 level=0 진입 가능 노드)
+      const anchors = new Map();       // 장소명 -> nodeId
+      const addEdge = (u, v, info) => {
+        if (!adj.has(u)) adj.set(u, []);
+        adj.get(u).push({ to: v, ...info });
+      };
+      (fc.features || []).forEach((f) => {
+        const p = f.properties || {};
+        if (p.featureRole !== "edge" || !p.walkable || !p.u || !p.v) return;
+        const cs = f.geometry.coordinates;
+        const w = Number(p.meters) || 0;
+        addEdge(p.u, p.v, { w, coords: cs, kind: p.kind, bridge: !!p.bridge });
+        addEdge(p.v, p.u, { w, coords: cs.slice().reverse(), kind: p.kind, bridge: !!p.bridge });
+        if (p.fromLevel === 0 && !String(p.u).startsWith("ANCHOR_")) groundNodes.set(p.u, cs[0]);
+        if (p.toLevel === 0 && !String(p.v).startsWith("ANCHOR_")) groundNodes.set(p.v, cs[cs.length - 1]);
+        if (p.anchorName && String(p.u).startsWith("ANCHOR_")) anchors.set(p.anchorName, p.u);
+      });
+      return { adj, groundNodes, anchors, walkSpeedMPerMin: (fc.metadata && fc.metadata.walkSpeedMPerMin) || 75 };
+    }).catch((err) => { _pedNetPromise = null; throw err; });
+  }
+  return _pedNetPromise;
+}
+
+// from·to는 장소 이름("올림픽공원역", "KSPO DOME" 등) 또는 { lat, lng } 객체
+function findPedestrianRoute(net, from, to) {
+  if (!net || !net.adj) return null;
+  const resolveEndpoint = (ep, tag) => {
+    if (typeof ep === "string" && net.anchors.has(ep)) return { id: net.anchors.get(ep), extra: null };
+    if (!ep || ep.lat == null || ep.lng == null) return null;
+    let bestId = null, bestPt = null, bestD = Infinity;
+    net.groundNodes.forEach((pt, nid) => {
+      const d = distMeters(ep.lat, ep.lng, pt[1], pt[0]);
+      if (d < bestD) { bestD = d; bestId = nid; bestPt = pt; }
+    });
+    if (!bestId) return null;
+    return { id: bestId, extra: { pt: [ep.lng, ep.lat], snapPt: bestPt, d: bestD, tag } };
+  };
+  const s = resolveEndpoint(from, "start"), t = resolveEndpoint(to, "end");
+  if (!s || !t) return null;
+  const dist = new Map([[s.id, 0]]);
+  const prev = new Map();
+  const visited = new Set();
+  const pq = [{ id: s.id, d: 0 }];
+  while (pq.length) {
+    let minIdx = 0;
+    for (let i = 1; i < pq.length; i++) if (pq[i].d < pq[minIdx].d) minIdx = i;
+    const cur = pq.splice(minIdx, 1)[0];
+    if (visited.has(cur.id)) continue;
+    visited.add(cur.id);
+    if (cur.id === t.id) break;
+    (net.adj.get(cur.id) || []).forEach((e) => {
+      if (visited.has(e.to)) return;
+      const nd = cur.d + e.w;
+      if (nd < (dist.has(e.to) ? dist.get(e.to) : Infinity)) {
+        dist.set(e.to, nd);
+        prev.set(e.to, { from: cur.id, edge: e });
+        pq.push({ id: e.to, d: nd });
+      }
+    });
+  }
+  if (!dist.has(t.id)) return null;
+  const steps = [];
+  for (let cur = t.id; prev.has(cur); cur = prev.get(cur).from) steps.push(prev.get(cur).edge);
+  steps.reverse();
+  const coords = [];
+  const pushCoord = (c) => {
+    if (!coords.length || coords[coords.length - 1][0] !== c[0] || coords[coords.length - 1][1] !== c[1]) coords.push(c);
+  };
+  if (s.extra && s.extra.d > 1) pushCoord(s.extra.pt);
+  steps.forEach((st) => st.coords.forEach(pushCoord));
+  if (t.extra && t.extra.d > 1) pushCoord(t.extra.pt);
+  const totalM = Math.round(dist.get(t.id) + (s.extra ? s.extra.d : 0) + (t.extra ? t.extra.d : 0));
+  return {
+    meters: totalM,
+    minutes: Math.max(1, Math.round(totalM / net.walkSpeedMPerMin)),
+    usedOverpass: steps.some((st) => st.kind === "overpass_walkway" && st.bridge),
+    coordinates: coords,
+  };
 }
 
 // 공연을 날짜별로 묶기

@@ -4,7 +4,7 @@ const MAP3D_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 const IDX_HEX = { "원활": "#16a34a", "서행": "#d97706", "정체": "#dc2626" };
 
 function roadsGeoJSON(links, live, shapes = {}) {
-  // 실시간 응답에 실제 도로 모양(xy)이 있으면 그걸, 없으면 시작~끝 직선
+  // 실시간 응답에 실제 도로 모양(xy)이 있으면 그걸, 없으면 시작~끝 직선. 모든 차도는 보행 가능(level=0).
   const liveById = {};
   ((live && live.links) || []).forEach((l) => { liveById[l.id] = l; });
   return {
@@ -15,7 +15,14 @@ function roadsGeoJSON(links, live, shapes = {}) {
       const coords = shapes[l.id] || (lv && lv.xy && lv.xy.length > 2 ? lv.xy : [l.a, l.b]);
       return {
         type: "Feature", geometry: { type: "LineString", coordinates: coords },
-        properties: { name: `${l.road} ${l.from}→${l.to}`, idx: r ? r.idx : "없음", spd: r ? r.spd : null },
+        properties: {
+          lid: String(l.id),
+          name: `${l.road} ${l.from}→${l.to}`,
+          idx: r ? r.idx : "없음",
+          spd: r ? r.spd : null,
+          walkable: true,
+          underpass: String(l.id) === "1230085700",
+        },
       };
     }),
   };
@@ -63,7 +70,7 @@ async function initMap3D(el, { links, places, live, venues }) {
     buildingSrc = "브이월드 건물(층수 × 3.3m)";
   } catch (_) { /* 바탕지도 건물 사용 */ }
 
-  // 2) 차도: 실시간 속도 색, 방향별로 살짝 띄워 양방향이 겹치지 않게
+  // 2) 차도(지상 level=0, 모든 차도 보행 가능): 실시간 속도 색, 방향별로 살짝 띄워 양방향이 겹치지 않게
   map.addSource("roads", { type: "geojson", data: roadsGeoJSON(links, live, shapes) });
   map.addLayer({
     id: "roads", type: "line", source: "roads",
@@ -76,7 +83,25 @@ async function initMap3D(el, { links, places, live, venues }) {
     },
   });
 
-  // 3) 걷는 길: TMAP 보행자 경로 (공원 근처 주차장·역 → 고른 공연장)
+  // 2-1) 만남의광장~KSPO DOME 지상 보행광장 바닥면 (차도 위, 육교 상판 아래)
+  let pedLoaded = false;
+  try {
+    const pedOver = await fetch(CONFIG.dataDir + "pedestrian_overpass.geojson").then((r) => { if (!r.ok) throw 0; return r.json(); });
+    map.addSource("ped-overpass", { type: "geojson", data: pedOver });
+    pedLoaded = true;
+    map.addLayer({
+      id: "ped-promenade-fill", type: "fill", source: "ped-overpass",
+      filter: ["==", ["get", "featureRole"], "promenade"],
+      paint: { "fill-color": "#fef3c7", "fill-opacity": 0.62 },
+    });
+    map.addLayer({
+      id: "ped-promenade-border", type: "line", source: "ped-overpass",
+      filter: ["==", ["get", "featureRole"], "promenade"],
+      paint: { "line-color": "#d97706", "line-width": 1.3, "line-opacity": 0.65 },
+    });
+  } catch (_) { /* 입체 인도 파일 로드 실패 시 기본 지도만 표시 */ }
+
+  // 3) 걷는 길(지상 기준 TMAP 보행자 경로): 육교 상판보다 아래에 두어 하부 차도를 따라가는 선은 육교 밑으로 지나가게 함
   let walkAll = [];
   try {
     const w = await fetch(CONFIG.dataDir + "walk_routes.geojson").then((r) => r.json());
@@ -98,6 +123,42 @@ async function initMap3D(el, { links, places, live, venues }) {
       "line-dasharray": [1.2, 1.2],
     },
   });
+
+  // 3-1) 차도 위 입체 보행 육교 상판·난간·주 보행축 (level=1: 하부 차도·지상 선 모두 위로 통과)
+  if (pedLoaded) {
+    map.addLayer({
+      id: "ped-overpass-deck-flat", type: "fill", source: "ped-overpass",
+      filter: ["==", ["get", "featureRole"], "overpass_deck"],
+      paint: { "fill-color": "#fde68a", "fill-opacity": 0.96 },
+    });
+    map.addLayer({
+      id: "ped-overpass-rails", type: "line", source: "ped-overpass",
+      filter: ["all", ["==", ["get", "featureRole"], "edge"], ["==", ["get", "bridge"], true], ["!=", ["get", "primaryCorridor"], true]],
+      layout: { "line-cap": "butt", "line-join": "round" },
+      paint: { "line-color": "#92400e", "line-width": ["interpolate", ["linear"], ["zoom"], 13, 1.6, 17, 3.4], "line-opacity": 0.92 },
+    });
+    map.addLayer({
+      id: "ped-overpass-3d", type: "fill-extrusion", source: "ped-overpass",
+      filter: ["==", ["get", "featureRole"], "overpass_deck"],
+      paint: {
+        "fill-extrusion-color": "#fde68a",
+        "fill-extrusion-base": ["get", "baseHeightM"],
+        "fill-extrusion-height": ["get", "topHeightM"],
+        "fill-extrusion-opacity": 0.94,
+      },
+    });
+    map.addLayer({
+      id: "ped-walkway-spine", type: "line", source: "ped-overpass",
+      filter: ["==", ["get", "primaryCorridor"], true],
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": "#b45309",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 13, 1.8, 17, 3.6],
+        "line-dasharray": [1.8, 1.4],
+        "line-opacity": 0.92,
+      },
+    });
+  }
 
   // 4) 주차장·역·공연장 표시 (HTML 표식: 한글이 깨지지 않게)
   const mark = (lng, lat, label, cls) => {
@@ -127,13 +188,23 @@ async function initMap3D(el, { links, places, live, venues }) {
   const pop = new maplibregl.Popup({ closeButton: false, offset: 8 });
   map.on("click", "roads", (e) => {
     const p = e.features[0].properties;
-    pop.setLngLat(e.lngLat).setHTML(`<b>${p.name}</b><br>${p.spd && p.spd !== "null" ? p.spd + "km/h · " + p.idx : "수집값 없음"}`).addTo(map);
+    const under = p.underpass === true || p.underpass === "true";
+    const walkNote = under ? "상부 보행 인도(육교) 아래 통과 · 차도 보행 가능" : "차도 · 보행 가능";
+    pop.setLngLat(e.lngLat).setHTML(`<b>${p.name}</b><br>${p.spd && p.spd !== "null" ? p.spd + "km/h · " + p.idx : "수집값 없음"}<br><span class="muted small">${walkNote}</span>`).addTo(map);
+  });
+  const showPedPopup = (e) => {
+    pop.setLngLat(e.lngLat).setHTML(
+      `<b>만남의광장~KSPO DOME 보행 인도</b><br>보행자 전용 · 하부 차도 위로 지나가는 입체 인도(육교)<br><span class="muted small">아래 차도를 포함한 공원 차도도 보행 가능</span>`
+    ).addTo(map);
+  };
+  ["ped-overpass-3d", "ped-promenade-fill", "ped-walkway-spine"].forEach((id) => {
+    if (map.getLayer(id)) map.on("click", id, showPedPopup);
   });
   map.on("click", "walk", (e) => {
     const p = e.features[0].properties;
     pop.setLngLat(e.lngLat).setHTML(`<b>${p.from} → ${p.to}</b><br>걷는 길 ${p.meters}m · 약 ${p.minutes}분`).addTo(map);
   });
-  ["roads", "walk"].forEach((id) => {
+  ["roads", "ped-overpass-3d", "ped-promenade-fill", "walk"].forEach((id) => {
     if (!map.getLayer(id)) return;
     map.on("mouseenter", id, () => { map.getCanvas().style.cursor = "pointer"; });
     map.on("mouseleave", id, () => { map.getCanvas().style.cursor = ""; });
@@ -169,7 +240,8 @@ function legend3DHTML(buildingSrc) {
     <span><i style="background:${IDX_HEX["서행"]}"></i>▲ 서행</span>
     <span><i style="background:${IDX_HEX["정체"]}"></i>■ 정체</span>
     <span><i style="background:#94a3b8"></i>— 수집값 없음</span>
+    <span><i style="background:#fde68a;border:1.5px solid #b45309;height:7px"></i>보행 인도(차도 위 육교)</span>
     <span><i style="background:repeating-linear-gradient(90deg,#1d4ed8 0 5px,transparent 5px 9px)"></i>주차장→공연장 도보</span>
     <span><i style="background:repeating-linear-gradient(90deg,#7c3aed 0 5px,transparent 5px 9px)"></i>역→공연장 도보</span>
-    <span>건물: ${buildingSrc}</span></div>`;
+    <span>차도: 보행 가능 · 건물: ${buildingSrc}</span></div>`;
 }

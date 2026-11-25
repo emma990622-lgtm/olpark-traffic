@@ -52,7 +52,7 @@
 |---|---|---|
 | 공통 (`common.js` · `levelOf`, 보관 운영자용) | `.chip.good`, `.chip.warn`, `.chip.bad`, `.chip.accent` | 강조·상태 배지 (`audience.js` 1단계 공연 요약에서는 혼잡 배지 미표시, `archive/operator`에서만 `levelOf` 사용) |
 | 공통 (`common.js` · `lineBadgesHTML`) | `.line-badge`, `.l2`, `.l5`, `.l8`, `.l9` | 호선 번호별 색상 알약 배지 |
-| 공통/3D지도 (`common.js`, `map3d.js`) | `.legend`, `.m3d`, `.m3d.lot`, `.m3d.st`, `.m3d.venue`, `.m3d.dome`, `.m3d.me` | 범례 및 3D 지도 HTML 캡슐 마커 (`.m3d.me`는 GPS 허용 시 `● 내 위치` 표시, `map3d.failed` 시 평면 지도 자동 펼침) |
+| 공통/3D지도 (`common.js`, `map3d.js`) | `.legend`, `.m3d`, `.m3d.lot`, `.m3d.st`, `.m3d.venue`, `.m3d.dome`, `.m3d.me` (MapLibre `ped-overpass` 레이어 포함) | 범례, 3D 지도 HTML 캡슐 마커 및 `roads` 위에 그려지는 입체 보행 인도·육교(`ped-promenade-fill`·`ped-overpass-3d` 등, `.m3d.me`는 GPS 허용 시 `● 내 위치` 표시, `map3d.failed` 시 평면 지도 자동 펼침) |
 | 관객 (`common.js`, `audience.js`, `exit_gate.js`) | `.gps-bar`, `button.ghost.gps-off` (`[data-gps-off]`) | 이용자 위치 권한(GPS) 동의 버튼 바 및 `위치 끄기` 버튼(최소 높이 44px, 기호+글자 상태 병기) |
 | 관객 (`audience.js` · `render`) | `.event-summary`, `.event-head`, `.stat-strip`, `.stat-item` (`.sk`, `.sv`) | Step 1 선택 공연 제목·공연장 배지(`.chip.accent`)·3열 핵심 시간/좌석 요약 |
 | 관객 (`exit_gate.js`) | `.eg-zones` (안의 `button.on` + `button.span-all` + `aria-pressed`), `.eg-reco`, `.eg-gate`, `.eg-wx` (+ `.chip.good`/`.warn`/`.accent`, `table.list`, `.subhead`, `.footnote` 재사용) | 3단계 '공연 끝나고 어느 문으로 나갈까요?' 카드(주차 구역 `#egZone` + 가는 방면 빠른 버튼 `#egWay`). 고른 버튼은 테두리+`✓` 글자로도 표시, 판단은 기호+글자(`● 가장 빠름`, `● 거의 비슷해요`, `▲ +n분`). 차로 오는 관객(`#mode`가 `car`일 때)에게만 보임 |
