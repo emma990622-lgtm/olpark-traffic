@@ -370,12 +370,26 @@ function drawRoadMap(svg, links, places, roads) {
     svg.appendChild(e); return e;
   };
   svg.innerHTML = "";
+  // 화면에 보이는 폭에 맞춰 글씨·점 크기를 정한다(viewBox 760을 휴대폰 약 300px로 줄여 보여서 글씨가 4~5px로 작아지던 문제).
+  // 접힌 '평면 지도'를 펼칠 때 실제 폭으로 다시 그린다.
+  svg._mapArgs = [links, places, roads];
+  const shownW = svg.getBoundingClientRect().width || 320;
+  const S = W / Math.max(240, shownW);           // 화면 1px = viewBox S
+  svg._drawnW = Math.round(shownW);
+  if (!svg._mapRO && typeof ResizeObserver !== "undefined") {
+    // 숨겨져 있다가 보이거나 화면 폭이 바뀌면 그 폭으로 다시 그린다
+    svg._mapRO = new ResizeObserver(() => {
+      const w = Math.round(svg.getBoundingClientRect().width);
+      if (w && Math.abs(w - svg._drawnW) > 8 && svg._mapArgs) drawRoadMap(svg, ...svg._mapArgs);
+    });
+    svg._mapRO.observe(svg);
+  }
   links.forEach((l) => {
     const r = roads && roads[l.id];
     const line = el("line", {
       x1: X(l.a[0]), y1: Y(l.a[1]), x2: X(l.b[0]), y2: Y(l.b[1]),
       stroke: r ? (IDX_COLOR[r.idx] || "var(--none)") : "var(--none)",
-      "stroke-width": 5, "stroke-linecap": "round", opacity: 0.9,
+      "stroke-width": Math.min(4 * S, 9), "stroke-linecap": "round", opacity: 0.9,
     });
     const t = document.createElementNS(ns, "title");
     const walkNote = String(l.id) === "1230085700" ? " · 상부 보행 인도(육교) 아래 통과·차도 보행 가능" : " · 차도 보행 가능";
@@ -387,31 +401,48 @@ function drawRoadMap(svg, links, places, roads) {
   const [ba, bb] = HANEOL_BRIDGE_SPAN;
   el("line", {
     x1: X(ba[0]), y1: Y(ba[1]), x2: X(bb[0]), y2: Y(bb[1]),
-    stroke: "#92400e", "stroke-width": 9, "stroke-linecap": "butt",
+    stroke: "#92400e", "stroke-width": Math.min(4 * S, 9) + 4, "stroke-linecap": "butt",
   });
   el("line", {
     x1: X(ba[0]), y1: Y(ba[1]), x2: X(bb[0]), y2: Y(bb[1]),
-    stroke: "#fde68a", "stroke-width": 6, "stroke-linecap": "butt",
+    stroke: "#fde68a", "stroke-width": Math.min(4 * S, 9) + 1, "stroke-linecap": "butt",
   });
   const pedLine = el("polyline", {
     points: pedPts, fill: "none", stroke: "#b45309",
-    "stroke-width": 3, "stroke-dasharray": "5 3", "stroke-linecap": "round", "stroke-linejoin": "round",
+    "stroke-width": Math.max(3, 1.5 * S), "stroke-dasharray": `${(4 * S).toFixed(1)} ${(2.5 * S).toFixed(1)}`, "stroke-linecap": "round", "stroke-linejoin": "round",
   });
   const pedTitle = document.createElementNS(ns, "title");
   pedTitle.textContent = "만남의광장~KSPO DOME 보행 인도 (하부 차도 위로 지나가는 육교 · 차도도 보행 가능)";
   pedLine.appendChild(pedTitle);
 
-  const dot = (lng, lat, color, r, label, dy = -9) => {
-    el("circle", { cx: X(lng), cy: Y(lat), r, fill: color, stroke: "#fff", "stroke-width": 2 });
-    if (label) el("text", { x: X(lng), y: Y(lat) + dy, "text-anchor": "middle", "font-size": 12, fill: "var(--ink)", "font-weight": 600 }, label);
-  };
-  places.lots.filter((x) => x.lat && x.kind !== "transfer").forEach((x) => dot(x.lng, x.lat, "var(--ink-2)", 5, x.kind === "park" ? "공원 주차장" : x.name.replace(" 주차장", "").replace("올림픽공원 ", ""), 16));
-  places.stations.forEach((s) => dot(s.lng, s.lat, "#7b4fd6", 6, s.name));
-  dot(places.dome.lng, places.dome.lat, "var(--accent)", 9, places.dome.name || "KSPO DOME");
+  // 점과 이름: 화면에서 글씨 12px 안팎. 이름끼리 겹치면 위·아래·옆 자리를 차례로 찾아보고, 그래도 겹치면 이름만 뺀다(점은 남김).
+  const FS = 12 * S;
+  const placed = [];
+  const items = [];
+  const dot = (lng, lat, color, r, label, rank, bold) => items.push({ lng, lat, color, r: r * S, label, rank, bold });
   const me = USER_GPS.loc;
-  if (me && me.lng >= minX && me.lng <= maxX && me.lat >= minY && me.lat <= maxY) {
-    dot(me.lng, me.lat, "var(--good-ink)", 8, "● 내 위치", -11);
-  }
+  if (me && me.lng >= minX && me.lng <= maxX && me.lat >= minY && me.lat <= maxY) dot(me.lng, me.lat, "var(--good-ink)", 6, "● 내 위치", 1, true);
+  dot(places.dome.lng, places.dome.lat, "var(--accent)", 7, places.dome.name || "KSPO DOME", 0, true);
+  places.stations.forEach((s) => dot(s.lng, s.lat, "#7b4fd6", 5, s.name, 2));
+  places.lots.filter((x) => x.lat && x.kind !== "transfer").forEach((x) =>
+    dot(x.lng, x.lat, "var(--ink-2)", 4, x.kind === "park" ? "공원 주차장" : x.name.replace(" 주차장", "").replace("올림픽공원 ", ""), x.kind === "park" ? 3 : 4));
+  items.forEach((d) => el("circle", { cx: X(d.lng), cy: Y(d.lat), r: d.r, fill: d.color, stroke: "#fff", "stroke-width": 1.5 * S }));
+  items.sort((a, b) => a.rank - b.rank).forEach((d) => {
+    if (!d.label) return;
+    const w = d.label.length * FS * 0.95, h = FS * 1.2;
+    const cx = X(d.lng), cy = Y(d.lat), g = d.r + 3 * S;
+    const spots = [[cx, cy - g - h * 0.25], [cx, cy + g + h * 0.85], [cx + g + w / 2, cy + h * 0.35], [cx - g - w / 2, cy + h * 0.35]];
+    const spot = spots.find(([x, y]) => {
+      const b = { l: x - w / 2, r: x + w / 2, t: y - h * 0.85, b: y + h * 0.15 };
+      if (b.l < 0 || b.r > W || b.t < 0 || b.b > H) return false;
+      return !placed.some((o) => b.l < o.r && b.r > o.l && b.t < o.b && b.b > o.t);
+    });
+    if (!spot) return;
+    const [x, y] = spot;
+    placed.push({ l: x - w / 2, r: x + w / 2, t: y - h * 0.85, b: y + h * 0.15 });
+    el("text", { x, y, "text-anchor": "middle", "font-size": FS.toFixed(1), fill: "var(--ink)", "font-weight": d.bold ? 800 : 700,
+      stroke: "#f8fafc", "stroke-width": (3 * S).toFixed(1), "paint-order": "stroke" }, d.label);
+  });
 }
 
 function legendHTML() {

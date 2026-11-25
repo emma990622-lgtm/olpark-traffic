@@ -184,6 +184,44 @@ async function initMap3D(el, { links, places, live, venues }) {
   };
   drawMarkers(places);
 
+  // 이름표 겹침 정리: 화면에서 겹치면 중요도가 낮은 이름표를 잠시 숨긴다(지도를 옮기거나 확대하면 다시 계산).
+  // 중요도: 공연장(고른 곳) > 내 위치 > 지하철역 > 공원 주차장 > 다른 주차장 > 다른 공연장
+  const RANK = { dome: 0, me: 1, st: 2, lot: 3, venue: 5 };
+  const rankOf = (m) => {
+    const e = m.getElement();
+    const k = Object.keys(RANK).find((c) => e.classList.contains(c));
+    let r = k == null ? 4 : RANK[k];
+    if (k === "lot" && !/공원 주차장/.test(e.textContent)) r = 4;
+    return r;
+  };
+  const declutter = () => {
+    try {
+      const all = markers.concat(meMarker ? [meMarker] : []);
+      const boxes = [];
+      all.map((m) => ({ m, r: rankOf(m) })).sort((a, b) => a.r - b.r).forEach(({ m }) => {
+        const e = m.getElement();
+        e.style.visibility = "";
+        const b = (e.querySelector("span") || e).getBoundingClientRect();
+        if (!b.width) return;
+        const hit = boxes.some((o) => b.left < o.right + 2 && b.right > o.left - 2 && b.top < o.bottom + 2 && b.bottom > o.top - 2);
+        if (hit) e.style.visibility = "hidden";
+        else boxes.push(b);
+      });
+    } catch (_) { /* 겹침 정리는 보조 기능 */ }
+  };
+  map.on("moveend", declutter);
+  map.on("resize", () => setTimeout(declutter, 50));
+  map.once("idle", declutter);
+  setTimeout(declutter, 300);
+
+  // 저작권 표시는 접힌 상태(ⓘ)로 시작 — 좁은 화면에서 지도를 가리지 않게. 누르면 펼쳐진다.
+  const collapseAttrib = () => {
+    const a = el.querySelector(".maplibregl-ctrl-attrib");
+    if (a) { a.classList.remove("maplibregl-compact-show"); a.removeAttribute("open"); }
+  };
+  collapseAttrib();
+  map.once("idle", collapseAttrib);
+
   // 5) 눌렀을 때 설명
   const pop = new maplibregl.Popup({ closeButton: false, offset: 8 });
   map.on("click", "roads", (e) => {
@@ -215,6 +253,7 @@ async function initMap3D(el, { links, places, live, venues }) {
     if (meMarker) { meMarker.remove(); meMarker = null; }
     if (!loc) return;
     meMarker = mark(loc.lng, loc.lat, "● 내 위치", "me");
+    setTimeout(declutter, 50);
     if (opts.fly && distMeters(loc.lat, loc.lng, dome.lat, dome.lng) <= 3000) {
       map.easeTo({ center: [loc.lng, loc.lat], duration: 700 });
     }
@@ -228,6 +267,7 @@ async function initMap3D(el, { links, places, live, venues }) {
     // 고른 공연장으로 바꾸기: 표식·걷는 길·지도 중심
     setVenue(pl) {
       drawMarkers(pl);
+      setTimeout(declutter, 50);
       map.getSource("walk").setData(walkFor(pl.dome.name || "KSPO DOME"));
       map.easeTo({ center: [pl.dome.lng - 0.0015, pl.dome.lat - 0.0008], duration: 800 });
     },
