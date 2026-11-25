@@ -82,16 +82,29 @@ def main():
 
     feats, total, kept, dttm = [], {}, {"node": 0, "link": 0}, set()
     seen = set()  # 같은 노드·링크가 두 번 오기도 하고(구 경계), 두 구에 함께 들어 있기도 해서 한 번만 남긴다
+    got = {}
     for sgg in SGGS:
-        first = get(key, sgg, 1, PAGE)
-        n = int(first.get("list_total_count") or 0)
-        total[sgg] = n
-        print(f"{sgg}: {n:,}줄")
-        rows = first.get("row") or []
-        for a in range(PAGE + 1, n + 1, PAGE):
-            rows += get(key, sgg, a, min(a + PAGE - 1, n)).get("row") or []
-            time.sleep(0.3)
-        for r in rows:
+        # 이 API는 쪽(page)을 나눠 받으면 쪽끼리 겹치거나 빠지는 줄이 있다(정렬이 고정되지 않음).
+        # 그래서 전체를 여러 번 훑어 합치고, 한 번 더 훑어도 새 줄이 거의 없을 때(0.2% 미만) 멈춘다.
+        n, uniq = 0, {}
+        for rnd in range(1, 7):
+            first = get(key, sgg, 1, PAGE)
+            n = int(first.get("list_total_count") or 0)
+            rows = first.get("row") or []
+            for a in range(PAGE + 1, n + 1, PAGE):
+                rows += get(key, sgg, a, min(a + PAGE - 1, n)).get("row") or []
+                time.sleep(0.2)
+            before = len(uniq)
+            for r in rows:
+                k = ("N", r.get("NODE_ID")) if r.get("NODE_TYPE") == "NODE" else ("L", r.get("LNKG_ID"))
+                uniq.setdefault(k, r)
+            print(f"{sgg} {rnd}번째: 받은 줄 {len(rows):,}, 서로 다른 줄 누적 {len(uniq):,} / 전체 {n:,}")
+            if rnd > 1 and len(uniq) - before < 0.002 * max(1, n):
+                break
+        total[sgg] = {"total": n, "unique": len(uniq), "rounds": rnd}
+        got[sgg] = list(uniq.values())
+    for sgg in SGGS:
+        for r in got[sgg]:
             if r.get("WORK_DTTM"):
                 dttm.add(r["WORK_DTTM"][:10])
             if r.get("NODE_TYPE") == "NODE":
@@ -125,7 +138,7 @@ def main():
             "source": "서울 열린데이터광장 '서울시 자치구별 도보 네트워크 공간정보'(OA-21208, TbTraficWlkNet), 공공누리 1유형",
             "fetched": kst.strftime("%Y-%m-%d %H:%M"),
             "workDates": sorted(dttm),
-            "sgg": total,
+            "sgg": total,  # 구별 전체 줄 수 · 받은 서로 다른 줄 수 · 훑은 횟수
             "bbox": BBOX,
             "kept": kept,
             "flags": "링크: expn_car_rd 고가도로, sbwy_ntw 지하철네트워크, brg 교량, tnl 터널, ovrp 육교, crswk 횡단보도, park 공원·녹지, bldg 건물내 (1=해당)",
