@@ -131,3 +131,10 @@ button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible 
   .exit-options {grid-template-columns:1fr}
   .exit-option {padding:14px 16px}
 }
+
+/* 지도 저작권 표시(ⓘ)는 위의 'details summary' 크기 규칙을 받지 않게 — 48px로 늘어나 ⓘ가 두 개로 보이던 문제 */
+.park-web .maplibregl-ctrl-attrib summary.maplibregl-ctrl-attrib-button {
+  min-height: 0;
+  height: 24px;
+  padding: 0;
+}
