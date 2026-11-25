@@ -392,7 +392,7 @@ function drawRoadMap(svg, links, places, roads) {
       "stroke-width": Math.min(4 * S, 9), "stroke-linecap": "round", opacity: 0.9,
     });
     const t = document.createElementNS(ns, "title");
-    const walkNote = String(l.id) === "1230085700" ? " · 상부 보행 인도(육교) 아래 통과·차도 보행 가능" : " · 차도 보행 가능";
+    const walkNote = String(l.id) === "1230085700" ? " · 상부 보행 인도(육교) 아래 통과" : "";
     t.textContent = `${l.road} ${l.from}→${l.to}` + (r ? ` · ${r.spd}km/h ${r.idx}` : " · 수집값 없음") + walkNote;
     line.appendChild(t);
   });
@@ -412,7 +412,7 @@ function drawRoadMap(svg, links, places, roads) {
     "stroke-width": Math.max(3, 1.5 * S), "stroke-dasharray": `${(4 * S).toFixed(1)} ${(2.5 * S).toFixed(1)}`, "stroke-linecap": "round", "stroke-linejoin": "round",
   });
   const pedTitle = document.createElementNS(ns, "title");
-  pedTitle.textContent = "만남의광장~KSPO DOME 보행 인도 (하부 차도 위로 지나가는 육교 · 차도도 보행 가능)";
+  pedTitle.textContent = "만남의광장~KSPO DOME 보행 인도 (하부 차도 위로 지나가는 육교)";
   pedLine.appendChild(pedTitle);
 
   // 점과 이름: 화면에서 글씨 12px 안팎. 이름끼리 겹치면 위·아래·옆 자리를 차례로 찾아보고, 그래도 겹치면 이름만 뺀다(점은 남김).
@@ -452,7 +452,7 @@ function legendHTML() {
     <span><i style="background:var(--bad)"></i>■ 정체</span>
     <span><i style="background:var(--none)"></i>— 수집값 없음</span>
     <span><i style="background:#fde68a;border:1.5px solid #b45309;height:7px"></i>보행 인도(차도 위 육교)</span>
-    <span>● 보라: 지하철역 · 회색: 주차장 · 차도 보행 가능</span></div>`;
+    <span>● 보라: 지하철역 · 회색: 주차장</span></div>`;
 }
 
 // ---------- 입체 보행 네트워크 (차도 보행 겸용 level=0 + 차도 위 인도·육교 level=1) ----------

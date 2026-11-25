@@ -230,12 +230,12 @@ async function initMap3D(el, { links, places, live, venues }) {
   map.on("click", "roads", (e) => {
     const p = e.features[0].properties;
     const under = p.underpass === true || p.underpass === "true";
-    const walkNote = under ? "상부 보행 인도(육교) 아래 통과 · 차도 보행 가능" : "차도 · 보행 가능";
-    pop.setLngLat(e.lngLat).setHTML(`<b>${p.name}</b><br>${p.spd && p.spd !== "null" ? p.spd + "km/h · " + p.idx : "수집값 없음"}<br><span class="muted small">${walkNote}</span>`).addTo(map);
+    const walkNote = under ? `<br><span class="muted small">상부 보행 인도(육교) 아래 통과</span>` : "";
+    pop.setLngLat(e.lngLat).setHTML(`<b>${p.name}</b><br>${p.spd && p.spd !== "null" ? p.spd + "km/h · " + p.idx : "수집값 없음"}${walkNote}`).addTo(map);
   });
   const showPedPopup = (e) => {
     pop.setLngLat(e.lngLat).setHTML(
-      `<b>만남의광장~KSPO DOME 보행 인도</b><br>보행자 전용 · 하부 차도 위로 지나가는 입체 인도(육교)<br><span class="muted small">아래 차도를 포함한 공원 차도도 보행 가능</span>`
+      `<b>만남의광장~KSPO DOME 보행 인도</b><br>보행자 전용 · 하부 차도 위로 지나가는 입체 인도(육교)`
     ).addTo(map);
   };
   ["ped-overpass-3d", "ped-promenade-fill", "ped-walkway-spine"].forEach((id) => {
@@ -286,5 +286,5 @@ function legend3DHTML(buildingSrc) {
     <span><i style="background:#fde68a;border:1.5px solid #b45309;height:7px"></i>보행 인도(차도 위 육교)</span>
     <span><i style="background:repeating-linear-gradient(90deg,#1d4ed8 0 5px,transparent 5px 9px)"></i>주차장→공연장 도보</span>
     <span><i style="background:repeating-linear-gradient(90deg,#7c3aed 0 5px,transparent 5px 9px)"></i>역→공연장 도보</span>
-    <span>차도: 보행 가능 · 건물: ${buildingSrc}</span></div>`;
+    <span>건물: ${buildingSrc}</span></div>`;
 }
