@@ -12,7 +12,7 @@
     ]);
   } catch (_) {}
   if (!J || !J.byEntry) {
-    $("egResult").innerHTML = `<span class="chip">○ 아직 없음</span> 출구 비교 자료를 불러오지 못했어요.`;
+    $("parkingStatus").textContent = "출구 비교 자료 불러오기 실패";
     return;
   }
   const GATE = (g) => g + "문";
@@ -45,10 +45,11 @@
 
   // 주차한 곳 버튼
   const box = $("egZone");
+  $("parkingStatus").hidden = true;
   const btn = (g, label, sub) =>
     `<button type="button" data-g="${g}" aria-pressed="false"><b>${label}</b><span>${sub}</span></button>`;
   box.innerHTML =
-    ["북2", "동2", "남2"].map((g) => btn(g, J.byEntry[g].zones.join("·"), `${ZONE[g]} · ${GATE(g)}으로 들어옴`)).join("") +
+    ["북2", "동2", "남2"].map((g) => btn(g, J.byEntry[g].zones.join("·"), `${ZONE[g]} · ${GATE(g)} 진입`)).join("") +
     btn("other", "그 밖의 주차장", "서1·서2·남3·남4문 주차장");
 
   // 가는 방면 빠른 버튼 (북서·북동 / 남서·남동 방위 순서로 배치, 외부 길찾기 API 호출 없음)
@@ -59,7 +60,7 @@
     const order = ["nw", "ne", "sw", "se"].filter((k) => dirByKey[k]);
     if (order.length) {
       wayBox.innerHTML =
-        `<button type="button" data-w="none" class="on span-all" aria-pressed="true"><b>방면 선택 안 함</b><span>공원 출구를 지날 때까지만 비교해요</span></button>` +
+        `<button type="button" data-w="none" class="on span-all" aria-pressed="true"><b>방면 선택 안 함</b></button>` +
         order.map((k) => {
           const d = dirByKey[k];
           return `<button type="button" data-w="${d.key}" aria-pressed="false"><b>${d.label}</b><span>${d.sub}</span></button>`;
@@ -74,13 +75,14 @@
           x.setAttribute("aria-pressed", on ? "true" : "false");
         });
         renderGate();
+        wayBox.dispatchEvent(new Event("park-direction-selected"));
       });
     } else {
-      wayBox.innerHTML = `<span class="muted small">방면별 둘레 도로 자료가 아직 없어요.</span>`;
+      $("skipDirection").hidden = false;
     }
   }
 
-  function selectZone(g) {
+  function selectZone(g, advance = true) {
     pick = g;
     box.querySelectorAll("button").forEach((x) => {
       const on = x.dataset.g === g;
@@ -88,6 +90,7 @@
       x.setAttribute("aria-pressed", on ? "true" : "false");
     });
     renderGate();
+    if (advance) $("exitGate").dispatchEvent(new Event("park-zone-selected"));
   }
 
   box.addEventListener("click", (e) => {
@@ -105,25 +108,24 @@
     gpsBtn.disabled = g.status === "loading";
     if (g.status === "loading") {
       gpsBtn.textContent = "위치 확인 중…";
-      gpsNote.textContent = "현재 위치를 확인하고 있어요…";
+      gpsNote.textContent = "현재 위치 확인 중";
     } else if (g.status === "ok" && g.loc) {
       gpsBtn.textContent = "내 위치로 다시 찾기";
       const nearest = PARK_ZONE_REFS
         .map((r) => ({ ...r, dist: distMeters(g.loc.lat, g.loc.lng, r.lat, r.lng) }))
         .sort((a, b) => a.dist - b.dist)[0];
       if (nearest.dist <= 1200) {
-        if (g.source === "exitGate" || pick === null) selectZone(nearest.gate);
+        if (g.source === "exitGate" || pick === null) selectZone(nearest.gate, g.source === "exitGate");
         const zoneLabel = nearest.gate === "other" ? "그 밖의 주차장" : `${GATE(nearest.gate)} 구역(${J.byEntry[nearest.gate].zones.join("·")})`;
         gpsNote.innerHTML =
-          `<span class="chip good">● GPS 반영</span> 현재 위치${g.loc.acc ? `(오차 약 ±${g.loc.acc}m)` : ""}에서 <b>${nearest.label}</b>(직선 약 ${Math.round(nearest.dist)}m)이 가장 가까워 <b>${zoneLabel}</b>을 골랐어요. ` +
-          `공연장 안에서 누르셨거나 실제 주차한 곳이 다르면 아래 버튼을 직접 눌러 바꿔 주세요(기준 좌표: TMAP·서울시 도시데이터).`;
+          `GPS 추천 구역 · ${zoneLabel}`;
       } else {
         gpsNote.innerHTML =
-          `<span class="chip">○ 공원 밖</span> 현재 위치가 올림픽공원에서 약 ${(nearest.dist / 1000).toFixed(1)}km 떨어져 있어 주차 구역을 자동으로 고르지 않았어요. 공원 주차장에서 누르거나 아래에서 직접 골라 주세요.`;
+          "공원 밖 · 주차 구역 직접 선택";
       }
     } else if (g.status === "off") {
       gpsBtn.textContent = "현재 위치(GPS)로 주차한 곳 찾기";
-      gpsNote.textContent = "내 위치 표시를 껐어요. 아래에서 직접 고르거나 다시 버튼을 눌러 주세요.";
+      gpsNote.textContent = "현재 위치 표시 해제";
     } else if (g.status === "denied" || g.status === "error" || g.status === "unsupported") {
       gpsBtn.textContent = "현재 위치(GPS) 다시 확인";
       gpsNote.innerHTML = `<span class="chip warn">▲ 확인 안 됨</span> ${g.msg}`;
@@ -132,85 +134,39 @@
 
   function renderGate() {
     const out = $("egResult");
-    const dir = wayPick !== "none" ? dirByKey[wayPick] : null;
-    if (!pick) {
-      out.innerHTML = `<span class="muted small">${dir
-        ? `위에서 주차한 곳을 고르면 ‘${dir.label}’ 방면 둘레 도로까지 합쳐 가장 빠른 출구를 계산해 드려요.`
-        : "주차한 곳을 고르면 가장 빨리 빠진 출구를 알려 드려요."}</span>`;
-      return;
-    }
+    if (!pick) return;
+
     if (pick === "other") {
-      const o = J.otherLots;
-      out.innerHTML = `<div class="eg-reco"><span class="chip accent">▶ 들어온 문으로 나가세요</span>
-        <p>서1·서2·남3·남4문 주차장은 공원 안쪽 길로 다른 문과 이어지지 않아요. 지난 공연에서 이 주차장에 세운 관객 차는
-        ${Object.keys(o).map((g) => `${GATE(g)} ${Math.round(o[g].sameGate * 1000) / 10}%`).join(", ")}가 들어온 문으로 나갔어요.${dir
-          ? ` <b>${dir.label}</b> 방면이어도 들어온 문으로 먼저 나간 뒤 바깥 큰길을 이용해야 해요.` : ""}</p></div>`;
-      return;
-    }
-    const E = J.byEntry[pick];
-    const L = J.gateLoad;
-
-    // 가는 방면을 골랐을 때: 공원 안 출차 차이 + 출구→방면 합류 교차로 둘레 도로 시간 합산 비교
-    if (dir && dir.byGate) {
-      const comb = E.options.map((o) => {
-        const inLate = o.gate === E.best ? 0 : o.vs[E.best].min;
-        const road = dir.byGate[o.gate];
-        const tot = +(inLate + road.roadMin).toFixed(1);
-        return { gate: o.gate, inLate, road, tot };
-      }).sort((a, b) => a.tot - b.tot);
-      const g0 = comb[0], g1 = comb[1], g2 = comb[2];
-      const gap1 = +(g1.tot - g0.tot).toFixed(1), gap2 = +(g2.tot - g0.tot).toFixed(1);
-      let head, body;
-      if (gap1 < 1.0) {
-        head = `<span class="chip good">● 거의 비슷해요</span> <b>${dir.label}</b> 방면은 <b class="eg-gate">${GATE(g0.gate)}</b>·<b class="eg-gate">${GATE(g1.gate)}</b>이 비슷해요 (약 ${gap1}분 차이)`;
-        body = `${E.zones.join("·")}에서 출구까지 걸리는 차이와 출구 밖에서 <b>${dir.hub}</b>까지 가는 시간을 합치면 ${GATE(g0.gate)}이 조금 이르지만, ${GATE(g1.gate)}과 약 ${gap1}분 차이라 교차로 신호 한 번이면 바뀔 수 있어요(${GATE(g2.gate)}은 약 ${gap2}분 더 걸려요).`;
-      } else if (g0.gate !== E.best) {
-        head = `<span class="chip good">● 가장 빠름</span> <b>${dir.label}</b> 방면은 <b class="eg-gate">${GATE(g0.gate)}</b>으로 나가세요`;
-        body = `공원 안만 보면 ${GATE(E.best)}이 빠르지만, 출구 밖에서 <b>${dir.hub}</b>까지 돌아가는 시간을 합치면 <b>${GATE(g0.gate)}</b>이 ${GATE(g1.gate)}보다 약 <b>${gap1}분</b>, ${GATE(g2.gate)}보다 약 <b>${gap2}분</b> 빨라요.`;
-      } else {
-        head = `<span class="chip good">● 가장 빠름</span> <b>${dir.label}</b> 방면도 <b class="eg-gate">${GATE(g0.gate)}</b>으로 나가세요`;
-        body = `출구 밖에서 합류 지점(<b>${dir.hub}</b>)까지 공원 둘레 도로를 도는 시간을 합쳐도 <b>${GATE(g0.gate)}</b>이 ${GATE(g1.gate)}보다 약 <b>${gap1}분</b>, ${GATE(g2.gate)}보다 약 <b>${gap2}분</b> 빨라요. 공원 안에서 다른 문으로 가로지르며 기다리는 것보다 바로 나가 바깥 큰길을 타는 편이 빨라요.`;
-      }
-      out.innerHTML =
-        `<div class="eg-reco">${head}<p>${body}</p></div>
-        <div class="table-scroll"><table class="list">
-          <tr><th>출구 · 둘레 경로</th><th>공원 안</th><th>합류점까지</th><th>합계 비교</th></tr>` +
-        comb.map((r, idx) => {
-          const diff = +(r.tot - g0.tot).toFixed(1);
-          const badge = idx === 0
-            ? ` <span class="chip good">● 추천</span>`
-            : (idx === 1 && gap1 < 1.0 ? ` <span class="chip">비슷함</span>` : "");
-          return `<tr>
-            <td><b>${GATE(r.gate)}</b>${badge}<br><span class="muted small">${r.road.via} (${(r.road.meters / 1000).toFixed(1)}km)</span></td>
-            <td class="nowrap">${r.inLate === 0 ? "기준" : `+${r.inLate}분`}</td>
-            <td class="nowrap">약 ${r.road.roadMin}분</td>
-            <td class="nowrap">${idx === 0 ? "<b>가장 빠름</b>" : `▲ +${diff}분`}</td>
-          </tr>`;
-        }).join("") +
-        `</table></div>
-        <p class="muted small" style="margin:8px 0 0">합류 지점(<b>${dir.hub}</b>) 이후 목적지까지 걸리는 시간은 어느 문으로 나가든 같은 길이라 똑같아요.
-        둘레 도로 시간은 KSPO DOME 공연 종료 시간대 실측 중앙값(${D.shows.length}회 공연·5분 간격 ${D.snapshots}회 수집, 서울시 실시간 도시데이터)이며 교차로 신호 대기 1~2분은 상황에 따라 달라질 수 있어요.</p>`;
+      out.innerHTML = '<div class="eg-reco"><strong class="eg-gate">진입한 문으로 출차</strong></div>';
       return;
     }
 
-    const best = E.options.find((o) => o.gate === E.best);
-    const rows = E.options.map((o) => {
-      const v = o.gate === E.best ? null : o.vs[E.best];
-      return { o, v, late: v ? v.min : 0 };
-    }).sort((a, b) => a.late - b.late);
-    const worst = rows[rows.length - 1];
-    const wv = best.vs[worst.o.gate];
-    out.innerHTML =
-      `<div class="eg-reco"><span class="chip good">● 가장 빠름</span> <b class="eg-gate">${GATE(E.best)}</b>으로 나가세요
-        <p>지난 KSPO DOME 공연 ${wv.n}회에서 ${E.zones.join("·")}에 세운 차(${GATE(pick)}으로 들어온 차)를 비교했어요.
-        ${GATE(E.best)}으로 나간 차가 ${GATE(worst.o.gate)}으로 나간 차보다 <b>${Math.abs(wv.min)}분</b> 일찍 빠졌어요(중앙값, 공연 ${Math.round(wv.fasterShare * 100)}%에서 더 빨랐어요).</p></div>
-      <div class="table-scroll"><table class="list"><tr><th>출구 · 나간 뒤 방향</th><th>${GATE(E.best)}보다</th></tr>` +
-      rows.map(({ o, v }) => `<tr><td><b>${GATE(o.gate)}</b>${o.gate === E.best ? ` <span class="chip good">● 가장 빠름</span>` : ""}<br><span class="muted small">${J.way[o.gate]}</span></td>
-        <td class="nowrap">${v ? `▲ ${v.min}분 늦음<br><span class="muted small">더 빨랐던 공연 ${Math.round(v.fasterShare * 100)}%</span>` : "기준"}</td>
-</tr>`).join("") +
-      `</table></div>
-      <p class="muted small" style="margin:8px 0 0">공연 한 번에 관객 차가 동2문 약 ${L["동2"].carsPerShow}대, 북2문 약 ${L["북2"].carsPerShow}대, 남2문 약 ${L["남2"].carsPerShow}대 나가요.
-      이 비교는 공원 출구를 지날 때까지이며, 위에서 <b>가는 방면</b>을 고르면 공원 밖 둘레 도로 시간까지 합쳐 볼 수 있어요.</p>`;
+    const entry = J.byEntry[pick];
+    const direction = dirByKey[wayPick];
+    const compareRoad = direction && entry.options.every(option => direction.byGate?.[option.gate]);
+    const routes = entry.options.map(option => {
+      const gate = option.gate;
+      const parkDifference = gate === entry.best ? 0 : option.vs[entry.best].min;
+      const road = compareRoad ? direction.byGate[gate] : null;
+      return {
+        gate,
+        path: road ? road.via : J.way[gate],
+        score: road ? +(parkDifference + road.roadMin).toFixed(1) : parkDifference,
+      };
+    }).sort((first, second) => first.score - second.score);
+
+    const cards = routes.map((route, index) => {
+      const difference = +(route.score - routes[0].score).toFixed(1);
+      const label = index === 0 ? "추천" : difference < 1 && compareRoad
+        ? `비슷한 소요 시간 · 약 +${difference}분`
+        : `추천 출구 대비 약 +${difference}분`;
+      return `<li class="exit-option${index === 0 ? " is-recommended" : ""}">
+        <strong>${GATE(route.gate)}</strong><p>${label}</p><p>${route.path}</p>
+      </li>`;
+    });
+    const scope = compareRoad ? `공원 출구부터 ${direction.hub}까지 포함` : "공원 출구까지 비교";
+    out.innerHTML = `<p class="result-scope">올림픽공원 과거 출차 기록${compareRoad ? "과 서울시 도로 실측" : ""} 기준 · ${scope}</p>
+      <ul class="exit-options" aria-label="출구별 비교">${cards.join("")}</ul>`;
   }
 
   // 날씨
@@ -227,7 +183,7 @@
         const r = await fetch("/api/weather");
         if (!r.ok) throw new Error(r.status);
         wxAll = (await r.json()).hours || [];
-      } catch (_) { return { none: "날씨 예보를 불러오지 못했어요" }; }
+      } catch (_) { return { none: "날씨 예보 불러오기 실패" }; }
     }
     const t0 = toMin(s.start) + 150, t1 = toMin(s.start) + 270;
     const hs = [];
@@ -237,7 +193,7 @@
       const h = wxAll.find((x) => x.date === ds && x.hour === day.getHours());
       if (h) hs.push(h);
     }
-    if (!hs.length) return { none: "이 공연의 출차 시간대 예보는 아직 없어요(서울시 예보는 24시간 앞까지)" };
+    if (!hs.length) return { none: "공연 시간대 예보 없음 (24시간 이내 예보 제공)" };
     const rain = hs.reduce((a, h) => a + (h.precip || 0), 0);
     const temps = hs.map((h) => h.temp).filter((v) => v != null);
     return { rain, temp: temps.length ? Math.min(...temps) : null };
@@ -256,41 +212,36 @@
     const s = show();
     let rain = mode === "rain", cold = mode === "cold", note = "";
     if (mode === "auto") {
-      if (!s || s.venue !== "KSPO DOME") note = "KSPO DOME 공연을 고르면 그 공연 출차 시간대 예보를 볼게요.";
+      if (!s || s.venue !== "KSPO DOME") note = "KSPO DOME 공연 예보만 제공";
       else {
         const f = await forecastRain(s);
         if (mine !== wxSeq) return;
-        if (f.none) note = f.none + ". 아래에서 직접 골라 볼 수 있어요.";
+        if (f.none) note = f.none;
         else {
           rain = f.rain >= 1; cold = f.temp != null && f.temp < 0;
           note = `서울시 예보: 출차 시간대 비 ${Math.round(f.rain * 10) / 10}mm${f.temp != null ? `, 기온 ${f.temp}도` : ""}.`;
         }
       }
     }
-    const e = W.effect, T = W.effectTour;
-    // 판단은 '같은 공연(투어)끼리' 비교의 95% 범위로(공연마다 길이가 달라 날씨와 섞이는 것을 막음).
-    // 절반 출차(p50)나 마지막 차들(p90) 중 하나라도 범위가 모두 0보다 크면 '늦어질 수 있어요'
-    const late = (x) => x.p50.lo > 0 || x.p90.lo > 0;
-    const verdict = (x) => late(x) ? `<span class="chip warn">▲ 늦어질 수 있어요</span>` : `<span class="chip">○ 늦어진다는 근거 없음</span>`;
+    const T = W.effectTour;
     const A = W.afterEnd && W.afterEnd.dry;
     let txt;
-    if (rain) txt = `${verdict(T.wet)} 비 온 공연 ${T.wet.shows}회를 같은 공연의 비 안 온 회차와 비교했어요(${T.wet.tours}개 공연).
-      관객 차 절반이 빠지는 때는 ${span(T.wet.p50)}, 마지막 10%가 남을 때까지(90% 출차)는 ${span(T.wet.p90)} 차이였어요.
-      ${T.wet.p90.lo > 0 ? "<b>비 오는 날은 마지막 차들이 빠지는 데 더 오래 걸렸어요.</b> 늦게 나올 생각이면 시간을 넉넉히 잡으세요. " : ""}비 온 공연이 ${T.wet.shows}회뿐이라 확실하지는 않아요.`;
-    else if (cold) txt = `${verdict(T.cold)} 추운 공연(출차 시간대 체감 0도 미만) ${T.cold.shows}회를 같은 공연의 덜 추운 회차와 비교하면(${T.cold.tours}개 공연)
-      절반 출차 ${span(T.cold.p50)}, 90% 출차 ${span(T.cold.p90)} 차이로 <b>추위 때문에 늦어진다는 근거는 없어요.</b>
-      공연을 가리지 않고 모든 추운 공연을 보면 절반 출차가 ${span(e.cold.p50)} 늦었는데, 추운 날 공연이 주로 길게 하는 연말 공연이라 생긴 차이로 보여요.`;
-    else if (A) txt = `<span class="chip good">● 보통 날씨</span> 관객 차 절반이 빠지는 때는 보통 <b>공연 종료 후 약 ${dur(A.p50.med)}</b>(가운데 50% ${dur(A.p50.p25)}~${dur(A.p50.p75)}), 90%는 <b>종료 후 약 ${dur(A.p90.med)}</b>(${dur(A.p90.p25)}~${dur(A.p90.p75)})이에요(종료 시각이 확인된 지난 공연 ${A.shows}회 중앙값 · 전체 ${W.shows - W.wetShows}회 공연 시작 기준으로는 ${dur(W.dryMedian.p50)} / ${dur(W.dryMedian.p90)}).`;
-    else txt = `<span class="chip good">● 보통 날씨</span> 관객 차 절반이 빠지는 때는 보통 공연 시작 후 ${dur(W.dryMedian.p50)}, 90%는 ${dur(W.dryMedian.p90)}예요(지난 공연 중앙값).`;
+    if (rain || cold) {
+      const comparison = rain ? T.wet : T.cold;
+      txt = `동일 공연 회차 ${comparison.shows}회 비교<br>
+        차량 50% 출차 ${span(comparison.p50)}<br>
+        차량 90% 출차 ${span(comparison.p90)}`;
+    } else {
+      const p50 = A ? A.p50.med : W.dryMedian.p50;
+      const p90 = A ? A.p90.med : W.dryMedian.p90;
+      txt = `공연 ${A ? "종료" : "시작"} 후 출차 중앙값<br>차량 50% 약 ${dur(p50)} · 90% 약 ${dur(p90)}`;
+    }
     $("egWeather").innerHTML = (note ? `<p class="muted small" style="margin:0 0 6px">${note}</p>` : "") + `<div class="eg-wx">${txt}</div>`;
   }
   $("egWx").addEventListener("change", renderWx);
   $("date").addEventListener("change", () => setTimeout(renderWx, 0));
   $("event").addEventListener("change", renderWx);
 
-  // 차로 오는 관객에게만 보임 (이동 수단 토글은 audience.js에서 전환)
-  const activeMode = document.querySelector("#mode button.on");
-  if (activeMode) $("exitGate").hidden = activeMode.dataset.v !== "car";
 
   $("egSrc").innerHTML = `출처: ${J.source}. 방법: ${J.method}. KSPO DOME 공연 ${J.shows}회, 관객 차 ${J.cars.toLocaleString()}대. ` +
     `주차한 곳은 기록에 없어 들어온 문으로 대신했어요(공식 주차 안내의 문별 주차 구역). ` +

@@ -1,5 +1,7 @@
 # 디자인 규칙 및 JS↔CSS 계약서 (`docs/design.md`)
 
+> ALL PARK 관객 화면에는 `park-web.css`가 공통 스타일 위에 적용된다. `park-journey.js`가 `data-journey` 화면과 `data-car` 하위 단계를 전환한다. 주차 위치와 방면 선택은 `park-zone-selected` 및 `park-direction-selected` 이벤트로 연결한다. 기존 필수 ID와 `#mode button.on` 상태를 유지한다. `.topic-choices`는 안내 진입 버튼, `.exit-options`와 `.is-recommended`는 출구 비교 목록과 추천 표시다. 화면 제목과 행동 버튼은 명사형을 쓰고, 이동 감소 설정에서는 전환 애니메이션을 끈다.
+
 어떤 AI든(Claude Code, Antigravity, Codex 등) 화면을 고치거나 확인할 때 함께 보는 기준 문서다.
 공통 원칙은 `AGENTS.md`, 프로젝트 배경과 데이터 함정은 `docs/context.md`를 먼저 따른다.
 

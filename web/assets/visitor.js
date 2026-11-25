@@ -16,7 +16,7 @@
   } catch (_) {}
 
   if (!A || !A.profiles) {
-    $("vfStatus").innerHTML = `<span class="chip">○ 아직 없음</span> 지난 공연 도착 시간대 자료를 불러오지 못했어요.`;
+    $("vfStatus").innerHTML = `<span class="chip">○ 아직 없음</span> 도착 시간대 자료 불러오기 실패`;
     return;
   }
 
@@ -98,8 +98,7 @@
 
     $("vfStatus").innerHTML =
       `<span class="chip bad">■ 도착 집중</span> ` +
-      `선택하신 <b>${start} ${ev.venue}</b> 공연(${dayLabel(date)})은 <b>${twoHourStart}~${start}</b>(시작 2시간 전~시작)에 관객의 <b>약 ${peak2Pct}%</b>가 몰릴 것으로 예상돼요. ` +
-      `여유 있게 도착하려면 <b>${twoHourStart} 전</b>을 권해요.`;
+      `<b>${twoHourStart}~${start}</b> 관객 약 <b>${peak2Pct}%</b> 도착 예상 · ${twoHourStart} 전 도착 권장`;
 
     if (chartBox) {
       const ariaSummary = slots.map((s) => `${s.ck.plain}(${s.label}) 약 ${s.pct}%`).join(", ");

@@ -1,12 +1,28 @@
 // 관객 화면
 (async function () {
-  const [events, links, allPlaces] = await Promise.all([
+  let events, links, allPlaces;
+  try {
+    [events, links, allPlaces] = await Promise.all([
     loadJSON("events.json"), loadJSON("links.json"), loadPlaces(),
-  ]);
+    ]);
+  } catch (_) {
+    const message = "공연 정보 불러오기 실패 · 새로고침 필요";
+    document.getElementById("eventInfo").textContent = message;
+    const choices = document.getElementById("journeyShows");
+    if (choices) choices.textContent = message;
+    return;
+  }
 
   const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
   const upcoming = events.filter((e) => e.date >= today && e.times.length);
   const byDate = groupByDate(upcoming);
+  if (!byDate.size) {
+    const message = "예정된 공연 없음";
+    document.getElementById("eventInfo").textContent = message;
+    const choices = document.getElementById("journeyShows");
+    if (choices) choices.textContent = message;
+    return;
+  }
   let live = null;
   let places = placesFor(allPlaces, "KSPO DOME");   // 고른 공연장 기준 장소 정보
 
@@ -133,23 +149,23 @@
 
     const near = sorted[0];
     $("stationTip").innerHTML = (useMy
-      ? `지금 계신 곳에서는 <b>${near.name}(${near.line})</b>이 가장 가까워요(추정 도보 약 ${near.myMin}분). <b>${places.dome.name}</b>에서는 <b>${venueNear.name}</b>이 가장 가까워요.`
-      : `<b>${places.dome.name}</b>은 <b>${venueNear.name}(${venueNear.line})</b>에서 가장 가까워요.`) +
-      (near.key === "olympic5" || venueNear.key === "olympic5" ? " 5호선은 강동역에서 하남검단산행과 갈라지니 꼭 <b>마천행</b> 열차를 확인하세요." : "");
+      ? `<b>현재 위치 기준</b> ${near.name} · 추정 도보 약 ${near.myMin}분`
+      : `<b>공연장 기준</b> ${venueNear.name} · 도보 약 ${venueNear.walkMin}분`) +
+      (near.key === "olympic5" || venueNear.key === "olympic5" ? "<br>5호선 이용 시 <b>마천행</b> 열차" : "");
 
     const stBtn = $("stGpsBtn"), stNote = $("stGpsNote");
     stBtn.disabled = USER_GPS.status === "loading";
     if (USER_GPS.status === "loading") {
       stBtn.textContent = "위치 확인 중…";
-      stNote.textContent = "현재 위치를 확인하고 있어요…";
+      stNote.textContent = "현재 위치 확인 중";
     } else if (USER_GPS.status === "ok" && loc) {
       stBtn.textContent = "내 위치 새로 고침";
       stNote.innerHTML = useMy
-        ? `<span class="chip good">● GPS 반영</span> 현재 위치${loc.acc ? `(오차 약 ±${loc.acc}m)` : ""}에서 가까운 역 순서예요(내 위치 도보는 직선거리 × 1.3, 분당 75m 추정).`
-        : `<span class="chip">○ 공원 밖</span> 현재 위치가 공원 주변 역에서 약 ${(minMyM / 1000).toFixed(1)}km 떨어져 있어 ${places.dome.name} 기준 도보 시간으로 보여 드려요.`;
+        ? `현재 위치 기준 · 거리와 도보 시간 추정`
+        : `공원 밖 · 공연장 기준 도보 시간`;
     } else if (USER_GPS.status === "off") {
       stBtn.textContent = "현재 위치(GPS)에서 역까지 거리 보기";
-      stNote.textContent = "내 위치 표시를 껐어요. 다시 보려면 버튼을 눌러 주세요.";
+      stNote.textContent = "현재 위치 표시 해제";
     } else if (USER_GPS.status === "denied" || USER_GPS.status === "error" || USER_GPS.status === "unsupported") {
       stBtn.textContent = "현재 위치(GPS) 다시 확인";
       stNote.innerHTML = `<span class="chip warn">▲ 확인 안 됨</span> ${USER_GPS.msg}`;
@@ -188,16 +204,16 @@
     mapBtn.disabled = g.status === "loading";
     if (g.status === "loading") {
       mapBtn.textContent = "위치 확인 중…";
-      mapNote.textContent = "현재 위치를 확인하고 있어요…";
+      mapNote.textContent = "현재 위치 확인 중";
     } else if (g.status === "ok" && g.loc) {
       mapBtn.textContent = "내 위치 새로 고침";
       const dPark = distMeters(g.loc.lat, g.loc.lng, allPlaces.dome.lat, allPlaces.dome.lng);
       mapNote.innerHTML = dPark <= 3000
-        ? `<span class="chip good">● GPS 표시 중</span> 지도에 <b>● 내 위치</b>${g.loc.acc ? `(오차 약 ±${g.loc.acc}m)` : ""}를 함께 표시했어요(브라우저 안에서만 계산).`
-        : `<span class="chip">○ 공원 밖</span> 현재 위치가 올림픽공원에서 약 ${(dPark / 1000).toFixed(1)}km 떨어져 있어 지도 중심은 공원에 유지했어요.`;
+        ? `현재 위치 표시 중`
+        : `공원 밖 · 지도 중심은 올림픽공원`;
     } else if (g.status === "off") {
       mapBtn.textContent = "내 현재 위치(GPS) 지도에 표시";
-      mapNote.textContent = "내 위치 표시를 껐어요.";
+      mapNote.textContent = "현재 위치 표시 해제";
     } else if (g.status === "denied" || g.status === "error" || g.status === "unsupported") {
       mapBtn.textContent = "내 현재 위치(GPS) 다시 확인";
       mapNote.innerHTML = `<span class="chip warn">▲ 확인 안 됨</span> ${g.msg}`;
@@ -213,7 +229,7 @@
       $("legend3d").innerHTML = legend3DHTML(m3.buildingSrc);
     } catch (e) {
       $("map3d").classList.add("failed"); $("flat").open = true;
-      $("legend3d").innerHTML = `<p class="muted small">3D 지도를 열 수 없어 평면 지도로 보여 드려요 (${e.message || e}).</p>`;
+      $("legend3d").innerHTML = `<p class="muted small">3D 지도 연결 실패 · 평면 지도 표시</p>`;
     }
   };
   fillEvents();
@@ -221,20 +237,23 @@
     live = await loadLive();
     if (live) {
       drawRoadMap($("map"), links, places, live.roads);
-      $("roadNote").textContent = liveNote(live);
+      $("roadNote").textContent = live.source === "live" ? "실시간 도로 정보" : "저장된 도로 자료";
       start3D(live);
-    } else start3D(null);
+    } else {
+      $("roadNote").textContent = "최근 도로 자료 없음 · 회색 표시";
+      start3D(null);
+    }
     // 실시간 연결이면 2분마다 새로 고침
     if (live && live.source === "live") setInterval(async () => {
       try {
         live = await loadLive();
         drawRoadMap($("map"), links, places, live.roads);
         if (m3) m3.update(live);
-        $("roadNote").textContent = liveNote(live);
+        $("roadNote").textContent = live && live.source === "live" ? "실시간 도로 정보" : "저장된 도로 자료";
       } catch (_) {}
     }, 120000);
   } catch (e) {
     start3D(null);
-    $("roadNote").textContent = "최근 수집값을 불러오지 못했어요(" + e.message + "). 도로는 회색으로 표시돼요.";
+    $("roadNote").textContent = "최근 도로 자료 없음 · 회색 표시";
   }
 })();
