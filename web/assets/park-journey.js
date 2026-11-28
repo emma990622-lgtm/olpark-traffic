@@ -3,14 +3,13 @@
   const $ = (id) => document.getElementById(id);
   let step = 'event';
   let travelMode = 'car';
-  let arrivalReturn = 'guide';
   let transition;
   const titles = {
     event: '공연 선택', mode: '이동수단 선택', parking: '출구별 귀가 안내',
     direction: '이동 방면 선택', guide: '출구별 귀가 안내', transit: '대중교통 안내',
-    map: '주변 도로와 도보 경로', arrival: '시간대별 공연장 도착 관객수',
+    map: '주변 도로와 도보 경로', arrival: '시간대별 예상 도착 비중',
   };
-  const previous = {mode: 'event', parking: 'mode', direction: 'parking', guide: 'direction', transit: 'mode'};
+  const previous = {mode: 'event', parking: 'mode', direction: 'parking', guide: 'direction', transit: 'mode', arrival: 'transit'};
   const carResultNav = $('carResultNav');
   const carViewButtons = carResultNav.querySelectorAll('[data-car-view]');
   function summary() {
@@ -24,11 +23,15 @@
     step = n;
     const car = ['parking', 'direction', 'guide'].includes(n);
     const carResult = travelMode === 'car' && (n === 'guide' || n === 'map');
+    const showArrivalBesideGuide = n === 'guide';
     const result = n === 'guide' || n === 'transit' || n === 'map' || n === 'arrival';
     document.querySelectorAll('[data-journey]').forEach(el => {
       const key = el.dataset.journey;
-      el.hidden = !(key === n || (key === 'car' && car) || (key === 'result' && result) || (key === 'car-arrival' && carResult));
+      el.hidden = !(key === n || (key === 'car' && car) || (key === 'result' && result) || (key === 'arrival' && showArrivalBesideGuide));
     });
+    $('carGuideLayout').classList.toggle('is-split', showArrivalBesideGuide);
+    $('arrivalHeading').hidden = !showArrivalBesideGuide;
+    $('visitorCard').setAttribute('aria-labelledby', showArrivalBesideGuide ? 'arrivalHeading' : 'journeyTitle');
     document.querySelectorAll('[data-car]').forEach(el => {
       el.hidden = el.dataset.car !== n;
     });
@@ -80,7 +83,6 @@
   $('journeyBack').addEventListener('click', () => {
     let target = previous[step];
     if (step === 'map') target = travelMode === 'car' ? 'direction' : 'transit';
-    if (step === 'arrival') target = arrivalReturn;
     show(target, true, -1);
   });
   $('journeyChange').addEventListener('click', () => show('event', true, -1));
@@ -94,7 +96,6 @@
   });
   document.querySelectorAll('[data-topic]').forEach(button => {
     button.addEventListener('click', () => {
-      if (button.dataset.topic === 'arrival') arrivalReturn = step;
       show(button.dataset.topic);
     });
   });

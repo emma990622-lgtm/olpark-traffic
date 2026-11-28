@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="assets/style.css?v=8">
 <link rel="stylesheet" href="https://spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500&display=swap">
-<link rel="stylesheet" href="assets/park-web.css?v=5">
+<link rel="stylesheet" href="assets/park-web.css?v=6">
 </head>
 <body class="park-web">
 <a class="skip-link" href="#journeyTitle">본문으로 바로가기</a>
@@ -61,6 +61,7 @@
     </div>
   </section>
 
+  <div class="car-guide-layout" id="carGuideLayout">
   <section class="card" id="exitGate" data-journey="car" hidden>
     <div data-car="parking">
     <h2>주차 위치 선택</h2>
@@ -77,6 +78,7 @@
       <button class="text-button" id="skipDirection" type="button" hidden>방면 선택 건너뛰기</button>
     </div>
     <div data-car="guide" hidden>
+    <h2>출구 비교</h2>
     <div id="egResult" role="status" style="margin-top:12px"></div>
     <details class="weather-detail"><summary>날씨에 따른 출차 시간 확인</summary>
     <div style="margin-bottom:8px;max-width:22em"><label class="field" for="egWx">날씨</label>
@@ -85,6 +87,14 @@
     </details><p id="egSrc" hidden></p>
     </div>
   </section>
+  <section class="card" id="visitorCard" data-journey="arrival" aria-labelledby="journeyTitle" hidden>
+    <h2 id="arrivalHeading" hidden>시간대별 예상 도착 비중</h2>
+    <div id="vfStatus" class="le-status" role="status">불러오는 중…</div>
+    <div id="vfChart" class="arr-chart-wrap"></div>
+    <div id="vfNote" hidden></div>
+    <p id="vfSrc" hidden></p>
+  </section>
+  </div>
 
   <section class="card park-map" data-journey="map" aria-labelledby="journeyTitle" hidden>
     <div class="gps-bar">
@@ -100,15 +110,6 @@
     </details>
     <p class="live-foot" id="roadNote">불러오는 중…</p>
   </section>
-  <section class="card" id="visitorCard" data-journey="arrival" aria-labelledby="journeyTitle" hidden>
-    <div id="vfStatus" class="le-status" role="status">불러오는 중…</div>
-    <div id="vfChart" class="arr-chart-wrap"></div>
-    <div id="vfNote" hidden></div>
-    <p id="vfSrc" hidden></p>
-  </section>
-  <div class="result-reset" data-journey="car-arrival" hidden>
-    <button class="text-button" type="button" data-topic="arrival">시간대별 예상 도착 비중</button>
-  </div>
   <div class="result-reset" data-journey="result" hidden><button class="text-button" id="journeyRestart" type="button">다른 공연 선택</button></div>
 </main></div>
 
@@ -116,8 +117,8 @@
 <script src="assets/common.js?v=ped5"></script>
 <script src="assets/map3d.js?v=ped5"></script>
 <script src="assets/audience.js?v=all-park"></script>
-<script src="assets/visitor.js?v=all-park-2"></script>
+<script src="assets/visitor.js?v=all-park-3"></script>
 <script src="assets/exit_gate.js?v=all-park"></script>
-<script src="assets/park-journey.js?v=6"></script>
+<script src="assets/park-journey.js?v=7"></script>
 </body>
 </html>
