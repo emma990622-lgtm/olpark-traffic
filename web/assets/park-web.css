@@ -111,6 +111,27 @@ button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible 
 }
 .topic-choices button:hover {background:var(--accent-soft);border-color:var(--accent)}
 #transitSection .topic-choices {margin-top:20px}
+.car-result-nav {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:4px;
+  padding:4px;
+  margin-bottom:24px;
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+}
+.car-result-nav button {
+  min-height:48px;
+  border:0;
+  border-radius:6px;
+  color:var(--accent);
+  background:transparent;
+  font-weight:700;
+  cursor:pointer;
+}
+.car-result-nav button[aria-pressed="true"] {color:white;background:var(--accent)}
+.car-result-nav button[aria-pressed="false"]:hover {background:var(--accent-soft)}
 .journey-layout .journey-heading {margin-bottom:28px}
 #journeyMeta {margin-top:5px;color:var(--ink-2);font-size:16px}
 .show-choice .show-venue,.show-choice .show-time {font-size:16px}
