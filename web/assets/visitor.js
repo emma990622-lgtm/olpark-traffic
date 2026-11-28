@@ -118,7 +118,7 @@
           const tip = `${s.ck.plain} (시작 ${s.label}): 평균 약 ${s.pct}% (지난 공연 가운데 50% 범위 ${Math.round(s.p25)}~${Math.round(s.p75)}%)`;
           return `<div class="arr-col is-${s.tier.cls}" title="${tip}">
             <div class="arr-val"><span aria-hidden="true">${s.tier.sym}</span> ${s.pct}%</div>
-            <div class="arr-track"><div class="arr-fill" style="height:${barH}%"></div></div>
+            <div class="arr-track"><div class="arr-fill" style="--arrival-bar:${barH}%"></div></div>
             <div class="arr-lbl">
               <span class="arr-clock">${s.ck.html}</span>
               <span class="arr-rel">${shortRelLabel(s.relHour)}</span>

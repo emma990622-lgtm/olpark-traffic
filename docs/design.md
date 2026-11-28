@@ -1,5 +1,10 @@
 # 디자인 규칙 및 JS↔CSS 계약서 (`docs/design.md`)
 
+- 자동차 안내는 주차 위치 → 이동 방면 → 결과 순서로 진행한다. 결과 상단 `#carResultNav`의 `data-car-view` 버튼에서 귀가 안내와 주변 도로를 전환하고, `aria-pressed`로 현재 화면을 표시한다. 두 화면은 선택한 주차 구역·방면을 공유한다.
+- 자동차 귀가 안내에서만 `.car-guide-layout.is-split`으로 출구 비교와 예상 도착 비중을 함께 표시한다. 800px 이하에서는 세로로 쌓고, 자동차 결과의 그래프는 가로 막대를 사용한다.
+- 주차·방면 버튼은 기존 선택 버튼과 같은 호버 색을 사용한다. 출구 카드에는 초록·황색·붉은색과 순위 문구를 함께 표시하고, `.exit-option-route`에 이동 경로를 강조한다.
+- `.exit-option-times`는 공연 종료 후 출구 통과와 방면별 합류점까지의 시간을 구분한다. 시간 산정 근거는 카드 아래 접힌 설명에 둔다. 헤더 이미지는 올림픽공원 PI 페이지의 영문 좌우조합 원본을 사용한다.
+
 > ALL PARK 관객 화면에는 `park-web.css`가 공통 스타일 위에 적용된다. `park-journey.js`가 `data-journey` 화면과 `data-car` 하위 단계를 전환한다. 주차 위치와 방면 선택은 `park-zone-selected` 및 `park-direction-selected` 이벤트로 연결한다. 기존 필수 ID와 `#mode button.on` 상태를 유지한다. `.topic-choices`는 안내 진입 버튼, `.exit-options`와 `.is-recommended`는 출구 비교 목록과 추천 표시다. 화면 제목과 행동 버튼은 명사형을 쓰고, 이동 감소 설정에서는 전환 애니메이션을 끈다.
 
 어떤 AI든(Claude Code, Antigravity, Codex 등) 화면을 고치거나 확인할 때 함께 보는 기준 문서다.

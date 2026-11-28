@@ -4,11 +4,12 @@
 (async function () {
   const $ = (id) => document.getElementById(id);
   if (!$("exitGate")) return;
-  let J = null, D = null;
+  let J = null, D = null, gateTimeData = null;
   try {
-    [J, D] = await Promise.all([
+    [J, D, gateTimeData] = await Promise.all([
       loadJSON("exit_gate.json"),
       loadJSON("gate_directions.json").catch(() => null),
+      loadJSON("gate_after_end.json").catch(() => null),
     ]);
   } catch (_) {}
   if (!J || !J.byEntry) {
@@ -137,36 +138,57 @@
     if (!pick) return;
 
     if (pick === "other") {
-      out.innerHTML = '<div class="eg-reco"><strong class="eg-gate">진입한 문으로 출차</strong></div>';
+      out.innerHTML = '<div class="eg-reco"><strong class="eg-gate">진입한 문으로 출차</strong><p>출구 통과 소요 시간 자료 없음</p></div>';
       return;
     }
 
     const entry = J.byEntry[pick];
+    const history = gateTimeData?.byEntry?.[pick];
+    const minutes = history?.minutes;
+    const hasGateTimes = entry.options.every(({gate}) => Number.isFinite(minutes?.[gate]) && minutes[gate] >= 0);
     const direction = dirByKey[wayPick];
     const compareRoad = direction && entry.options.every(option => direction.byGate?.[option.gate]);
     const routes = entry.options.map(option => {
       const gate = option.gate;
       const parkDifference = gate === entry.best ? 0 : option.vs[entry.best].min;
       const road = compareRoad ? direction.byGate[gate] : null;
+      const gateMinutes = hasGateTimes ? minutes[gate] : null;
+      const score = gateMinutes ?? parkDifference;
       return {
         gate,
         path: road ? road.via : J.way[gate],
-        score: road ? +(parkDifference + road.roadMin).toFixed(1) : parkDifference,
+        gateMinutes,
+        score: road ? +(score + road.roadMin).toFixed(1) : score,
       };
     }).sort((first, second) => first.score - second.score);
 
     const cards = routes.map((route, index) => {
       const difference = +(route.score - routes[0].score).toFixed(1);
-      const label = index === 0 ? "추천" : difference < 1 && compareRoad
-        ? `비슷한 소요 시간 · 약 +${difference}분`
-        : `추천 출구 대비 약 +${difference}분`;
-      return `<li class="exit-option${index === 0 ? " is-recommended" : ""}">
-        <strong>${GATE(route.gate)}</strong><p>${label}</p><p>${route.path}</p>
+      const label = difference === 0 ? "가장 빠름" : difference < 1 ? "시간 차이 작음" : `${index + 1}순위`;
+      const detail = difference > 0 ? `<p class="exit-option-difference">가장 빠른 출구보다 약 ${difference}분 더 소요</p>` : "";
+      const gateTime = route.gateMinutes === null ? "자료 없음" : `약 ${route.gateMinutes}분`;
+      const totalTime = hasGateTimes && compareRoad
+        ? `<div class="exit-option-time"><dt>${direction.hub}까지</dt><dd>약 ${route.score}분</dd></div>`
+        : "";
+      return `<li class="exit-option${difference === 0 ? " is-recommended" : ""}">
+        <div class="exit-option-header">
+          <strong class="exit-option-name">${GATE(route.gate)}</strong>
+          <span class="exit-option-rank">${label}</span>
+        </div>
+        <dl class="exit-option-times">
+          <div class="exit-option-time"><dt>공연 종료 후 출구 통과</dt><dd>${gateTime}</dd></div>
+          ${totalTime}
+        </dl>
+        ${detail}
+        <p class="exit-option-route"><span>이동 경로</span><b>${route.path}</b></p>
       </li>`;
     });
-    const scope = compareRoad ? `공원 출구부터 ${direction.hub}까지 포함` : "공원 출구까지 비교";
-    out.innerHTML = `<p class="result-scope">올림픽공원 과거 출차 기록${compareRoad ? "과 서울시 도로 실측" : ""} 기준 · ${scope}</p>
-      <ul class="exit-options" aria-label="출구별 비교">${cards.join("")}</ul>`;
+    const basis = hasGateTimes
+      ? `종료 시각이 확인된 과거 KSPO DOME 공연 ${history.shows}회의 차량 출구 통과 중앙값.`
+      : "올림픽공원 과거 출차 기록의 출구 간 시간 차이.";
+    const roadBasis = compareRoad ? ` ${direction.hub}까지는 서울시 도로 실측 기준 주행 시간을 더한 값.` : "";
+    out.innerHTML = `<ul class="exit-options" aria-label="출구별 비교">${cards.join("")}</ul>
+      <details class="exit-time-basis"><summary>예상 시간 기준</summary><p>${basis}${roadBasis}</p></details>`;
   }
 
   // 날씨
