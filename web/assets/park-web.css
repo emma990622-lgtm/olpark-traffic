@@ -109,7 +109,12 @@ button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible 
   border-radius:var(--radius);
   cursor:pointer;
 }
-.topic-choices button:hover {background:var(--accent-soft);border-color:var(--accent)}
+.topic-choices button:hover,
+.park-web .eg-zones button:not(.on):is(:hover,:focus-visible),
+.park-web #egGpsBtn:not(:disabled):is(:hover,:focus-visible) {
+  background:var(--accent-soft);
+  border-color:var(--accent);
+}
 #transitSection .topic-choices {margin-top:20px}
 .car-result-nav {
   display:grid;
@@ -142,10 +147,47 @@ button:focus-visible,a:focus-visible,select:focus-visible,summary:focus-visible 
 .park-web #mode button {min-height:80px}
 .result-scope {font-size:16px;color:var(--ink-2)}
 .exit-options {list-style:none;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.exit-option {border:1px solid var(--line-strong);border-radius:8px;padding:18px}
-.exit-option.is-recommended {border-color:var(--accent);background:var(--accent-soft)}
-.exit-option strong {display:block;color:var(--accent);font-size:25px}
-.exit-option p {font-size:16px;margin:6px 0 0}
+.exit-option {
+  --exit-bg:var(--bad-bg);
+  --exit-ink:var(--bad-ink);
+  --exit-stripe:var(--bad-ink);
+  background:var(--exit-bg);
+  border:1px solid var(--line-strong);
+  border-inline-start:5px solid var(--exit-stripe);
+  border-radius:8px;
+  padding:18px;
+}
+.exit-option:nth-child(2) {
+  --exit-bg:var(--warn-bg);
+  --exit-ink:var(--warn-ink);
+  --exit-stripe:var(--warn-ink);
+}
+.exit-option.is-recommended {
+  --exit-bg:var(--good-bg);
+  --exit-ink:var(--good-ink);
+  --exit-stripe:var(--good-ink);
+}
+.exit-option-header {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 12px}
+.exit-option-name {color:var(--ink);font-size:25px}
+.exit-option-rank {
+  padding:4px 10px;
+  border-radius:6px;
+  background:var(--exit-ink);
+  color:#fff;
+  font-size:14px;
+  font-weight:700;
+}
+.exit-option-difference {margin:5px 0 0;font-size:15px;color:var(--exit-ink)}
+.exit-option-route {
+  margin:10px 0 0;
+  padding:9px 11px;
+  border-radius:6px;
+  background:#fff;
+  color:var(--ink);
+  overflow-wrap:anywhere;
+}
+.exit-option-route span {display:block;color:var(--ink-2);font-size:14px}
+.exit-option-route b {display:block;font-size:17px;line-height:1.5}
 .park-web .arr-chart-box {min-width:510px}
 .park-web .arr-fill {height:var(--arrival-bar)}
 .park-web .arr-val,.park-web .arr-clock,.park-web .arr-rel,.park-web .arr-chart-legend,.park-web .arr-start-pill,.park-web .live-foot {font-size:16px}

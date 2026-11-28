@@ -157,11 +157,15 @@
 
     const cards = routes.map((route, index) => {
       const difference = +(route.score - routes[0].score).toFixed(1);
-      const label = index === 0 ? "추천" : difference < 1 && compareRoad
-        ? `비슷한 소요 시간 · 약 +${difference}분`
-        : `추천 출구 대비 약 +${difference}분`;
-      return `<li class="exit-option${index === 0 ? " is-recommended" : ""}">
-        <strong>${GATE(route.gate)}</strong><p>${label}</p><p>${route.path}</p>
+      const label = difference === 0 ? "가장 빠름" : difference < 1 ? "시간 차이 작음" : `${index + 1}순위`;
+      const detail = difference > 0 ? `<p class="exit-option-difference">가장 빠른 출구보다 약 ${difference}분 더 소요</p>` : "";
+      return `<li class="exit-option${difference === 0 ? " is-recommended" : ""}">
+        <div class="exit-option-header">
+          <strong class="exit-option-name">${GATE(route.gate)}</strong>
+          <span class="exit-option-rank">${label}</span>
+        </div>
+        ${detail}
+        <p class="exit-option-route"><span>이동 경로</span><b>${route.path}</b></p>
       </li>`;
     });
     const scope = compareRoad ? `공원 출구부터 ${direction.hub}까지 포함` : "공원 출구까지 비교";
